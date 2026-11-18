@@ -1,7 +1,7 @@
-# RacePilot v2.1.0 — Connect IQ Store Metadata Draft
+# RacePilot v2.2.0 — Connect IQ Store Metadata Draft
 
 > Draft siap pakai untuk Connect IQ Store submission.
-> Sesuaikan URL/email sebelum submit.
+> Isi bagian `<isi>` (support email/URL) sebelum submit.
 
 ---
 
@@ -14,16 +14,17 @@
 | **Category** | Data Fields |
 | **Sub-category** | Running |
 | **Price** | (gratis / berbayar — tentukan) |
-| **Version** | 2.1.0 |
+| **Version** | 2.2.0 |
 | **Min SDK** | 3.2.0 |
 | **Languages** | English |
+| **Package** | `build/RacePilot-v2.2.0.iq` |
 
 ---
 
 ## 2. Short Description (max ~150 char)
 
 ```
-Race pacing data field with live projected finish, ahead/behind indicator, and need-pace guidance. Outdoor, Track & Treadmill.
+Race pacing data field: live projected finish, ahead/behind, need pace and a progress ring. 3 layouts. Outdoor, Track & Treadmill.
 ```
 
 ---
@@ -38,30 +39,36 @@ Instead of just showing current pace, RacePilot projects your finish time
 in real time and tells you exactly how far ahead or behind you are.
 
 WHAT YOU SEE
-• Lap Pace — smoothed, stable pace (no jitter)
-• Distance & Timer — your activity progress
-• Projected Finish — estimated finish time at current pace
+• Projected Finish — estimated finish time, updated live
 • Ahead / Behind — how much time you're ahead of or behind target
 • Need Pace — the pace you must hold to hit your goal
+• Lap Pace — smoothed, stable pace (no jitter)
+• Progress ring — distance covered toward your race distance
+
+PICK YOUR LAYOUT
+• Standard (HUD) — projected finish hero with a progress ring
+• Delta — giant +/- time vs target with a color status bar
+• Grid — classic split grid: lap pace, need pace, distance, time
+• Focus — big pace with distance and time in one line
 
 THREE RUN MODES
 • Outdoor GPS — spike rejection, corner protection, tunnel hold,
-  grade compensation, GPS recovery
+  GPS recovery
 • Track Run — pace per lap (/400m or custom), lap counter,
-  auto lap detection, lap blending
-• Treadmill Run — 3-phase warmup that fixes Garmin's early-pace
-  errors, single-point calibration (x100)
+  lap blending
+• Treadmill Run — 3-phase warmup that fixes early-pace errors,
+  single-point calibration (x100)
 
 46 RACE PRESETS
 5K (Sub 18–35), 10K (Sub 40–70), Half Marathon (Sub 1:20–2:30),
 Marathon (Sub 2:30–5:00), and Custom distance/time.
 
-BUILT FOR STABILITY
-• Confidence engine (0–100%) suppresses unreliable data
-• Adaptive smoothing that reacts faster when GPS is clean
-• Projection lock prevents the finish estimate from vibrating
-• Multi-source prediction (instant + lap + EWMA + history)
-• Finish lock freezes display after you cross the line
+MORE
+• Metric / Imperial units (auto from watch)
+• Dark or High Contrast theme, 5 accent colors
+• Off-target vibration alert (can be turned off)
+• Projected finish, ahead/behind and need pace recorded to your
+  activity — view the charts in Garmin Connect
 
 WHO IT'S FOR
 Runners chasing a specific goal time — PR attempts, race day,
@@ -70,35 +77,36 @@ tempo runs, and interval sessions on the track.
 
 ---
 
-## 4. "What's New" (v2.1.0)
+## 4. "What's New" (v2.2.0)
 
 ```
-• Unified architecture with single source-of-truth display model
-• Treadmill 3-phase warmup — eliminates early-run pace errors
-• Configurable track length (200/250/300/400/500m)
-• Auto-pause detection with distance-stagnation guard
-• Finish lock prevents flicker across the finish line
-• Distance-gated grade filter for smoother hill compensation
-• Cleaner UI matching the reference layout
-• Fixed "LAP LAP" lap-count duplication
-• 15 automated unit tests, zero build warnings
+• New UI: Suunto-style HUD with distance progress ring
+• Two new layouts: Delta (big +/- vs target) and Grid
+• Metric / Imperial units, Dark / High Contrast theme, 5 accent colors
+• Projected finish, ahead/behind and need pace charts in Garmin Connect
+• Fixed: projected finish could stop updating mid-race
+• Fixed: Auto run type could switch to treadmill when GPS dropped
+  (e.g. tunnels), causing distance jumps
+• Smarter off-target alert: vibrates when you fall behind, then
+  reminds at most every 2 minutes
+• 20 automated tests, zero code warnings
 ```
 
 ---
 
-## 5. Screenshots Plan (5 campaign images)
+## 5. Screenshots
 
-Store butuh gambar layar jam (biasanya 5). Scene yang direkomendasikan:
+Siap pakai (dipotong dari simulator, < 150 KB): folder `SS Redesign UI/Store/`.
 
-| # | Scene | Data contoh |
-|---|-------|-------------|
-| 1 | **At a Glance** — Outdoor default | 5:32/km, 8.24km, 42:37, proyeksi 49:47, ▲0:13 AHEAD, 5:18/km |
-| 2 | **Ahead of Target** | 5:12/km, 10.35km, 53:15, proyeksi 49:38, ▲0:22 AHEAD, 5:15/km |
-| 3 | **Behind Target** | 6:02/km, 12.40km, 1:15:10, proyeksi 50:13, ▼0:28 BEHIND, 6:10/km |
-| 4 | **Treadmill Run** | 5:45/km, 7.60km, 40:00, proyeksi 50:00, ▼ON TARGET, 5:40/km |
-| 5 | **Track Run** | 1:24/400m, 3.20km, 12:45, proyeksi 25:05, ▲0:15 AHEAD, 1:25/400m |
+| # | File | Scene |
+|---|------|-------|
+| 1 | `store_1_fr165_standard.jpg` | Standard HUD — projected 24:09, ▲0:51 ahead |
+| 2 | `store_2_fr165_delta.jpg` | Delta layout — +0:51, status bar |
+| 3 | `store_3_fr165_grid.jpg` | Grid layout |
+| 4 | `store_4_edge540.jpg` | Edge 540 (rectangular) |
+| 5 | `store_5_venux1.jpg` | Venu X1 |
 
-**Catatan:** Gunakan skenario 10K target 50:00 sebagai basis konsisten (lihat reference infographic).
+Catatan: angka berasal dari simulasi (target 5K sub-25). Untuk store yang lebih meyakinkan, bisa diganti screenshot dari lari nyata.
 
 ---
 
@@ -106,11 +114,8 @@ Store butuh gambar layar jam (biasanya 5). Scene yang direkomendasikan:
 
 | Asset | Spec | Status |
 |-------|------|--------|
-| Hero image | 1440×720, JPG/PNG/GIF, max 2048 KB | ☐ Belum |
-| Cover image | 500×500, max 300 KB | ☐ Belum |
-| Screen images | max 150 KB each | ☐ Belum |
-
-Aset promosi yang sudah ada di `Context & References/` bisa dipakai/di-edit.
+| Hero image | 1440×720, JPG/PNG/GIF, max 2048 KB | `Asset Developer Portal/HeroImage.jpg` (UI lama — perlu update ke UI baru) |
+| Cover image | 500×500, max 300 KB | `Asset Developer Portal/CoverImageIcons.jpg` |
 
 ---
 
@@ -120,6 +125,7 @@ Aset promosi yang sudah ada di `Context & References/` bisa dipakai/di-edit.
 |------------|--------|
 | **Positioning** | Membaca GPS untuk pace & jarak outdoor |
 | **UserProfile** | Menyesuaikan unit pace (metric/imperial) |
+| **FitContributor** | Merekam projected finish, ahead/behind, need pace ke file aktivitas |
 
 ---
 
@@ -137,33 +143,19 @@ Aset promosi yang sudah ada di `Context & References/` bisa dipakai/di-edit.
 |-------|-------|
 | Support email | `<isi>` |
 | Support URL | `<isi>` |
-| Source repo | `<isi bila open> ` |
 
 ---
 
 ## 10. Pre-Submit Checklist
 
-- [ ] Build clean (zero warnings) — ✅ sudah
-- [ ] Store package `.iq` generated — ✅ sudah (31.4 KB)
-- [ ] Hardware test lulus (lihat HARDWARE_TEST_CHECKLIST.md) — ☐
-- [ ] 5 screenshot campaign siap — ☐
-- [ ] Hero + cover image siap — ☐
-- [ ] Description + What's New diisi — ✅ draft siap
-- [ ] Privacy policy (jika diminta) — ☐
-- [ ] Version bump final — 2.1.0 ✅
-- [ ] Icon 54×54 (fr165) — ✅ sudah
-- [ ] Languages di manifest — ✅ sudah
-
----
-
-## Catatan Strategi Rilis
-
-**Rilis 1: fr165 saja (v2.1.0)**
-- Fokus stabilitas di device utama
-- Kumpulkan feedback lapangan
-- Fix bug hardware-specific jika ada
-
-**Rilis 2 (v2.2+): Multi-device**
-- Tambah fr165m, fr255/255s, fr265/265s, fr955, fr965
-- Build + test per device (ukuran layar & API beda)
-- Jangan klaim kompatibel sebelum test tiap device
+- [x] Build clean (0 code warnings; hanya info icon auto-scale)
+- [x] Store package `build/RacePilot-v2.2.0.iq` (85 device build)
+- [x] 20 unit test lulus
+- [x] Version bump 2.2.0
+- [x] Description + What's New
+- [x] 5 screenshot store
+- [x] FIT contributions (chart di Garmin Connect)
+- [ ] **Hardware test di jam fisik** (HARDWARE_TEST_CHECKLIST.md) — wajib, tidak bisa disimulasikan
+- [ ] Hero image versi UI baru (opsional, yang lama masih valid)
+- [ ] Support email / URL
+- [ ] Privacy policy (jika diminta)

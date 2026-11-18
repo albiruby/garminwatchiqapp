@@ -100,33 +100,33 @@ class PredictionBuffer {
             return mLastProjectedFinishSec;
         }
 
-        if (currentDistM >= 100.0f) {
-            var diff = rawProjectedSec - mLastProjectedFinishSec;
-            if (diff > MAX_PROJECTION_SLEW_SEC) {
-                rawProjectedSec = mLastProjectedFinishSec + MAX_PROJECTION_SLEW_SEC;
-            } else if (diff < -MAX_PROJECTION_SLEW_SEC) {
-                rawProjectedSec = mLastProjectedFinishSec - MAX_PROJECTION_SLEW_SEC;
-            }
-        }
-
+        // Lock/breakout decisions use the UNCLAMPED target. Comparing the
+        // slew-clamped value (max 4 s) against a 5 s breakout made the lock
+        // permanent once engaged (projection froze for the rest of the race).
         var absDiff = (rawProjectedSec - mLastProjectedFinishSec).abs();
         if (mProjectionLocked) {
-            if (absDiff > PROJECTION_BREAKOUT_SEC) {
-                mProjectionLocked = false;
-                mStableProjectionTicks = 0;
-                mLastProjectedFinishSec = rawProjectedSec;
+            if (absDiff <= PROJECTION_BREAKOUT_SEC) {
+                return mLastProjectedFinishSec;
             }
+            mProjectionLocked = false;
+            mStableProjectionTicks = 0;
+        } else if (absDiff <= PROJECTION_LOCK_DEADBAND_SEC) {
+            mStableProjectionTicks += 1;
+            if (mStableProjectionTicks >= 3) {
+                mProjectionLocked = true;
+            }
+            return mLastProjectedFinishSec;
         } else {
-            if (absDiff <= PROJECTION_LOCK_DEADBAND_SEC) {
-                mStableProjectionTicks += 1;
-                if (mStableProjectionTicks >= 3) {
-                    mProjectionLocked = true;
-                }
-            } else {
-                mStableProjectionTicks = 0;
-                mLastProjectedFinishSec = rawProjectedSec;
-            }
+            mStableProjectionTicks = 0;
         }
+
+        // Move toward the target, rate-limited after the first 100 m.
+        var step = rawProjectedSec - mLastProjectedFinishSec;
+        if (currentDistM >= 100.0f) {
+            if (step > MAX_PROJECTION_SLEW_SEC) { step = MAX_PROJECTION_SLEW_SEC; }
+            else if (step < -MAX_PROJECTION_SLEW_SEC) { step = -MAX_PROJECTION_SLEW_SEC; }
+        }
+        mLastProjectedFinishSec += step;
 
         return mLastProjectedFinishSec;
     }

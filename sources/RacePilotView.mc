@@ -22,6 +22,7 @@ class RacePilotView extends WatchUi.DataField {
 
     // v2.2: off-target alert throttle
     private var mLastAlertSec as Float = -9999.0f;
+    private var mWasBehind as Boolean = false;
 
     // Skill 028: Obscurity flags
     private var _obscurity as Number = 0;
@@ -59,7 +60,7 @@ class RacePilotView extends WatchUi.DataField {
         } catch (ex) { mFitAhead = null; }
         try {
             mFitNeed = createField("needPace", 2, FitContributor.DATA_TYPE_FLOAT,
-                {:mesgType => FitContributor.MESG_TYPE_RECORD, :units => "s"});
+                {:mesgType => FitContributor.MESG_TYPE_RECORD, :units => "s/km"});
         } catch (ex) { mFitNeed = null; }
     }
 
@@ -72,7 +73,9 @@ class RacePilotView extends WatchUi.DataField {
                 mFitAhead.setData(snap.aheadBehindSec);
             }
             if (mFitNeed != null && snap.needPaceSec > 0.0f) {
-                mFitNeed.setData(snap.needPaceSec);
+                // Always record need pace as seconds per km (track mode is per lap internally)
+                var needPerKm = snap.isTrackMode ? (snap.needPaceSec * 1000.0f / snap.trackLapLengthM) : snap.needPaceSec;
+                mFitNeed.setData(needPerKm);
             }
         } catch (ex) {}
     }
@@ -84,14 +87,17 @@ class RacePilotView extends WatchUi.DataField {
         if (!snap.alertsEnabled) { return; }
         if (!snap.hasTarget || snap.projectedFinishSec <= 0.0f) { return; }
         if (snap.state != STATE_RACING) { return; }
-        // Behind target by more than 5 seconds
-        if (snap.aheadBehindSec < -5.0f) {
+        // Vibrate when the runner falls behind (>5 s), then remind at most
+        // every 2 minutes while still behind. Recovering re-arms the alert.
+        var behind = (snap.aheadBehindSec < -5.0f);
+        if (behind) {
             var now = snap.elapsedSeconds;
-            if (now - mLastAlertSec >= 30.0f) {
+            if (!mWasBehind || (now - mLastAlertSec >= 120.0f)) {
                 mLastAlertSec = now;
                 vibrateAlert();
             }
         }
+        mWasBehind = behind;
     }
 
     private function vibrateAlert() as Void {
@@ -158,6 +164,7 @@ class RacePilotView extends WatchUi.DataField {
         mLastElapsedDistM = 0.0f;
         mLastTimerSec = 0.0f;
         mLastAlertSec = -9999.0f;
+        mWasBehind = false;
         mEngine.reset();
     }
 

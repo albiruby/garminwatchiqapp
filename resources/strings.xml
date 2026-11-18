@@ -87,4 +87,13 @@
     <string id="LayoutFocus">Focus</string>
     <string id="LayoutDelta">Delta</string>
     <string id="LayoutGrid">Grid</string>
+
+    <string id="FitProjChart">Projected Finish</string>
+    <string id="FitProjLabel">Projected Finish</string>
+    <string id="FitAheadChart">Ahead / Behind Target</string>
+    <string id="FitAheadLabel">Ahead (+) / Behind (-)</string>
+    <string id="FitNeedChart">Need Pace</string>
+    <string id="FitNeedLabel">Need Pace</string>
+    <string id="FitUnitSec">s</string>
+    <string id="FitUnitSecKm">s/km</string>
 </strings>

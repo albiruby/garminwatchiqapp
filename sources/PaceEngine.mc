@@ -83,6 +83,7 @@ class PaceEngine {
     private var mAccent as Number = 0;
     private var mLayoutMode as Number = 0;
 
+    private var mAutoGpsLatched as Boolean = false;
     private var mHasTarget as Boolean = false;
     private var mTargetDistM as Float = 0.0f;
     private var mTargetTimeSec as Float = 0.0f;
@@ -115,6 +116,7 @@ class PaceEngine {
         mPredictionBuffer.reset();
         mTelemetry.reset();
         mNeedPaceBuf.reset();
+        mAutoGpsLatched = false;
     }
 
     public function applySettings(
@@ -243,6 +245,15 @@ class PaceEngine {
             }
         }
 
+        // Latch OUTDOOR once a real GPS fix has been seen this session, so a
+        // tunnel / signal dropout cannot flip the run into treadmill mode
+        // (which would apply treadmill calibration to outdoor distance).
+        if (gpsAccuracy != null && gpsAccuracy >= Position.QUALITY_POOR) {
+            mAutoGpsLatched = true;
+        }
+        if (mAutoGpsLatched) {
+            return MODE_OUTDOOR_GPS;
+        }
         if (gpsAccuracy == null || gpsAccuracy <= Position.QUALITY_NOT_AVAILABLE) {
             return MODE_TREADMILL;
         }

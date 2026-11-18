@@ -201,4 +201,75 @@ class UnitTestRunner {
         Test.assertMessage(snap.distanceMeters >= 0.0f, "Distance must be >= 0");
         return true;
     }
+
+    // =========================================================================
+    // REGRESSION (v2.2 audit)
+    // =========================================================================
+
+    // Projection must follow a real slowdown after it has locked (was frozen forever)
+    (:test)
+    public static function testProjectionFollowsSlowdown(logger as Test.Logger) as Boolean {
+        var e = makeEngine(8, 5000, 25, 1, 400);
+        var d = 0.0f; var t = 0;
+        var snap = null;
+        for (var i = 0; i < 300; i += 1) { d += 3.3333f; t += 1000;
+            snap = e.updateFromValues(3.3333f, d, t, Activity.TIMER_STATE_ON, Position.QUALITY_GOOD, 0.0f, 10.0f, 175, null); }
+        var p1 = snap.projectedFinishSec;
+        Test.assertMessage(p1 >= 1490.0f && p1 <= 1510.0f, "Steady projection ~1500, got " + p1.format("%.1f"));
+        for (var i = 0; i < 300; i += 1) { d += 2.7778f; t += 1000;
+            snap = e.updateFromValues(2.7778f, d, t, Activity.TIMER_STATE_ON, Position.QUALITY_GOOD, 0.0f, 10.0f, 165, null); }
+        var p2 = snap.projectedFinishSec;
+        // 1833 m at 600 s; finishing the rest at 6:00/km = 600 + 3167/2.7778 ~ 1740 s
+        // (history blend pulls it slightly faster). Old bug froze it at 1500.
+        Test.assertMessage(p2 > 1650.0f && p2 < 1800.0f, "Projection must track slowdown, got " + p1.format("%.1f") + " -> " + p2.format("%.1f"));
+        return true;
+    }
+
+    // Projection stays stable (locked) during steady pace
+    (:test)
+    public static function testProjectionStableWhenSteady(logger as Test.Logger) as Boolean {
+        var e = makeEngine(8, 5000, 25, 1, 400);
+        var d = 0.0f; var t = 0; var snap = null; var minP = 99999.0f; var maxP = 0.0f;
+        for (var i = 0; i < 400; i += 1) { d += 3.3333f; t += 1000;
+            snap = e.updateFromValues(3.3333f, d, t, Activity.TIMER_STATE_ON, Position.QUALITY_GOOD, 0.0f, 10.0f, 175, null);
+            if (i >= 200) { var p = snap.projectedFinishSec; if (p < minP) { minP = p; } if (p > maxP) { maxP = p; } } }
+        Test.assertMessage(maxP - minP <= 2.0f, "Steady projection jitter must be <= 2 s, got " + (maxP - minP).format("%.1f"));
+        return true;
+    }
+
+    // AUTO mode: outdoor run losing GPS (tunnel) must stay OUTDOOR, no calibration jump
+    (:test)
+    public static function testAutoModeTunnelStaysOutdoor(logger as Test.Logger) as Boolean {
+        var e = new PaceEngine();
+        e.applySettings(8, 5000, 25, 0, 105, 400, 50, false);
+        var s1 = e.updateFromValues(3.3333f, 1000.0f, 300000, Activity.TIMER_STATE_ON, Position.QUALITY_GOOD, 0.0f, 10.0f, 175, null);
+        var mode1 = s1.activeRunMode;
+        var s2 = e.updateFromValues(3.3333f, 1003.0f, 301000, Activity.TIMER_STATE_ON, Position.QUALITY_NOT_AVAILABLE, 0.0f, 10.0f, 175, null);
+        Test.assertMessage(mode1 == MODE_OUTDOOR_GPS, "Starts OUTDOOR");
+        Test.assertMessage(s2.activeRunMode == MODE_OUTDOOR_GPS, "Must stay OUTDOOR in tunnel, got " + s2.activeRunMode);
+        Test.assertMessage(s2.distanceMeters < 1010.0f, "No treadmill calibration on outdoor distance, got " + s2.distanceMeters.format("%.1f"));
+        return true;
+    }
+
+    // AUTO mode with no GPS at all (indoor, no subSport) still resolves to TREADMILL
+    (:test)
+    public static function testAutoModeIndoorNoGps(logger as Test.Logger) as Boolean {
+        var e = new PaceEngine();
+        e.applySettings(8, 5000, 25, 0, 100, 400, 50, false);
+        var s = e.updateFromValues(3.0f, 500.0f, 166000, Activity.TIMER_STATE_ON, null, null, null, 170, null);
+        Test.assertMessage(s.activeRunMode == MODE_TREADMILL, "No GPS ever -> TREADMILL, got " + s.activeRunMode);
+        return true;
+    }
+
+    // GPS latch is cleared on activity reset
+    (:test)
+    public static function testAutoLatchResets(logger as Test.Logger) as Boolean {
+        var e = new PaceEngine();
+        e.applySettings(8, 5000, 25, 0, 100, 400, 50, false);
+        e.updateFromValues(3.3f, 100.0f, 30000, Activity.TIMER_STATE_ON, Position.QUALITY_GOOD, 0.0f, 10.0f, 175, null);
+        e.reset();
+        var s = e.updateFromValues(3.0f, 100.0f, 30000, Activity.TIMER_STATE_ON, null, null, null, 170, null);
+        Test.assertMessage(s.activeRunMode == MODE_TREADMILL, "Latch must clear on reset, got " + s.activeRunMode);
+        return true;
+    }
 }

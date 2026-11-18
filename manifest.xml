@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0"?>
 <iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
-    <iq:application id="01d6a798-591e-4be2-bfdf-5469e2dc9651" type="datafield" name="@Strings.AppName" entry="RacePilotApp" launcherIcon="@Drawables.LauncherIcon" minSdkVersion="3.2.0" version="2.1.0">
+    <iq:application id="01d6a798-591e-4be2-bfdf-5469e2dc9651" type="datafield" name="@Strings.AppName" entry="RacePilotApp" launcherIcon="@Drawables.LauncherIcon" minSdkVersion="3.2.0" version="2.2.0">
         <iq:products>
             <iq:product id="approachs7243mm"/>
             <iq:product id="approachs7247mm"/>

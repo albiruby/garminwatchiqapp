@@ -6,7 +6,6 @@ import Toybox.Position;
 class GPSEngine {
     private var mLastValidSpeedMps as Float = 0.0f;
     private var mLastHeadingRad as Float? = null;
-    private var mLastAltitudeM as Float? = null;
     private var mLastDistanceM as Float = 0.0f;
     private var mLastCadenceSpm as Number = 0;
 
@@ -28,7 +27,6 @@ class GPSEngine {
     public function reset() as Void {
         mLastValidSpeedMps = 0.0f;
         mLastHeadingRad = null;
-        mLastAltitudeM = null;
         mLastDistanceM = 0.0f;
         mLastCadenceSpm = 0;
         mSignalLostTimestampMs = -1;
@@ -112,16 +110,9 @@ class GPSEngine {
             mLastCadenceSpm = cadenceSpm;
         }
 
-        // Skill 044: Distance-gated grade filter (min 10m to prevent GPS jitter)
-        var distDelta = currentDistM - mLastDistanceM;
-        if (altitudeM != null && mLastAltitudeM != null && distDelta >= 10.0f && distDelta <= 50.0f) {
-            var altDelta = altitudeM - mLastAltitudeM;
-            var grade = altDelta / distDelta;
-            if (grade > -0.15f && grade < 0.15f) {
-                workingSpeedMps = workingSpeedMps * (1.0f + (grade * 0.12f));
-            }
-        }
-        mLastAltitudeM = altitudeM;
+        // Grade compensation removed: its 10 m gate could never trigger at 1 Hz,
+        // and adjusting real speed for grade would distort projected finish.
+        // Grade-adjusted pace (GAP) is planned as a separate display metric (v2.3).
         if (currentDistM > mLastDistanceM) {
             mLastDistanceM = currentDistM;
         }
