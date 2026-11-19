@@ -24,7 +24,7 @@ class HistoryView extends WatchUi.View {
         dc.setColor(DeviceProfile.COLOR_TEXT, DeviceProfile.COLOR_BG);
         dc.clear();
         dc.setColor(DeviceProfile.COLOR_SAGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 10 / 100, Graphics.FONT_XTINY, "YOUR RECOVERY ACTIVITY", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h * 13 / 100, Graphics.FONT_XTINY, "THIS WEEK", Graphics.TEXT_JUSTIFY_CENTER);
 
         if (page == 0) {
             stat(dc, w * 30 / 100, h * 24 / 100, "sessions");
@@ -32,7 +32,7 @@ class HistoryView extends WatchUi.View {
             stat(dc, w * 30 / 100, h * 50 / 100, "categories");
             stat(dc, w * 70 / 100, h * 50 / 100, "streak");
             dc.setColor(DeviceProfile.COLOR_TEXT, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 74 / 100, Graphics.FONT_XTINY,
+            dc.drawText(cx, h * 71 / 100, Graphics.FONT_XTINY,
                 "Completed " + _m.get("completionRate").display(), Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             var keys = ["circulation", "elevation", "windDown", "avgSession", "hrBaseline"];
@@ -50,7 +50,7 @@ class HistoryView extends WatchUi.View {
                 Graphics.TEXT_JUSTIFY_CENTER);
         }
         dc.setColor(DeviceProfile.COLOR_DIM, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 84 / 100, Graphics.FONT_XTINY, "This week - RESTORA calc", Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, h * 80 / 100, Graphics.FONT_XTINY, "RESTORA calc", Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     hidden function stat(dc as Graphics.Dc, x as Number, y as Number, key as String) as Void {

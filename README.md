@@ -64,3 +64,9 @@ Haptics (on), countdown 3/5/10 s, auto-advance (on), HR before/after (off). You 
 ## Safety
 
 Each session shows a safety note. Elevation and inversion sessions carry a specific warning: Legs Up the Wall is not suitable for everyone, for example people with glaucoma, heart or kidney failure, or uncontrolled blood pressure. Stop if you feel pain, dizziness, shortness of breath or more swelling.
+
+## UI mockups
+
+`docs/mockups/` holds renders of each screen at 390×390. They use the same layout coordinates and palette as the `onUpdate()` code. They are not simulator screenshots: Menu2 screens are drawn natively by the device, and real Garmin fonts differ slightly.
+
+![RESTORA UI mockups](docs/mockups/restora-ui-mockups.png)

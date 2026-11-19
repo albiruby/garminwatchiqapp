@@ -95,7 +95,11 @@ class SessionPlayerView extends WatchUi.View {
         dc.drawText(cx, h * 12 / 100, Graphics.FONT_XTINY,
             (_engine.stepIndex + 1).toString() + "/" + steps.size(), Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(DeviceProfile.COLOR_TEXT, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 18 / 100, Graphics.FONT_SMALL, ex[ExerciseLibrary.F_NAME], Graphics.TEXT_JUSTIFY_CENTER);
+        // Round screen: long names drop to a smaller font so they are not clipped.
+        var name = ex[ExerciseLibrary.F_NAME];
+        var nameFont = (dc.getTextWidthInPixels(name, Graphics.FONT_SMALL) > dc.getWidth() * 70 / 100)
+            ? Graphics.FONT_XTINY : Graphics.FONT_SMALL;
+        dc.drawText(cx, h * 19 / 100, nameFont, name, Graphics.TEXT_JUSTIFY_CENTER);
 
         if (ex[ExerciseLibrary.F_TYPE] == Models.TYPE_BREATHING) {
             drawBreathing(dc, cx, cy, radius, ex[ExerciseLibrary.F_PATTERN]);
