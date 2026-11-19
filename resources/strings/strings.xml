@@ -1,0 +1,7 @@
+<strings>
+    <string id="AppName">RESTORA</string>
+    <string id="SetHaptics">Haptic feedback</string>
+    <string id="SetCountdown">Countdown (sec)</string>
+    <string id="SetAutoAdvance">Auto-advance exercises</string>
+    <string id="SetHrSnapshot">HR before/after</string>
+</strings>

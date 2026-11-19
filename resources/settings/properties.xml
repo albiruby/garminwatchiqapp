@@ -1,0 +1,6 @@
+<properties>
+    <property id="haptics" type="boolean">true</property>
+    <property id="countdown" type="number">3</property>
+    <property id="autoAdvance" type="boolean">true</property>
+    <property id="hrSnapshot" type="boolean">false</property>
+</properties>

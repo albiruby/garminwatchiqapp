@@ -1,0 +1,18 @@
+<settings>
+    <setting propertyKey="@Properties.haptics" title="@Strings.SetHaptics">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.countdown" title="@Strings.SetCountdown">
+        <settingConfig type="list">
+            <listEntry value="3">3</listEntry>
+            <listEntry value="5">5</listEntry>
+            <listEntry value="10">10</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.autoAdvance" title="@Strings.SetAutoAdvance">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.hrSnapshot" title="@Strings.SetHrSnapshot">
+        <settingConfig type="boolean"/>
+    </setting>
+</settings>
