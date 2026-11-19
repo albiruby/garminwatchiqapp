@@ -25,29 +25,31 @@ class SessionDetailView extends WatchUi.View {
         _def = def;
     }
 
+    // 390-px grid, safe circle r170:
+    //   50 icon / 64 module / 83 title / 114 total + steps / 145 hairline
+    //   150 + 22n step table / 264 hairline / 271-294 safety note / 324 START
     function onUpdate(dc as Graphics.Dc) as Void {
         dc.setColor(Theme.IVORY, Theme.BG);
         dc.clear();
         var cx = Theme.cx(dc);
+        var safe = Theme.SAFE_PAGE;
         var cat = _def[SessionLibrary.F_CAT];
         var steps = _def[SessionLibrary.F_STEPS];
 
-        Icons.draw(dc, cat, cx, Theme.y(dc, 95), 22, Theme.SAGE);
-        Theme.centerText(dc, Theme.y(dc, 140), Theme.label(), Theme.SAGE, Models.categoryName(cat));
-        var titleY = Theme.y(dc, 185);
-        Theme.centerText(dc, titleY, Theme.title(), Theme.IVORY,
-            Theme.fit(dc, _def[SessionLibrary.F_NAME].toUpper(), Theme.title(), Theme.chordHalf(dc, titleY) * 2 - 40));
-        Theme.centerText(dc, Theme.y(dc, 268), Theme.label(), Theme.GREY,
-            Hud.mmss(SessionLibrary.totalSeconds(_def)) + "  /  " + steps.size().toString() + " STEPS");
-        Theme.divider(dc, Theme.y(dc, 330), 30);
+        Icons.draw(dc, cat, cx, Theme.px(dc, 50), Theme.px(dc, 20), Theme.SAGE);
+        Theme.centerText(dc, Theme.px(dc, 64), Theme.label(), Theme.SAGE, Models.categoryName(cat));
+        Theme.fitLine(dc, Theme.px(dc, 83), _def[SessionLibrary.F_NAME].toUpper(), Theme.title(), Theme.body(), safe, Theme.IVORY);
+        Theme.centerText(dc, Theme.px(dc, 114), Theme.label(), Theme.GREY,
+            Hud.mmss(SessionLibrary.totalSeconds(_def)) + "  " + steps.size().toString() + " STEPS");
+        Theme.divider(dc, Theme.px(dc, 145), safe, Theme.px(dc, 16));
 
-        // Step table: "01  NAME ......  2:00"
-        var rowH = 26;
-        var y = Theme.y(dc, 345);
+        // Step table: "01 NAME ......... 02:00", each row inside the safe circle.
+        var rowH = Theme.px(dc, 22);
+        var y = Theme.px(dc, 150);
         var maxRows = 5;
         var shown = (steps.size() > maxRows) ? maxRows - 1 : steps.size();
         for (var i = 0; i < shown; i++) {
-            var half = Theme.chordHalf(dc, y + rowH / 2) - 34;
+            var half = Theme.lineWidth(dc, y + Theme.px(dc, 5), Theme.px(dc, 14), safe) / 2 - Theme.px(dc, 6);
             var ex = ExerciseLibrary.get(steps[i][0]);
             var name = ((ex != null) ? ex[ExerciseLibrary.F_NAME] : steps[i][0]).toUpper();
             var idx = (i + 1).format("%02d");
@@ -55,7 +57,7 @@ class SessionDetailView extends WatchUi.View {
             var x0 = cx - half;
             var x1 = cx + half;
             var nameX = x0 + dc.getTextWidthInPixels(idx + " ", Theme.label());
-            var nameMax = x1 - nameX - dc.getTextWidthInPixels(" " + time, Theme.label());
+            var nameMax = x1 - nameX - dc.getTextWidthInPixels("  " + time, Theme.label());
             Theme.text(dc, x0, y, Theme.label(), Theme.SAGE, idx, Graphics.TEXT_JUSTIFY_LEFT);
             Theme.text(dc, nameX, y, Theme.label(), Theme.IVORY, Theme.fit(dc, name, Theme.label(), nameMax), Graphics.TEXT_JUSTIFY_LEFT);
             Theme.text(dc, x1, y, Theme.label(), Theme.GREY, time, Graphics.TEXT_JUSTIFY_RIGHT);
@@ -63,14 +65,13 @@ class SessionDetailView extends WatchUi.View {
         }
         if (shown < steps.size()) {
             Theme.centerText(dc, y, Theme.label(), Theme.GREY, "+" + (steps.size() - shown).toString() + " MORE");
-            y += rowH;
         }
 
-        Theme.divider(dc, Theme.y(dc, 690), 30);
-        var note = Graphics.fitTextToArea(_def[SessionLibrary.F_SAFETY], Theme.label(), dc.getWidth() * 62 / 100,
-            Theme.y(dc, 125), true);
-        Theme.centerText(dc, Theme.y(dc, 705), Theme.label(), Theme.GREY, note);
-        Theme.centerText(dc, Theme.y(dc, 858), Theme.title(), Theme.MINT, "START");
+        Theme.divider(dc, Theme.px(dc, 264), safe, Theme.px(dc, 16));
+        var noteW = Theme.lineWidth(dc, Theme.px(dc, 276), Theme.px(dc, 37), safe) - Theme.px(dc, 8);
+        var note = Graphics.fitTextToArea(_def[SessionLibrary.F_SAFETY], Theme.label(), noteW, Theme.px(dc, 46), true);
+        Theme.centerText(dc, Theme.px(dc, 271), Theme.label(), Theme.GREY, note);
+        Theme.centerText(dc, Theme.px(dc, 324), Theme.label(), Theme.MINT, "START");
         Theme.startHint(dc);
     }
 }

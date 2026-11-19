@@ -12,7 +12,7 @@ class SessionSummaryView extends WatchUi.View {
     hidden var _name as String;
     hidden var _time as String;
     hidden var _fields as Array; // [[label, value], ...] up to 4
-    hidden var _footer as String;
+    hidden var _footer as Array; // 1-2 short lines
 
     function initialize(record as Dictionary, def, saved as Boolean) {
         View.initialize();
@@ -22,7 +22,7 @@ class SessionSummaryView extends WatchUi.View {
         _time = Hud.mmss(m.get("duration").value);
         _fields = buildFields(m, record);
         var hasHr = m.get("hrBefore").isAvailable() || m.get("hrAfter").isAvailable();
-        _footer = !saved ? "NOT SAVED" : (hasHr ? "HR GARMIN / CALC RESTORA" : "CALC: RESTORA");
+        _footer = !saved ? ["NOT SAVED"] : (hasHr ? ["HR: GARMIN", "CALC: RESTORA"] : ["CALC: RESTORA"]);
     }
 
     hidden function buildFields(m as Dictionary, record as Dictionary) as Array {
@@ -55,41 +55,46 @@ class SessionSummaryView extends WatchUi.View {
         return (f.size() > 4) ? f.slice(0, 4) : f;
     }
 
+    // 390-px grid, safe circle r170:
+    //   50 status / 71 name / 99 time (44 px) / 148 ACTIVE TIME / 180 hairline
+    //   184-199 row 1 / 240 hairline / 244-259 row 2 / 300 hairline / 304-322 footer
     function onUpdate(dc as Graphics.Dc) as Void {
         dc.setColor(Theme.IVORY, Theme.BG);
         dc.clear();
         var cx = Theme.cx(dc);
-        Theme.centerText(dc, Theme.y(dc, 120), Theme.label(), _completed ? Theme.MINT : Theme.AMBER,
+        var safe = Theme.SAFE_PAGE;
+        Theme.centerText(dc, Theme.px(dc, 50), Theme.label(), _completed ? Theme.MINT : Theme.AMBER,
             _completed ? "SESSION COMPLETE" : "SESSION ENDED");
-        var nameY = Theme.y(dc, 165);
-        Theme.centerText(dc, nameY, Theme.title(), Theme.IVORY,
-            Theme.fit(dc, _name, Theme.title(), Theme.chordHalf(dc, nameY) * 2 - 40));
-        Theme.text(dc, cx, Theme.y(dc, 235), Theme.num(), Theme.IVORY, _time, Graphics.TEXT_JUSTIFY_CENTER);
-        Theme.centerText(dc, Theme.y(dc, 385), Theme.label(), Theme.GREY, "ACTIVE TIME");
-        Theme.divider(dc, Theme.y(dc, 440), 24);
+        Theme.fitLine(dc, Theme.px(dc, 71), _name, Theme.title(), Theme.body(), safe, Theme.IVORY);
+        Theme.centerText(dc, Theme.px(dc, 99), Theme.num(), Theme.IVORY, _time);
+        Theme.centerText(dc, Theme.px(dc, 148), Theme.label(), Theme.GREY, "ACTIVE TIME");
+        Theme.divider(dc, Theme.px(dc, 180), safe, Theme.px(dc, 16));
 
-        var off = dc.getWidth() * 17 / 100;
+        var off = Theme.px(dc, 62);
         for (var i = 0; i < _fields.size(); i++) {
             var x = (i % 2 == 0) ? cx - off : cx + off;
             if (i == _fields.size() - 1 && i % 2 == 0) {
                 x = cx; // odd count: centre the last field
             }
-            var y = Theme.y(dc, (i < 2) ? 455 : 625);
-            Hud.field(dc, x, y, _fields[i][0], _fields[i][1], Theme.title(), Theme.IVORY);
+            var row2 = i >= 2;
+            Hud.field(dc, x, Theme.px(dc, row2 ? 244 : 184), Theme.px(dc, row2 ? 259 : 199),
+                _fields[i][0], _fields[i][1], Theme.title(), Theme.IVORY);
         }
         dc.setColor(Theme.LINE, Graphics.COLOR_TRANSPARENT);
         if (_fields.size() > 1) {
-            dc.drawLine(cx, Theme.y(dc, 460), cx, Theme.y(dc, 595));
+            dc.drawLine(cx, Theme.px(dc, 188), cx, Theme.px(dc, 230));
         }
         if (_fields.size() > 2) {
-            Theme.divider(dc, Theme.y(dc, 610), 40);
+            Theme.divider(dc, Theme.px(dc, 240), safe, Theme.px(dc, 30));
             if (_fields.size() > 3) {
                 dc.setColor(Theme.LINE, Graphics.COLOR_TRANSPARENT);
-                dc.drawLine(cx, Theme.y(dc, 630), cx, Theme.y(dc, 765));
+                dc.drawLine(cx, Theme.px(dc, 248), cx, Theme.px(dc, 290));
             }
         }
-        Theme.divider(dc, Theme.y(dc, 785), 30);
-        Theme.centerText(dc, Theme.y(dc, 798), Theme.label(), Theme.GREY, _footer);
+        Theme.divider(dc, Theme.px(dc, 300), safe, Theme.px(dc, 16));
+        for (var j = 0; j < _footer.size(); j++) {
+            Theme.centerText(dc, Theme.px(dc, 304 + 18 * j), Theme.label(), Theme.GREY, _footer[j]);
+        }
         Theme.startHint(dc);
     }
 

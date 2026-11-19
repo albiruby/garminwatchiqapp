@@ -6,16 +6,39 @@ import Toybox.WatchUi;
 //! palette (native Menu2 cannot use custom fonts).
 module MenuKit {
 
-    const ITEM_H = 64;
+    // 390-px units. Rows are tall enough that only the focused row and one
+    // neighbour on each side are visible; anything beyond the safe circle
+    // (r160) is hidden by the MenuMask foreground, so no row is ever cut by
+    // the bezel.
+    const ITEM_H = 96;
     const FOCUS_H = 104;
-    const TITLE_H = 92;
+    const TITLE_H = 116;
 
     function newMenu(title as String) as WatchUi.CustomMenu {
         return new WatchUi.CustomMenu(ITEM_H, Theme.BG, {
             :focusItemHeight => FOCUS_H,
             :title => new MenuTitle(title),
-            :titleItemHeight => TITLE_H
+            :titleItemHeight => TITLE_H,
+            :foreground => new MenuMask()
         });
+    }
+}
+
+//! Black ring over everything outside the safe circle.
+class MenuMask extends WatchUi.Drawable {
+
+    function initialize() {
+        Drawable.initialize({});
+    }
+
+    function draw(dc as Graphics.Dc) as Void {
+        var r = Theme.px(dc, Theme.SAFE_MENU);
+        var outer = dc.getWidth() / 2 + 2;
+        var pen = outer - r + 2;
+        dc.setColor(Theme.BG, Graphics.COLOR_TRANSPARENT);
+        dc.setPenWidth(pen);
+        dc.drawCircle(Theme.cx(dc), Theme.cy(dc), r + pen / 2);
+        dc.setPenWidth(1);
     }
 }
 
@@ -31,10 +54,10 @@ class MenuTitle extends WatchUi.Drawable {
 
     function draw(dc as Graphics.Dc) as Void {
         var cx = dc.getWidth() / 2;
-        Theme.text(dc, cx, dc.getHeight() - 62, Theme.label(), Theme.GREY, Theme.clock(), Graphics.TEXT_JUSTIFY_CENTER);
-        Theme.text(dc, cx, dc.getHeight() - 38, Theme.title(), Theme.IVORY, _title, Graphics.TEXT_JUSTIFY_CENTER);
+        Theme.text(dc, cx, Theme.px(dc, 42), Theme.label(), Theme.GREY, Theme.clock(), Graphics.TEXT_JUSTIFY_CENTER);
+        Theme.text(dc, cx, Theme.px(dc, 63), Theme.title(), Theme.IVORY, _title, Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(Theme.LINE, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(cx - 90, dc.getHeight() - 2, cx + 90, dc.getHeight() - 2);
+        dc.drawLine(cx - Theme.px(dc, 80), Theme.px(dc, 108), cx + Theme.px(dc, 80), Theme.px(dc, 108));
     }
 }
 
@@ -61,37 +84,57 @@ class RowItem extends WatchUi.CustomMenuItem {
         _icon = icon;
     }
 
+    // Row geometry (390-px units): focused surface spans x 55..335 so its
+    // corners stay inside r160 wherever the row sits; icon at x 94, text at
+    // x 126, right value ends at x 304.
     function draw(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var focused = isFocused();
         var midY = h / 2;
-        var left = w * 22 / 100;
+        var iconX = Theme.px(dc, 94);
+        var textX = iconX;
+        var valueX = Theme.px(dc, 304);
 
         if (focused) {
+            var x0 = Theme.px(dc, 55);
             dc.setColor(Theme.DEEP, Graphics.COLOR_TRANSPARENT);
-            dc.fillRoundedRectangle(w * 8 / 100, 6, w * 84 / 100, h - 12, 14);
+            dc.fillRoundedRectangle(x0, Theme.px(dc, 8), w - 2 * x0, h - Theme.px(dc, 16), Theme.px(dc, 14));
             dc.setColor(Theme.MINT, Graphics.COLOR_TRANSPARENT);
-            dc.fillRoundedRectangle(w * 8 / 100, h / 2 - 18, 5, 36, 2);
+            dc.fillRoundedRectangle(x0, midY - Theme.px(dc, 16), Theme.px(dc, 4), Theme.px(dc, 32), 2);
         }
-        var textX = left;
         if (_icon != ICON_NONE) {
-            drawIcon(dc, left + 4, midY, focused ? 34 : 24, focused ? Theme.MINT : Theme.GREY);
-            textX = left + 36;
+            drawIcon(dc, iconX, midY, Theme.px(dc, focused ? 28 : 20), focused ? Theme.MINT : Theme.GREY);
+            textX = iconX + Theme.px(dc, 32);
         }
         var nameFont = focused ? Theme.title() : Theme.body();
-        var nameColor = focused ? Theme.IVORY : Theme.GREY;
         var hasSub = focused && sub != null;
-        var nameY = hasSub ? midY - 30 : midY - dc.getFontHeight(nameFont) / 2;
-        var maxW = w * 84 / 100 - (textX - w * 8 / 100) - ((value != null) ? 70 : 16);
-        Theme.text(dc, textX, nameY, nameFont, nameColor, Theme.fit(dc, name, nameFont, maxW), Graphics.TEXT_JUSTIFY_LEFT);
+        var nameY = hasSub ? midY - Theme.px(dc, 27) : midY - dc.getFontHeight(nameFont) / 2;
+        var right = (value != null) ? valueX - dc.getTextWidthInPixels(value, Theme.body()) - Theme.px(dc, 10) : valueX;
+        // Name too long to share its line with the value: value drops to the sub line.
+        var valueOnSub = hasSub && value != null && dc.getTextWidthInPixels(name, nameFont) > right - textX;
+        if (valueOnSub) {
+            right = valueX;
+        }
+        var maxW = right - textX;
+        Theme.text(dc, textX, nameY, nameFont, focused ? Theme.IVORY : Theme.GREY,
+            Theme.fit(dc, name, nameFont, maxW), Graphics.TEXT_JUSTIFY_LEFT);
         if (hasSub) {
-            Theme.text(dc, textX, midY + 4, Theme.label(), Theme.SAGE, Theme.fit(dc, sub, Theme.label(), maxW + 50),
-                Graphics.TEXT_JUSTIFY_LEFT);
+            var subMax = valueX - textX;
+            if (valueOnSub) {
+                subMax -= dc.getTextWidthInPixels(value, Theme.label()) + Theme.px(dc, 10);
+            }
+            Theme.text(dc, textX, midY + Theme.px(dc, 4), Theme.label(), Theme.SAGE,
+                Theme.fit(dc, sub, Theme.label(), subMax), Graphics.TEXT_JUSTIFY_LEFT);
         }
         if (value != null) {
-            Theme.text(dc, w * 86 / 100, midY - dc.getFontHeight(Theme.body()) / 2, Theme.body(),
-                valueOn ? Theme.MINT : Theme.GREY, value, Graphics.TEXT_JUSTIFY_RIGHT);
+            if (valueOnSub) {
+                Theme.text(dc, valueX, midY + Theme.px(dc, 4), Theme.label(), valueOn ? Theme.MINT : Theme.GREY,
+                    value, Graphics.TEXT_JUSTIFY_RIGHT);
+            } else {
+                Theme.text(dc, valueX, nameY + (hasSub ? Theme.px(dc, 4) : 0), Theme.body(),
+                    valueOn ? Theme.MINT : Theme.GREY, value, Graphics.TEXT_JUSTIFY_RIGHT);
+            }
         }
     }
 

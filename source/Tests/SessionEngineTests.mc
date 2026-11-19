@@ -116,3 +116,21 @@ function testEngineCancel(logger as Logger) as Boolean {
     Test.assert(!r.hasKey("hrB")); // missing sensor data is omitted, not faked
     return true;
 }
+
+//! Exercise names and cues must fit the round HUD without truncation.
+(:test)
+function testContentFitsHud(logger as Logger) as Boolean {
+    for (var c = 0; c < Models.CAT_COUNT; c++) {
+        var ids = SessionLibrary.idsFor(c);
+        for (var i = 0; i < ids.size(); i++) {
+            var steps = SessionLibrary.get(ids[i])[SessionLibrary.F_STEPS];
+            for (var j = 0; j < steps.size(); j++) {
+                var ex = ExerciseLibrary.get(steps[j][0]);
+                Test.assertMessage(ex != null, "missing exercise " + steps[j][0]);
+                Test.assertMessage(ex[ExerciseLibrary.F_NAME].length() <= 22, "name too long: " + ex[ExerciseLibrary.F_NAME]);
+                Test.assertMessage(ex[ExerciseLibrary.F_CUE].length() <= 26, "cue too long: " + ex[ExerciseLibrary.F_CUE]);
+            }
+        }
+    }
+    return true;
+}

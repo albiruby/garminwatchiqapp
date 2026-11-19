@@ -27,8 +27,8 @@ FONTS = [
     ("MonoLabel", "mono_label", "Medium", 17, ASCII),   # uppercase labels, hints
     ("MonoBody", "mono_body", "Regular", 21, ASCII),    # list rows, notes
     ("MonoTitle", "mono_title", "Bold", 27, ASCII),     # titles, phase words
-    ("MonoNum", "mono_num", "Bold", 50, DIGITS),        # data-field values
-    ("MonoHero", "mono_hero", "Bold", 100, HERO),       # main timer
+    ("MonoNum", "mono_num", "Bold", 44, DIGITS),        # headline numbers
+    ("MonoHero", "mono_hero", "Bold", 80, HERO),        # main timer (~62% of diameter)
 ]
 
 ATLAS_W = 512

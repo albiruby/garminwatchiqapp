@@ -13,8 +13,8 @@ Every glyph is Roboto Mono. Mono digits keep timers from jittering as they count
 | `Theme.label()` | Medium | 17 | uppercase labels, hints, table rows | ASCII |
 | `Theme.body()` | Regular | 21 | exercise name, list rows | ASCII |
 | `Theme.title()` | Bold | 27 | titles, phase word, field values | ASCII |
-| `Theme.num()` | Bold | 50 | headline numbers (summary, week) | `0-9 : - / % .` |
-| `Theme.hero()` | Bold | 100 | main timer | `0-9 :` |
+| `Theme.num()` | Bold | 44 | headline numbers (summary, week) | `0-9 : - / % .` |
+| `Theme.hero()` | Bold | 80 | main timer ("03:24" = 240 px, ~62% of the diameter) | `0-9 :` |
 
 The large fonts carry only digits, to save memory. `Theme.releaseLarge()` drops them after leaving the session screens. Roboto Mono is under the SIL OFL 1.1 licence (`tools/fonts/OFL.txt`).
 
@@ -37,33 +37,47 @@ Inter is the brand typeface for marketing material such as the store listing and
 
 There is one identity across all modules, with no colour per module. Modules are told apart by icon and name.
 
+## Layout grid and safe circles
+
+All layouts are specified on a **390 px grid** (the FR165 screen) and scaled with `Theme.px()`. Content never crosses a **safe circle**, so nothing presses against the round bezel:
+
+| Screen | Safe radius | Why |
+|---|---|---|
+| Session HUD | **160 px** | the bezel ring (r190) and breathing ring (r177) need ≥ 13 px of air |
+| Detail, summary, history | **170 px** | only the START hint sits on the bezel |
+| Menus | **160 px** | `MenuMask` blacks out everything outside r160, so rows never appear cut by the bezel |
+
+Rules:
+- Line widths come from the safe circle at that height (`Theme.lineWidth`, `Theme.safeHalf`). Text that is too wide first drops to a smaller font (`Theme.fitLine`), and only then is cut with `.`.
+- Exercise names are at most 22 characters and cues at most 26, so neither is cut. `testContentFitsHud` checks this.
+- Menu rows are tall (96 / 104 px). Only the focused row and one neighbour on each side show, so a list never shows a row half-cut at the edge. If a name does not fit next to its value, the value moves to the sub line.
+- `tools/mockups/` runs an automatic **layout check**. It measures the ink box of every text and icon, then reports any box outside the safe circle and any two boxes that overlap. `node tools/mockups/render.js` must print `layout check: no issues`. Add `?debug=1` to the HTML to see the boxes.
+
 ## Session HUD
 
-Layout positions are per-mille of screen height (390 px on the FR165).
-
 ```
-        ╭─ bezel: one segment per exercise, sized by duration ─╮
-   110  20:27 ⦀                (clock + haptic mark)
-   175  CIRCULATE  04/05        (module, step)
-   220  LEGS UP THE WALL        (exercise)
-   300  ─────────────────
-   318  INHALE                  (breathing only, mint)
-   470  03:24                   (hero timer; breathing: phase seconds "04")
-   600  HOLD POSITION / RIGHT SIDE
-   650  cue  |  NEXT: X (last 10 s)  |  PAUSED  |  START: NEXT
-   700  ─────────────────
-   712  LEFT 04:24  │  DONE 56%  (breathing: CYCLES │ LEFT)
+   ╭─ bezel r190: one segment per exercise ─╮   ╭─ r177: breathing phases ─╮
+    56  STEP 04/05               label, sage
+    79  LEGS UP THE WALL         body (drops to label if long)
+   114  ─────────────            hairline, spans r160
+   117  INHALE                   title, mint (breathing only)
+   114  03:24                    hero 80 px (breathing: phase seconds at 134)
+   208  HOLD POSITION / RIGHT SIDE
+   228  cue | NEXT: X (last 10 s) | PAUSED | START: NEXT
+   260  ─────────────
+   266  LEFT │ DONE              label
+   285  04:24 │ 56%              body
+   324  haptic mark (when haptics are on)
 ```
 
 - **Bezel ring** (6 px): the segments before the current one are mint, the current one fills in sage (amber when paused), and the later ones are forest. There is a 3° gap between segments.
-- **Breathing ring** (10 px, inside the bezel): one segment per phase, sized by phase length, so 4-7-8 looks different from 4-4-4-4. Zero-length phases are skipped. The active phase fills in mint.
+- **Breathing ring** (8 px): one segment per phase, sized by phase length, so 4-7-8 looks different from 4-4-4-4. Zero-length phases are skipped. The active phase fills in mint.
 - **NEXT line**: in the last 10 s of an exercise, the cue line changes to `NEXT: <exercise>` in mint.
 - **Paused**: the timer turns grey, the state line shows `PAUSED` in amber, and the active ring segment turns amber.
-- Only the fields that matter for the exercise type are shown.
 
 ## Navigation
 
-- Custom-drawn lists (`CustomMenu`) so lists can use Roboto Mono and icons. Rows are 64 px. The focused row is 104 px, on a Deep Forest rounded surface with a mint marker bar, and shows its subtitle.
+- Custom-drawn lists (`CustomMenu`) so lists can use Roboto Mono and icons. The focused row is 104 px, on a Deep Forest rounded surface (x 55–335, always inside r160) with a mint marker bar, and shows its subtitle.
 - **Button-first**: START selects, starts and pauses; DOWN skips; BACK goes back or asks to end the session. A short mint arc at the 2 o'clock bezel position marks the START button wherever START has a meaning.
 - Any session is at most 3 presses from Home.
 

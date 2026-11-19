@@ -11,6 +11,8 @@ const { chromium } = require('playwright');
   await page.goto('file://' + path.join(__dirname, 'restora_mockups.html'));
   await page.waitForFunction(() => document.body.dataset.ready === '1');
   await page.waitForTimeout(300);
+  const issues = await page.evaluate(() => window.LAYOUT_ISSUES);
+  console.log(issues.length ? 'LAYOUT ISSUES:\n  ' + issues.join('\n  ') : 'layout check: no issues');
   await page.screenshot({ path: path.join(out, 'restora-ui-mockups.png'), fullPage: true });
   const canvases = await page.$$('canvas');
   for (let i = 0; i < canvases.length; i++) {

@@ -66,21 +66,33 @@ module Theme {
     }
 
     // ---- Layout helpers --------------------------------------------------
+    // Layouts are specified in px of a 390 px round screen (FR165) and scaled.
+    // Safe circles: content never crosses these radii (390-px units).
+    const SAFE_HUD = 160;   // inside the bezel + breathing rings
+    const SAFE_PAGE = 170;  // detail / summary / history pages
+    const SAFE_MENU = 160;  // menus (outside is masked)
 
     function cx(dc as Graphics.Dc) as Number { return dc.getWidth() / 2; }
     function cy(dc as Graphics.Dc) as Number { return dc.getHeight() / 2; }
 
-    //! y position as a per-mille of screen height (layouts are resolution-relative).
-    function y(dc as Graphics.Dc, permille as Number) as Number {
-        return dc.getHeight() * permille / 1000;
+    //! Scale a 390-px design value to this screen.
+    function px(dc as Graphics.Dc, v as Number) as Number {
+        return v * dc.getHeight() / 390;
     }
 
-    //! Half-width of the round screen's chord at height y.
-    function chordHalf(dc as Graphics.Dc, yy as Number) as Number {
-        var r = dc.getWidth() / 2;
-        var d = yy - r;
-        var sq = r * r - d * d;
+    //! Half-width of the safe circle (radius r in 390-px units) at screen y.
+    function safeHalf(dc as Graphics.Dc, yy as Number, r as Number) as Number {
+        var rr = px(dc, r);
+        var d = yy - cy(dc);
+        var sq = rr * rr - d * d;
         return (sq > 0) ? Math.sqrt(sq).toNumber() : 0;
+    }
+
+    //! Usable text width on a line whose ink spans [top, top + h].
+    function lineWidth(dc as Graphics.Dc, top as Number, h as Number, r as Number) as Number {
+        var a = safeHalf(dc, top, r);
+        var b = safeHalf(dc, top + h, r);
+        return 2 * ((a < b) ? a : b);
     }
 
     function text(dc as Graphics.Dc, x as Number, yy as Number, font, color as Number, s as String, just as Number) as Void {
@@ -92,9 +104,9 @@ module Theme {
         text(dc, cx(dc), yy, font, color, s, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
-    //! Horizontal hairline across the round screen at y, inset by `inset` px.
-    function divider(dc as Graphics.Dc, yy as Number, inset as Number) as Void {
-        var half = chordHalf(dc, yy) - inset;
+    //! Horizontal hairline at y spanning the safe circle r, inset by `inset` px.
+    function divider(dc as Graphics.Dc, yy as Number, r as Number, inset as Number) as Void {
+        var half = safeHalf(dc, yy, r) - inset;
         if (half <= 0) {
             return;
         }
@@ -113,6 +125,17 @@ module Theme {
             n--;
         }
         return s.substring(0, n) + ".";
+    }
+
+    //! Centred single line inside safe circle r: tries `font`, then `small`,
+    //! then truncates. `inkTop`/`inkH` are the ink offset/height of the font.
+    function fitLine(dc as Graphics.Dc, yy as Number, s as String, font, small, r as Number, color as Number) as Void {
+        var w = lineWidth(dc, yy, px(dc, 30), r) - px(dc, 8);
+        var f = font;
+        if (small != null && dc.getTextWidthInPixels(s, font) > w) {
+            f = small;
+        }
+        centerText(dc, yy, f, color, fit(dc, s, f, w));
     }
 
     //! Short mint arc on the bezel next to the START button (FR165: 2 o'clock).
