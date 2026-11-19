@@ -12,7 +12,8 @@ module SessionDetail {
     }
 }
 
-//! Session detail: name, duration, exercise sequence, safety note, START.
+//! Session detail: module, name, total / steps, step table, safety note,
+//! START hint on the bezel next to the START button.
 class SessionDetailView extends WatchUi.View {
 
     hidden var _id;
@@ -25,42 +26,52 @@ class SessionDetailView extends WatchUi.View {
     }
 
     function onUpdate(dc as Graphics.Dc) as Void {
-        var cx = DeviceProfile.centerX(dc);
-        var h = dc.getHeight();
-        var w = dc.getWidth();
-        dc.setColor(DeviceProfile.COLOR_TEXT, DeviceProfile.COLOR_BG);
+        dc.setColor(Theme.IVORY, Theme.BG);
         dc.clear();
-
-        dc.setColor(DeviceProfile.COLOR_SAGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 10 / 100, Graphics.FONT_XTINY, Models.categoryName(_def[SessionLibrary.F_CAT]), Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(DeviceProfile.COLOR_TEXT, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 16 / 100, Graphics.FONT_SMALL, _def[SessionLibrary.F_NAME], Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(DeviceProfile.COLOR_PRIMARY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 26 / 100, Graphics.FONT_TINY, TimeFormatter.minutes(SessionLibrary.totalSeconds(_def)), Graphics.TEXT_JUSTIFY_CENTER);
-
+        var cx = Theme.cx(dc);
+        var cat = _def[SessionLibrary.F_CAT];
         var steps = _def[SessionLibrary.F_STEPS];
-        var y = h * 36 / 100;
-        var lineH = dc.getFontHeight(Graphics.FONT_XTINY);
-        var shown = (steps.size() > 5) ? 4 : steps.size();
-        dc.setColor(DeviceProfile.COLOR_TEXT, Graphics.COLOR_TRANSPARENT);
+
+        Icons.draw(dc, cat, cx, Theme.y(dc, 95), 22, Theme.SAGE);
+        Theme.centerText(dc, Theme.y(dc, 140), Theme.label(), Theme.SAGE, Models.categoryName(cat));
+        var titleY = Theme.y(dc, 185);
+        Theme.centerText(dc, titleY, Theme.title(), Theme.IVORY,
+            Theme.fit(dc, _def[SessionLibrary.F_NAME].toUpper(), Theme.title(), Theme.chordHalf(dc, titleY) * 2 - 40));
+        Theme.centerText(dc, Theme.y(dc, 268), Theme.label(), Theme.GREY,
+            Hud.mmss(SessionLibrary.totalSeconds(_def)) + "  /  " + steps.size().toString() + " STEPS");
+        Theme.divider(dc, Theme.y(dc, 330), 30);
+
+        // Step table: "01  NAME ......  2:00"
+        var rowH = 26;
+        var y = Theme.y(dc, 345);
+        var maxRows = 5;
+        var shown = (steps.size() > maxRows) ? maxRows - 1 : steps.size();
         for (var i = 0; i < shown; i++) {
+            var half = Theme.chordHalf(dc, y + rowH / 2) - 34;
             var ex = ExerciseLibrary.get(steps[i][0]);
-            var name = (ex != null) ? ex[ExerciseLibrary.F_NAME] : steps[i][0];
-            dc.drawText(cx, y, Graphics.FONT_XTINY, name + "  " + TimeFormatter.clock(steps[i][1]), Graphics.TEXT_JUSTIFY_CENTER);
-            y += lineH;
+            var name = ((ex != null) ? ex[ExerciseLibrary.F_NAME] : steps[i][0]).toUpper();
+            var idx = (i + 1).format("%02d");
+            var time = Hud.mmss(steps[i][1]);
+            var x0 = cx - half;
+            var x1 = cx + half;
+            var nameX = x0 + dc.getTextWidthInPixels(idx + " ", Theme.label());
+            var nameMax = x1 - nameX - dc.getTextWidthInPixels(" " + time, Theme.label());
+            Theme.text(dc, x0, y, Theme.label(), Theme.SAGE, idx, Graphics.TEXT_JUSTIFY_LEFT);
+            Theme.text(dc, nameX, y, Theme.label(), Theme.IVORY, Theme.fit(dc, name, Theme.label(), nameMax), Graphics.TEXT_JUSTIFY_LEFT);
+            Theme.text(dc, x1, y, Theme.label(), Theme.GREY, time, Graphics.TEXT_JUSTIFY_RIGHT);
+            y += rowH;
         }
         if (shown < steps.size()) {
-            dc.drawText(cx, y, Graphics.FONT_XTINY, "+" + (steps.size() - shown) + " more", Graphics.TEXT_JUSTIFY_CENTER);
-            y += lineH;
+            Theme.centerText(dc, y, Theme.label(), Theme.GREY, "+" + (steps.size() - shown).toString() + " MORE");
+            y += rowH;
         }
 
-        dc.setColor(DeviceProfile.COLOR_DIM, Graphics.COLOR_TRANSPARENT);
-        var boxW = w * 70 / 100;
-        var safety = Graphics.fitTextToArea(_def[SessionLibrary.F_SAFETY], Graphics.FONT_XTINY, boxW, h * 18 / 100, true);
-        dc.drawText(cx, h * 70 / 100, Graphics.FONT_XTINY, safety, Graphics.TEXT_JUSTIFY_CENTER);
-
-        dc.setColor(DeviceProfile.COLOR_PRIMARY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 88 / 100, Graphics.FONT_XTINY, "START to begin", Graphics.TEXT_JUSTIFY_CENTER);
+        Theme.divider(dc, Theme.y(dc, 690), 30);
+        var note = Graphics.fitTextToArea(_def[SessionLibrary.F_SAFETY], Theme.label(), dc.getWidth() * 62 / 100,
+            Theme.y(dc, 125), true);
+        Theme.centerText(dc, Theme.y(dc, 705), Theme.label(), Theme.GREY, note);
+        Theme.centerText(dc, Theme.y(dc, 858), Theme.title(), Theme.MINT, "START");
+        Theme.startHint(dc);
     }
 }
 

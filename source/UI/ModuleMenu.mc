@@ -1,17 +1,18 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-//! Session list for one module.
+//! Session list for one module: name, then duration and step count.
 module ModuleMenu {
-    function build(cat as Number) as WatchUi.Menu2 {
-        var menu = new WatchUi.Menu2({:title => Models.categoryName(cat)});
+    function build(cat as Number) as WatchUi.CustomMenu {
+        var menu = MenuKit.newMenu(Models.categoryName(cat));
         var ids = SessionLibrary.idsFor(cat);
         for (var i = 0; i < ids.size(); i++) {
             var def = SessionLibrary.get(ids[i]);
             if (def != null) {
-                menu.addItem(new WatchUi.MenuItem(def[SessionLibrary.F_NAME],
-                    TimeFormatter.minutes(SessionLibrary.totalSeconds(def)) + " - " + def[SessionLibrary.F_DESC],
-                    ids[i], null));
+                var steps = def[SessionLibrary.F_STEPS].size();
+                menu.addItem(new RowItem(ids[i], def[SessionLibrary.F_NAME].toUpper(),
+                    steps.toString() + (steps == 1 ? " STEP" : " STEPS"), RowItem.ICON_NONE,
+                    Hud.mmss(SessionLibrary.totalSeconds(def))));
             }
         }
         return menu;

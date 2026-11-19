@@ -22,13 +22,13 @@ RESTORA is a wellness app, not a medical device. It does not diagnose, treat or 
 ```
 source/
   RestoraApp.mc        app entry
-  UI/                  Home (Menu2), module list, session detail, player, summary, history, settings
+  UI/                  Custom-drawn menus, session detail, session HUD, summary, history, settings, icons
   Engine/              SessionEngine (state machine), HapticEngine
   Content/             ExerciseLibrary, SessionLibrary
   Data/                Models, HistoryRepository (Storage, 100 records), SettingsRepository (Properties)
   Sensors/             SensorManager, HeartRateProvider, SensorAvailability (all optional)
   Calculation/         Calculation Engine (pure, unit-tested) — see docs/CALCULATION_ENGINE.md
-  Utils/               TimeFormatter, DeviceProfile (palette)
+  Utils/               TimeFormatter, Theme (palette, Roboto Mono fonts, layout helpers)
   Tests/               (:test) unit tests
 ```
 
@@ -65,8 +65,11 @@ Haptics (on), countdown 3/5/10 s, auto-advance (on), HR before/after (off). You 
 
 Each session shows a safety note. Elevation and inversion sessions carry a specific warning: Legs Up the Wall is not suitable for everyone, for example people with glaucoma, heart or kidney failure, or uncontrolled blood pressure. Stop if you feel pain, dizziness, shortness of breath or more swelling.
 
-## UI mockups
+## Design
 
-`docs/mockups/` holds renders of each screen at 390×390. They use the same layout coordinates and palette as the `onUpdate()` code. They are not simulator screenshots: Menu2 screens are drawn natively by the device, and real Garmin fonts differ slightly.
+The design language is "Calm Precision", using Roboto Mono throughout and a data-first sports-watch HUD. See `docs/DESIGN_SYSTEM.md`.
+
+- Fonts: `python3 tools/make_fonts.py` regenerates `resources/fonts/` from `tools/fonts/RobotoMono-*.ttf` (SIL OFL).
+- Mockups: `node tools/mockups/render.js` renders `docs/mockups/` from `tools/mockups/restora_mockups.html`. The mockups use the same per-mille layout, palette, font metrics, ring geometry and icons as the Monkey C views. They are not simulator screenshots: CustomMenu scrolling is approximated and the data is illustrative.
 
 ![RESTORA UI mockups](docs/mockups/restora-ui-mockups.png)

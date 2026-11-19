@@ -5,8 +5,7 @@ import Toybox.Time;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
-//! Active session: exercise, timer, breathing circle, side indicator,
-//! progress ring. One 1 s timer drives redraws; elapsed time comes from
+//! Active session HUD. One 1 s timer drives redraws; elapsed time comes from
 //! System.getTimer() deltas inside SessionEngine.
 class SessionPlayerView extends WatchUi.View {
 
@@ -65,125 +64,156 @@ class SessionPlayerView extends WatchUi.View {
         WatchUi.switchToView(summary, new SessionSummaryDelegate(), WatchUi.SLIDE_LEFT);
     }
 
+    // ---- Session HUD -------------------------------------------------------
+    // Layout (per-mille of screen height, 390 px on FR165):
+    //   bezel  : one ring segment per exercise (Coros-style), current one fills
+    //   inner  : breathing only - one segment per phase, active phase lit
+    //   110 : clock + haptic mark        175 : MODULE  03/05
+    //   220 : EXERCISE NAME              300 : hairline
+    //   318 : phase word (breathing)     470-510 : big mono timer (v-centre)
+    //   600 : type / side                650 : state / cue / NEXT line
+    //   700 : hairline                   712 : two data fields
+    // Fields sit high enough to clear the inner breathing ring.
+
     function onUpdate(dc as Graphics.Dc) as Void {
-        var cx = DeviceProfile.centerX(dc);
-        var cy = DeviceProfile.centerY(dc);
-        var h = dc.getHeight();
-        var radius = (dc.getWidth() < h ? dc.getWidth() : h) / 2;
-        dc.setColor(DeviceProfile.COLOR_TEXT, DeviceProfile.COLOR_BG);
+        dc.setColor(Theme.IVORY, Theme.BG);
         dc.clear();
-
-        drawProgressRing(dc, cx, cy, radius - 6);
-
         var st = _engine.state;
-        if (st == SessionEngine.COUNTDOWN || (st == SessionEngine.PAUSED && _engine.countdownMs > 0)) {
-            dc.setColor(DeviceProfile.COLOR_SAGE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 28 / 100, Graphics.FONT_TINY, "Get ready", Graphics.TEXT_JUSTIFY_CENTER);
-            dc.setColor(DeviceProfile.COLOR_TEXT, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, cy, Graphics.FONT_NUMBER_HOT, ((_engine.countdownMs + 999) / 1000).toString(),
-                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-            drawPaused(dc, cx, h);
+        var counting = (st == SessionEngine.COUNTDOWN) || (st == SessionEngine.PAUSED && _engine.countdownMs > 0);
+
+        drawStepRing(dc);
+        Hud.statusLine(dc, Theme.y(dc, 110));
+
+        var steps = _engine.steps;
+        var ex = _engine.currentExercise();
+        var cat = _engine.def[SessionLibrary.F_CAT];
+        var top = Models.categoryName(cat) + "  "
+            + (_engine.stepIndex + 1).format("%02d") + "/" + steps.size().format("%02d");
+        Theme.centerText(dc, Theme.y(dc, 175), Theme.label(), Theme.SAGE, counting ? "GET READY" : top);
+        if (ex != null) {
+            var nameY = Theme.y(dc, 220);
+            Theme.centerText(dc, nameY, Theme.body(), Theme.IVORY,
+                Theme.fit(dc, ex[ExerciseLibrary.F_NAME].toUpper(), Theme.body(), Theme.chordHalf(dc, nameY) * 2 - 40));
+        }
+        Theme.divider(dc, Theme.y(dc, 300), 24);
+
+        var paused = (st == SessionEngine.PAUSED);
+        var heroColor = paused ? Theme.GREY : Theme.IVORY;
+        if (counting) {
+            Theme.text(dc, Theme.cx(dc), Theme.y(dc, 490), Theme.hero(), heroColor,
+                ((_engine.countdownMs + 999) / 1000).toString(), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            statusRow(dc, paused ? "PAUSED" : "START TO PAUSE", paused ? Theme.AMBER : Theme.GREY);
+            Theme.divider(dc, Theme.y(dc, 700), 24);
+            Hud.fieldPair(dc, Theme.y(dc, 712), "STEPS", steps.size().toString(), "TOTAL",
+                Hud.mmss(_engine.plannedSeconds()), Theme.title(), Theme.IVORY);
             return;
         }
-
-        var ex = _engine.currentExercise();
         if (ex == null) {
             return;
         }
-        var steps = _engine.steps;
-        dc.setColor(DeviceProfile.COLOR_SAGE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, h * 12 / 100, Graphics.FONT_XTINY,
-            (_engine.stepIndex + 1).toString() + "/" + steps.size(), Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(DeviceProfile.COLOR_TEXT, Graphics.COLOR_TRANSPARENT);
-        // Round screen: long names drop to a smaller font so they are not clipped.
-        var name = ex[ExerciseLibrary.F_NAME];
-        var nameFont = (dc.getTextWidthInPixels(name, Graphics.FONT_SMALL) > dc.getWidth() * 70 / 100)
-            ? Graphics.FONT_XTINY : Graphics.FONT_SMALL;
-        dc.drawText(cx, h * 19 / 100, nameFont, name, Graphics.TEXT_JUSTIFY_CENTER);
 
-        if (ex[ExerciseLibrary.F_TYPE] == Models.TYPE_BREATHING) {
-            drawBreathing(dc, cx, cy, radius, ex[ExerciseLibrary.F_PATTERN]);
+        var remainingStep = (_engine.stepRemainingMs() + 999) / 1000;
+        var sessionLeft = _engine.plannedSeconds() - _engine.activeMs / 1000;
+        var breathing = ex[ExerciseLibrary.F_TYPE] == Models.TYPE_BREATHING;
+
+        if (breathing) {
+            var pattern = ex[ExerciseLibrary.F_PATTERN];
+            var phase = _engine.breathingPhase();
+            var remainMs = BreathingCalculator.phaseRemainingMs(pattern, _engine.stepElapsedMs);
+            drawPhaseRing(dc, pattern, phase, remainMs);
+            var words = ["INHALE", "HOLD", "EXHALE", "HOLD"];
+            Theme.centerText(dc, Theme.y(dc, 318), Theme.title(), paused ? Theme.GREY : Theme.MINT,
+                (phase == null) ? "" : words[phase]);
+            var phaseSec = ((remainMs == null) ? 0 : remainMs + 999) / 1000;
+            Theme.text(dc, Theme.cx(dc), Theme.y(dc, 510), Theme.hero(), heroColor, phaseSec.format("%02d"),
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            var cycles = _engine.cycles;
+            var cur = BreathingCalculator.completedCycles(pattern, _engine.stepElapsedMs);
+            if (cur != null) {
+                cycles += cur;
+            }
+            stateRow(dc, st, remainingStep, "PATTERN " + pattern[0] + "-" + pattern[1] + "-" + pattern[2] + "-" + pattern[3]);
+            Theme.divider(dc, Theme.y(dc, 700), 24);
+            Hud.fieldPair(dc, Theme.y(dc, 712), "CYCLES", cycles.format("%02d"), "LEFT",
+                Hud.mmss(sessionLeft), Theme.title(), Theme.IVORY);
         } else {
-            dc.setColor(DeviceProfile.COLOR_PRIMARY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, cy - h * 4 / 100, Graphics.FONT_NUMBER_MEDIUM,
-                TimeFormatter.clock((_engine.stepRemainingMs() + 999) / 1000),
+            Theme.text(dc, Theme.cx(dc), Theme.y(dc, 470), Theme.hero(), heroColor, Hud.mmss(remainingStep),
                 Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
             var side = _engine.currentSide();
+            var typeLabel = typeName(ex[ExerciseLibrary.F_TYPE]);
             if (side != null) {
-                dc.setColor(DeviceProfile.COLOR_SAGE, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(cx, cy + h * 9 / 100, Graphics.FONT_TINY,
-                    side.equals(Models.TAG_LEFT) ? "LEFT SIDE" : "RIGHT SIDE", Graphics.TEXT_JUSTIFY_CENTER);
+                typeLabel = side.equals(Models.TAG_LEFT) ? "LEFT SIDE" : "RIGHT SIDE";
             }
-            dc.setColor(DeviceProfile.COLOR_DIM, Graphics.COLOR_TRANSPARENT);
-            var cue = Graphics.fitTextToArea(ex[ExerciseLibrary.F_CUE], Graphics.FONT_XTINY, dc.getWidth() * 70 / 100, h * 12 / 100, true);
-            dc.drawText(cx, h * 66 / 100, Graphics.FONT_XTINY, cue, Graphics.TEXT_JUSTIFY_CENTER);
+            Theme.centerText(dc, Theme.y(dc, 600), Theme.label(), (side != null) ? Theme.MINT : Theme.SAGE, typeLabel);
+            stateRow(dc, st, remainingStep, ex[ExerciseLibrary.F_CUE]);
+            Theme.divider(dc, Theme.y(dc, 700), 24);
+            Hud.fieldPair(dc, Theme.y(dc, 712), "LEFT", Hud.mmss(sessionLeft), "DONE",
+                _engine.progressPercent().toString() + "%", Theme.title(), Theme.IVORY);
         }
-
         if (st == SessionEngine.AWAITING_NEXT) {
-            dc.setColor(DeviceProfile.COLOR_PRIMARY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 80 / 100, Graphics.FONT_XTINY, "START for next", Graphics.TEXT_JUSTIFY_CENTER);
+            Theme.startHint(dc);
+        }
+    }
+
+    //! Row under the timer: PAUSED / START: NEXT / NEXT: X (last 10 s) / info.
+    hidden function stateRow(dc as Graphics.Dc, st as Number, remainingStep as Number, info as String) as Void {
+        if (st == SessionEngine.PAUSED) {
+            statusRow(dc, "PAUSED", Theme.AMBER);
+        } else if (st == SessionEngine.AWAITING_NEXT) {
+            statusRow(dc, "START: NEXT", Theme.MINT);
+        } else if (remainingStep <= 10 && nextName() != null) {
+            statusRow(dc, "NEXT: " + nextName(), Theme.MINT);
         } else {
-            dc.setColor(DeviceProfile.COLOR_DIM, Graphics.COLOR_TRANSPARENT);
-            var left = _engine.plannedSeconds() - _engine.activeMs / 1000;
-            dc.drawText(cx, h * 80 / 100, Graphics.FONT_XTINY, TimeFormatter.clock(left > 0 ? left : 0) + " left",
-                Graphics.TEXT_JUSTIFY_CENTER);
-        }
-        drawPaused(dc, cx, h);
-    }
-
-    hidden function drawPaused(dc as Graphics.Dc, cx as Number, h as Number) as Void {
-        if (_engine.state == SessionEngine.PAUSED) {
-            dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, h * 87 / 100, Graphics.FONT_XTINY, "PAUSED", Graphics.TEXT_JUSTIFY_CENTER);
+            statusRow(dc, info, Theme.GREY);
         }
     }
 
-    hidden function drawProgressRing(dc as Graphics.Dc, cx as Number, cy as Number, r as Number) as Void {
-        dc.setPenWidth(4);
-        dc.setColor(DeviceProfile.COLOR_FOREST, Graphics.COLOR_TRANSPARENT);
-        dc.drawCircle(cx, cy, r);
-        var p = _engine.progressPercent();
-        if (p > 0) {
-            dc.setColor(DeviceProfile.COLOR_PRIMARY, Graphics.COLOR_TRANSPARENT);
-            if (p >= 100) {
-                dc.drawCircle(cx, cy, r);
-            } else {
-                dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, 90, 90 - 360 * p / 100);
-            }
-        }
-        dc.setPenWidth(1);
+    hidden function statusRow(dc as Graphics.Dc, s as String, color as Number) as Void {
+        var yy = Theme.y(dc, 650);
+        Theme.centerText(dc, yy, Theme.label(), color,
+            Theme.fit(dc, s.toUpper(), Theme.label(), Theme.chordHalf(dc, yy + 18) * 2 - 48));
     }
 
-    //! Circle grows on inhale, holds, shrinks on exhale, rests small on pause.
-    hidden function drawBreathing(dc as Graphics.Dc, cx as Number, cy as Number, radius as Number, pattern) as Void {
-        var labels = ["INHALE", "HOLD", "EXHALE", "PAUSE"];
-        var phase = _engine.breathingPhase();
-        var remainMs = BreathingCalculator.phaseRemainingMs(pattern, _engine.stepElapsedMs);
+    hidden function nextName() {
+        var i = _engine.stepIndex + 1;
+        if (i >= _engine.steps.size()) {
+            return null;
+        }
+        var ex = ExerciseLibrary.get(_engine.steps[i][0]);
+        return (ex == null) ? null : ex[ExerciseLibrary.F_NAME];
+    }
+
+    hidden function typeName(type as Number) as String {
+        var names = ["BREATHING", "HOLD POSITION", "REPEAT GENTLY", "ALTERNATE SIDES", "INTERVAL", "REST", "TRANSITION"];
+        return (type >= 0 && type < names.size()) ? names[type] : "";
+    }
+
+    //! Bezel: one segment per exercise, sized by duration.
+    hidden function drawStepRing(dc as Graphics.Dc) as Void {
+        var steps = _engine.steps;
+        var weights = new [steps.size()];
+        for (var i = 0; i < steps.size(); i++) {
+            weights[i] = steps[i][1];
+        }
+        var dur = _engine.stepDurationMs();
+        var permille = (dur > 0) ? (_engine.stepElapsedMs * 1000 / dur) : 0;
+        var active = _engine.isFinished() ? steps.size() : _engine.stepIndex;
+        if (_engine.state == SessionEngine.COUNTDOWN) {
+            permille = 0;
+        }
+        Hud.segmentRing(dc, weights, active, permille, dc.getWidth() / 2 - 5, 6,
+            (_engine.state == SessionEngine.PAUSED) ? Theme.AMBER : Theme.SAGE);
+    }
+
+    //! Inner ring for breathing: segments = phase lengths, active phase fills.
+    hidden function drawPhaseRing(dc as Graphics.Dc, pattern, phase, remainMs) as Void {
         if (phase == null || remainMs == null) {
             return;
         }
         var phaseMs = pattern[phase] * 1000;
-        var frac = (phaseMs > 0) ? (phaseMs - remainMs) * 100 / phaseMs : 100; // 0..100 through phase
-        var rMin = radius * 18 / 100;
-        var rMax = radius * 48 / 100;
-        var r = rMin;
-        if (phase == 0) {
-            r = rMin + (rMax - rMin) * frac / 100;
-        } else if (phase == 1) {
-            r = rMax;
-        } else if (phase == 2) {
-            r = rMax - (rMax - rMin) * frac / 100;
-        }
-        dc.setColor(DeviceProfile.COLOR_FOREST, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(cx, cy + radius * 6 / 100, r);
-        dc.setColor(DeviceProfile.COLOR_PRIMARY, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(2);
-        dc.drawCircle(cx, cy + radius * 6 / 100, r);
-        dc.setPenWidth(1);
-        dc.setColor(DeviceProfile.COLOR_TEXT, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy - radius * 6 / 100, Graphics.FONT_SMALL, labels[phase], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.drawText(cx, cy + radius * 14 / 100, Graphics.FONT_MEDIUM, ((remainMs + 999) / 1000).toString(),
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        var permille = (phaseMs > 0) ? (phaseMs - remainMs) * 1000 / phaseMs : 1000;
+        Hud.segmentRing(dc, pattern, phase, permille, dc.getWidth() / 2 - 20, 10,
+            (_engine.state == SessionEngine.PAUSED) ? Theme.AMBER : Theme.MINT);
     }
 }
 

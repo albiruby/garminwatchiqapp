@@ -1,0 +1,7 @@
+<fonts>
+    <font id="MonoLabel" filename="mono_label.fnt" antialias="true"/>
+    <font id="MonoBody" filename="mono_body.fnt" antialias="true"/>
+    <font id="MonoTitle" filename="mono_title.fnt" antialias="true"/>
+    <font id="MonoNum" filename="mono_num.fnt" antialias="true" filter="0123456789:-/%. "/>
+    <font id="MonoHero" filename="mono_hero.fnt" antialias="true" filter="0123456789:"/>
+</fonts>

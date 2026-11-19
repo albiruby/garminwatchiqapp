@@ -1,22 +1,22 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-//! Home: six modules, quick access to the last session, history, settings.
-//! Any session is reachable in <= 3 presses: module -> session -> start.
+//! Home: continue last session, six modules, history, settings.
+//! Any session is reachable in <= 3 presses: module -> session -> START.
 module HomeMenu {
-    function build() as WatchUi.Menu2 {
-        var menu = new WatchUi.Menu2({:title => "RESTORA"});
+    function build() as WatchUi.CustomMenu {
+        var menu = MenuKit.newMenu("RESTORA");
         var lastId = HistoryRepository.lastSessionId();
         var last = SessionLibrary.get(lastId);
         if (last != null) {
-            menu.addItem(new WatchUi.MenuItem("Continue", last[SessionLibrary.F_NAME] + " - "
-                + TimeFormatter.minutes(SessionLibrary.totalSeconds(last)), :continue, null));
+            menu.addItem(new RowItem(:continue, "CONTINUE", last[SessionLibrary.F_NAME].toUpper() + "  "
+                + Hud.mmss(SessionLibrary.totalSeconds(last)), RowItem.ICON_PLAY, null));
         }
         for (var c = 0; c < Models.CAT_COUNT; c++) {
-            menu.addItem(new WatchUi.MenuItem(Models.categoryName(c), Models.categorySubtitle(c), c, null));
+            menu.addItem(new RowItem(c, Models.categoryName(c), Models.categorySubtitle(c).toUpper(), c, null));
         }
-        menu.addItem(new WatchUi.MenuItem("HISTORY", "Your practice", :history, null));
-        menu.addItem(new WatchUi.MenuItem("SETTINGS", "Haptics, countdown", :settings, null));
+        menu.addItem(new RowItem(:history, "HISTORY", "THIS WEEK", RowItem.ICON_HISTORY, null));
+        menu.addItem(new RowItem(:settings, "SETTINGS", "HAPTICS, COUNTDOWN", RowItem.ICON_SETTINGS, null));
         return menu;
     }
 }
