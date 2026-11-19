@@ -2,29 +2,30 @@ import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-//! Custom-drawn menus so lists use Roboto Mono, module icons and the RESTORA
-//! palette (native Menu2 cannot use custom fonts).
+//! Custom-drawn menus: Roboto Condensed, icons, chevrons, RESTORA palette.
+//!
+//! 390-px units. Rows are 88 px. A foreground mask blacks out y < 62,
+//! y > 316 and everything outside r164, so a list shows the title (when at the
+//! top) or the focused row with one neighbour each side, and never a row
+//! half-cut by the bezel.
 module MenuKit {
 
-    // 390-px units. Rows are tall enough that only the focused row and one
-    // neighbour on each side are visible; anything beyond the safe circle
-    // (r160) is hidden by the MenuMask foreground, so no row is ever cut by
-    // the bezel.
-    const ITEM_H = 96;
-    const FOCUS_H = 104;
-    const TITLE_H = 116;
+    const ITEM_H = 88;
+    const TITLE_H = 140;
+    const BAND_TOP = 62;
+    const BAND_BOTTOM = 316;
 
-    function newMenu(title as String) as WatchUi.CustomMenu {
+    function newMenu(title as String, sub, logo as Boolean) as WatchUi.CustomMenu {
         return new WatchUi.CustomMenu(ITEM_H, Theme.BG, {
-            :focusItemHeight => FOCUS_H,
-            :title => new MenuTitle(title),
+            :focusItemHeight => ITEM_H,
+            :title => new MenuTitle(title, sub, logo),
             :titleItemHeight => TITLE_H,
             :foreground => new MenuMask()
         });
     }
 }
 
-//! Black ring over everything outside the safe circle.
+//! Black bands top/bottom plus everything outside the safe circle.
 class MenuMask extends WatchUi.Drawable {
 
     function initialize() {
@@ -32,43 +33,50 @@ class MenuMask extends WatchUi.Drawable {
     }
 
     function draw(dc as Graphics.Dc) as Void {
-        var r = Theme.px(dc, Theme.SAFE_MENU);
-        var outer = dc.getWidth() / 2 + 2;
-        var pen = outer - r + 2;
+        var w = dc.getWidth();
+        var h = dc.getHeight();
         dc.setColor(Theme.BG, Graphics.COLOR_TRANSPARENT);
+        dc.fillRectangle(0, 0, w, Theme.px(dc, MenuKit.BAND_TOP));
+        var bottom = Theme.px(dc, MenuKit.BAND_BOTTOM);
+        dc.fillRectangle(0, bottom, w, h - bottom);
+        var r = Theme.px(dc, Theme.SAFE_MENU);
+        var pen = w / 2 - r + 4;
         dc.setPenWidth(pen);
         dc.drawCircle(Theme.cx(dc), Theme.cy(dc), r + pen / 2);
         dc.setPenWidth(1);
     }
 }
 
-//! Menu header: clock, then the menu name in spaced uppercase.
+//! Header: optional leaf logo, title, optional small uppercase subtitle.
 class MenuTitle extends WatchUi.Drawable {
 
     hidden var _title as String;
+    hidden var _sub;
+    hidden var _logo as Boolean;
 
-    function initialize(title as String) {
+    function initialize(title as String, sub, logo as Boolean) {
         Drawable.initialize({});
         _title = title;
+        _sub = sub;
+        _logo = logo;
     }
 
     function draw(dc as Graphics.Dc) as Void {
         var cx = dc.getWidth() / 2;
-        Theme.text(dc, cx, Theme.px(dc, 42), Theme.label(), Theme.GREY, Theme.clock(), Graphics.TEXT_JUSTIFY_CENTER);
-        Theme.text(dc, cx, Theme.px(dc, 63), Theme.title(), Theme.IVORY, _title, Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(Theme.LINE, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(cx - Theme.px(dc, 80), Theme.px(dc, 108), cx + Theme.px(dc, 80), Theme.px(dc, 108));
+        if (_logo) {
+            Icons.draw(dc, Models.CAT_RECOVER, cx, Theme.px(dc, 82), Theme.px(dc, 24), Theme.GREEN);
+        }
+        Theme.text(dc, cx, Theme.px(dc, _logo ? 96 : 84), Theme.title(), Theme.WHITE, _title, Graphics.TEXT_JUSTIFY_CENTER);
+        if (_sub != null) {
+            Theme.text(dc, cx, Theme.px(dc, _logo ? 123 : 113), Theme.label(), Theme.GREY, _sub, Graphics.TEXT_JUSTIFY_CENTER);
+        }
     }
 }
 
-//! One row: optional module icon, name, subtitle (focused only), right value.
-//! icon: module id 0..5, or ICON_* for non-module rows, or -1 for none.
+//! One row: optional icon, name, subtitle, and a chevron or a value on the right.
 class RowItem extends WatchUi.CustomMenuItem {
 
     const ICON_NONE = -1;
-    const ICON_PLAY = 10;
-    const ICON_HISTORY = 11;
-    const ICON_SETTINGS = 12;
 
     var name as String;
     var sub;
@@ -84,85 +92,42 @@ class RowItem extends WatchUi.CustomMenuItem {
         _icon = icon;
     }
 
-    // Row geometry (390-px units): focused surface spans x 55..335 so its
-    // corners stay inside r160 wherever the row sits; icon at x 94, text at
-    // x 126, right value ends at x 304.
+    // Row geometry (390-px units): focused surface x 48..342, icon at x 84,
+    // text at x 116 (84 without icon), chevron/value ends at x 324.
     function draw(dc as Graphics.Dc) as Void {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var focused = isFocused();
         var midY = h / 2;
-        var iconX = Theme.px(dc, 94);
-        var textX = iconX;
-        var valueX = Theme.px(dc, 304);
+        var textX = Theme.px(dc, (_icon != ICON_NONE) ? 116 : 84);
+        var rightX = Theme.px(dc, 324);
 
         if (focused) {
-            var x0 = Theme.px(dc, 55);
-            dc.setColor(Theme.DEEP, Graphics.COLOR_TRANSPARENT);
-            dc.fillRoundedRectangle(x0, Theme.px(dc, 8), w - 2 * x0, h - Theme.px(dc, 16), Theme.px(dc, 14));
-            dc.setColor(Theme.MINT, Graphics.COLOR_TRANSPARENT);
-            dc.fillRoundedRectangle(x0, midY - Theme.px(dc, 16), Theme.px(dc, 4), Theme.px(dc, 32), 2);
+            var x0 = Theme.px(dc, 48);
+            dc.setColor(Theme.SURFACE, Graphics.COLOR_TRANSPARENT);
+            dc.fillRoundedRectangle(x0, Theme.px(dc, 6), w - 2 * x0, h - Theme.px(dc, 12), Theme.px(dc, 12));
+            dc.setColor(Theme.GREEN, Graphics.COLOR_TRANSPARENT);
+            dc.fillRoundedRectangle(x0, midY - Theme.px(dc, 18), Theme.px(dc, 4), Theme.px(dc, 36), 2);
         }
         if (_icon != ICON_NONE) {
-            drawIcon(dc, iconX, midY, Theme.px(dc, focused ? 28 : 20), focused ? Theme.MINT : Theme.GREY);
-            textX = iconX + Theme.px(dc, 32);
+            Icons.draw(dc, _icon, Theme.px(dc, 84), midY, Theme.px(dc, 26), focused ? Theme.GREEN : Theme.SOFT);
+        }
+        var right = rightX - Theme.px(dc, 12);
+        if (value != null) {
+            right = rightX - dc.getTextWidthInPixels(value, Theme.body()) - Theme.px(dc, 10);
         }
         var nameFont = focused ? Theme.title() : Theme.body();
-        var hasSub = focused && sub != null;
-        var nameY = hasSub ? midY - Theme.px(dc, 27) : midY - dc.getFontHeight(nameFont) / 2;
-        var right = (value != null) ? valueX - dc.getTextWidthInPixels(value, Theme.body()) - Theme.px(dc, 10) : valueX;
-        // Name too long to share its line with the value: value drops to the sub line.
-        var valueOnSub = hasSub && value != null && dc.getTextWidthInPixels(name, nameFont) > right - textX;
-        if (valueOnSub) {
-            right = valueX;
-        }
-        var maxW = right - textX;
-        Theme.text(dc, textX, nameY, nameFont, focused ? Theme.IVORY : Theme.GREY,
-            Theme.fit(dc, name, nameFont, maxW), Graphics.TEXT_JUSTIFY_LEFT);
-        if (hasSub) {
-            var subMax = valueX - textX;
-            if (valueOnSub) {
-                subMax -= dc.getTextWidthInPixels(value, Theme.label()) + Theme.px(dc, 10);
-            }
-            Theme.text(dc, textX, midY + Theme.px(dc, 4), Theme.label(), Theme.SAGE,
-                Theme.fit(dc, sub, Theme.label(), subMax), Graphics.TEXT_JUSTIFY_LEFT);
+        Theme.text(dc, textX, midY - dc.getFontHeight(nameFont) + Theme.px(dc, 4), nameFont,
+            focused ? Theme.WHITE : Theme.SOFT, Theme.fit(dc, name, nameFont, right - textX), Graphics.TEXT_JUSTIFY_LEFT);
+        if (sub != null) {
+            Theme.text(dc, textX, midY + Theme.px(dc, 6), Theme.small(), Theme.GREY,
+                Theme.fit(dc, sub, Theme.small(), right - textX), Graphics.TEXT_JUSTIFY_LEFT);
         }
         if (value != null) {
-            if (valueOnSub) {
-                Theme.text(dc, valueX, midY + Theme.px(dc, 4), Theme.label(), valueOn ? Theme.MINT : Theme.GREY,
-                    value, Graphics.TEXT_JUSTIFY_RIGHT);
-            } else {
-                Theme.text(dc, valueX, nameY + (hasSub ? Theme.px(dc, 4) : 0), Theme.body(),
-                    valueOn ? Theme.MINT : Theme.GREY, value, Graphics.TEXT_JUSTIFY_RIGHT);
-            }
-        }
-    }
-
-    hidden function drawIcon(dc as Graphics.Dc, x as Number, y as Number, s as Number, color as Number) as Void {
-        if (_icon >= 0 && _icon < Models.CAT_COUNT) {
-            Icons.draw(dc, _icon, x, y, s, color);
-            return;
-        }
-        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-        var h = s / 2;
-        if (_icon == ICON_PLAY) {
-            dc.fillPolygon([[x - h / 2, y - h * 2 / 3], [x + h * 2 / 3, y], [x - h / 2, y + h * 2 / 3]]);
-        } else if (_icon == ICON_HISTORY) {
-            // Bars of a weekly chart.
-            var bw = s / 6;
-            var hs = [h / 2, h, h * 3 / 4, h * 3 / 2];
-            for (var i = 0; i < 4; i++) {
-                dc.fillRectangle(x - h + i * (bw + 2), y + h * 3 / 4 - hs[i], bw, hs[i]);
-            }
-        } else if (_icon == ICON_SETTINGS) {
-            dc.setPenWidth(2);
-            dc.drawCircle(x, y, h * 2 / 3);
-            dc.fillCircle(x, y, h / 4);
-            dc.drawLine(x - h, y, x - h * 2 / 3, y);
-            dc.drawLine(x + h * 2 / 3, y, x + h, y);
-            dc.drawLine(x, y - h, x, y - h * 2 / 3);
-            dc.drawLine(x, y + h * 2 / 3, x, y + h);
-            dc.setPenWidth(1);
+            Theme.text(dc, rightX, midY - dc.getFontHeight(Theme.body()) / 2, Theme.body(),
+                valueOn ? Theme.GREEN : Theme.GREY, value, Graphics.TEXT_JUSTIFY_RIGHT);
+        } else {
+            Icons.draw(dc, Icons.CHEVRON, rightX - Theme.px(dc, 4), midY, Theme.px(dc, 12), Theme.GREY);
         }
     }
 }

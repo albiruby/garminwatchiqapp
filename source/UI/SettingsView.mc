@@ -2,22 +2,22 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 
 //! On-watch settings (same properties as the phone settings page).
-//! Rows show their value on the right: ON (mint) / OFF (grey) / 3S.
+//! Rows show their value on the right: On (green) / Off (grey) / 3 s.
 module SettingsMenu {
     function build() as WatchUi.CustomMenu {
-        var menu = MenuKit.newMenu("SETTINGS");
-        menu.addItem(toggle(:haptics, "HAPTICS", "VIBRATION CUES", SettingsRepository.hapticsEnabled()));
-        var cd = new RowItem(:countdown, "COUNTDOWN", "BEFORE START", RowItem.ICON_NONE,
-            SettingsRepository.countdownSec().toString() + "S");
+        var menu = MenuKit.newMenu("Settings", null, false);
+        menu.addItem(toggle(:haptics, "Haptics", "Vibration cues", SettingsRepository.hapticsEnabled()));
+        var cd = new RowItem(:countdown, "Countdown", "Before start", RowItem.ICON_NONE,
+            SettingsRepository.countdownSec().toString() + " s");
         cd.valueOn = true;
         menu.addItem(cd);
-        menu.addItem(toggle(:autoAdvance, "AUTO NEXT", "ADVANCE EXERCISES", SettingsRepository.autoAdvance()));
-        menu.addItem(toggle(:hrSnapshot, "HR CHECK", "GARMIN HR BEFORE/AFTER", SettingsRepository.hrSnapshot()));
+        menu.addItem(toggle(:autoAdvance, "Auto next", "Advance exercises", SettingsRepository.autoAdvance()));
+        menu.addItem(toggle(:hrSnapshot, "HR check", "Garmin HR before/after", SettingsRepository.hrSnapshot()));
         return menu;
     }
 
     function toggle(id, name as String, sub as String, on as Boolean) as RowItem {
-        var item = new RowItem(id, name, sub, RowItem.ICON_NONE, on ? "ON" : "OFF");
+        var item = new RowItem(id, name, sub, RowItem.ICON_NONE, on ? "On" : "Off");
         item.valueOn = on;
         return item;
     }
@@ -45,12 +45,12 @@ class SettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
             var cur = SettingsRepository.countdownSec();
             var nextVal = (cur == 3) ? 5 : ((cur == 5) ? 10 : 3);
             SettingsRepository.set("countdown", nextVal);
-            row.value = nextVal.toString() + "S";
+            row.value = nextVal.toString() + " s";
         } else {
             var on = !row.valueOn;
             SettingsRepository.set(SettingsMenu.keyFor(id), on);
             row.valueOn = on;
-            row.value = on ? "ON" : "OFF";
+            row.value = on ? "On" : "Off";
         }
         WatchUi.requestUpdate();
     }

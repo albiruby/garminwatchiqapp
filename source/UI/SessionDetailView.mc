@@ -26,52 +26,52 @@ class SessionDetailView extends WatchUi.View {
     }
 
     // 390-px grid, safe circle r170:
-    //   50 icon / 64 module / 83 title / 114 total + steps / 145 hairline
-    //   150 + 22n step table / 264 hairline / 271-294 safety note / 324 START
+    //   52 module icon / 68 MODULE / 84 name / 113 "10 min · 5 steps" / 140 hairline
+    //   146 + 22n step table / 260 hairline / 266-284 safety note / 312 Start pill
     function onUpdate(dc as Graphics.Dc) as Void {
-        dc.setColor(Theme.IVORY, Theme.BG);
+        dc.setColor(Theme.WHITE, Theme.BG);
         dc.clear();
         var cx = Theme.cx(dc);
         var safe = Theme.SAFE_PAGE;
         var cat = _def[SessionLibrary.F_CAT];
         var steps = _def[SessionLibrary.F_STEPS];
 
-        Icons.draw(dc, cat, cx, Theme.px(dc, 50), Theme.px(dc, 20), Theme.SAGE);
-        Theme.centerText(dc, Theme.px(dc, 64), Theme.label(), Theme.SAGE, Models.categoryName(cat));
-        Theme.fitLine(dc, Theme.px(dc, 83), _def[SessionLibrary.F_NAME].toUpper(), Theme.title(), Theme.body(), safe, Theme.IVORY);
-        Theme.centerText(dc, Theme.px(dc, 114), Theme.label(), Theme.GREY,
-            Hud.mmss(SessionLibrary.totalSeconds(_def)) + "  " + steps.size().toString() + " STEPS");
-        Theme.divider(dc, Theme.px(dc, 145), safe, Theme.px(dc, 16));
+        Icons.draw(dc, cat, cx, Theme.px(dc, 52), Theme.px(dc, 22), Theme.GREEN);
+        Theme.centerText(dc, Theme.px(dc, 68), Theme.label(), Theme.GREEN, Models.categoryName(cat).toUpper());
+        Theme.fitLine(dc, Theme.px(dc, 84), _def[SessionLibrary.F_NAME], Theme.title(), Theme.body(), safe, Theme.WHITE);
+        Theme.centerText(dc, Theme.px(dc, 113), Theme.small(), Theme.GREY,
+            RecordUtil.toMinutes(SessionLibrary.totalSeconds(_def)).toString() + " min · "
+                + steps.size().toString() + " steps");
+        Theme.divider(dc, Theme.px(dc, 140), safe, Theme.px(dc, 16));
 
-        // Step table: "01 NAME ......... 02:00", each row inside the safe circle.
+        // Step table: "1  Name ............ 2:00", each row inside the safe circle.
         var rowH = Theme.px(dc, 22);
-        var y = Theme.px(dc, 150);
+        var y = Theme.px(dc, 146);
         var maxRows = 5;
         var shown = (steps.size() > maxRows) ? maxRows - 1 : steps.size();
         for (var i = 0; i < shown; i++) {
-            var half = Theme.lineWidth(dc, y + Theme.px(dc, 5), Theme.px(dc, 14), safe) / 2 - Theme.px(dc, 6);
+            var half = Theme.lineWidth(dc, y + Theme.px(dc, 4), Theme.px(dc, 14), safe) / 2 - Theme.px(dc, 8);
             var ex = ExerciseLibrary.get(steps[i][0]);
-            var name = ((ex != null) ? ex[ExerciseLibrary.F_NAME] : steps[i][0]).toUpper();
-            var idx = (i + 1).format("%02d");
-            var time = Hud.mmss(steps[i][1]);
+            var name = (ex != null) ? ex[ExerciseLibrary.F_NAME] : steps[i][0];
+            var time = Hud.mss(steps[i][1]);
             var x0 = cx - half;
             var x1 = cx + half;
-            var nameX = x0 + dc.getTextWidthInPixels(idx + " ", Theme.label());
-            var nameMax = x1 - nameX - dc.getTextWidthInPixels("  " + time, Theme.label());
-            Theme.text(dc, x0, y, Theme.label(), Theme.SAGE, idx, Graphics.TEXT_JUSTIFY_LEFT);
-            Theme.text(dc, nameX, y, Theme.label(), Theme.IVORY, Theme.fit(dc, name, Theme.label(), nameMax), Graphics.TEXT_JUSTIFY_LEFT);
-            Theme.text(dc, x1, y, Theme.label(), Theme.GREY, time, Graphics.TEXT_JUSTIFY_RIGHT);
+            var nameX = x0 + dc.getTextWidthInPixels("5  ", Theme.small());
+            var nameMax = x1 - nameX - dc.getTextWidthInPixels("  " + time, Theme.small());
+            Theme.text(dc, x0, y, Theme.small(), Theme.GREEN, (i + 1).toString(), Graphics.TEXT_JUSTIFY_LEFT);
+            Theme.text(dc, nameX, y, Theme.small(), Theme.WHITE, Theme.fit(dc, name, Theme.small(), nameMax), Graphics.TEXT_JUSTIFY_LEFT);
+            Theme.text(dc, x1, y, Theme.small(), Theme.GREY, time, Graphics.TEXT_JUSTIFY_RIGHT);
             y += rowH;
         }
         if (shown < steps.size()) {
-            Theme.centerText(dc, y, Theme.label(), Theme.GREY, "+" + (steps.size() - shown).toString() + " MORE");
+            Theme.centerText(dc, y, Theme.small(), Theme.GREY, "+" + (steps.size() - shown).toString() + " more");
         }
 
-        Theme.divider(dc, Theme.px(dc, 264), safe, Theme.px(dc, 16));
-        var noteW = Theme.lineWidth(dc, Theme.px(dc, 276), Theme.px(dc, 37), safe) - Theme.px(dc, 8);
-        var note = Graphics.fitTextToArea(_def[SessionLibrary.F_SAFETY], Theme.label(), noteW, Theme.px(dc, 46), true);
-        Theme.centerText(dc, Theme.px(dc, 271), Theme.label(), Theme.GREY, note);
-        Theme.centerText(dc, Theme.px(dc, 324), Theme.label(), Theme.MINT, "START");
+        Theme.divider(dc, Theme.px(dc, 260), safe, Theme.px(dc, 16));
+        var noteW = Theme.lineWidth(dc, Theme.px(dc, 266), Theme.px(dc, 40), safe) - Theme.px(dc, 8);
+        var note = Graphics.fitTextToArea(_def[SessionLibrary.F_SAFETY], Theme.label(), noteW, Theme.px(dc, 36), true);
+        Theme.centerText(dc, Theme.px(dc, 266), Theme.label(), Theme.GREY, note);
+        Theme.pill(dc, 312, "Start");
         Theme.startHint(dc);
     }
 }

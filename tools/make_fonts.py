@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Connect IQ bitmap fonts (BMFont text .fnt + PNG atlas) from Roboto Mono.
+"""Generate Connect IQ bitmap fonts (BMFont text .fnt + PNG atlas) from Roboto Condensed.
 
 Connect IQ cannot load .ttf files, so each size is pre-rendered. Glyphs are white with
 an alpha channel, which Connect IQ uses for anti-aliasing (antialias="true" in fonts.xml).
@@ -7,8 +7,8 @@ an alpha channel, which Connect IQ uses for anti-aliasing (antialias="true" in f
 Usage:  python3 tools/make_fonts.py
 Output: resources/fonts/*.fnt + *.png
 
-Roboto Mono is (c) The Roboto Mono Project Authors, SIL Open Font License 1.1
-(tools/fonts/OFL.txt).
+Roboto Condensed (variable, wght 100-900) is (c) The Roboto Project Authors,
+SIL Open Font License 1.1 (tools/fonts/OFL.txt).
 """
 import os
 from PIL import Image, ImageDraw, ImageFont
@@ -17,18 +17,22 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "tools", "fonts")
 OUT = os.path.join(ROOT, "resources", "fonts")
 
-ASCII = "".join(chr(c) for c in range(32, 127))
+TEXT = "".join(chr(c) for c in range(32, 127)) + "\u00b7\u2191\u2193"  # ASCII + middot, arrows
 DIGITS = "0123456789:-/%. "
 HERO = "0123456789:"
+FACE = "RobotoCondensed-VF.ttf"
+WEIGHTS = {"Regular": 400, "Medium": 500, "SemiBold": 600, "Bold": 700}
 
 # id, file stem, weight, pixel size, character set.
 # Sizes are tuned for 390 x 390 displays (Forerunner 165 / 165 Music).
+# Roboto Condensed digits are tabular, so timers do not jitter.
 FONTS = [
-    ("MonoLabel", "mono_label", "Medium", 17, ASCII),   # uppercase labels, hints
-    ("MonoBody", "mono_body", "Regular", 21, ASCII),    # list rows, notes
-    ("MonoTitle", "mono_title", "Bold", 27, ASCII),     # titles, phase words
-    ("MonoNum", "mono_num", "Bold", 44, DIGITS),        # headline numbers
-    ("MonoHero", "mono_hero", "Bold", 80, HERO),        # main timer (~62% of diameter)
+    ("Label", "rc_label", "Medium", 15, TEXT),    # small uppercase labels
+    ("Small", "rc_small", "Regular", 17, TEXT),   # subtitles, cues, table rows
+    ("Body", "rc_body", "Medium", 20, TEXT),      # list names, clock
+    ("Title", "rc_title", "Bold", 24, TEXT),      # titles, phase word, values
+    ("Num", "rc_num", "Bold", 40, DIGITS),        # headline numbers
+    ("Hero", "rc_hero", "Bold", 60, HERO),        # main timer inside the ring
 ]
 
 ATLAS_W = 512
@@ -36,7 +40,8 @@ PAD = 2
 
 
 def build(font_id, stem, weight, size, chars):
-    font = ImageFont.truetype(os.path.join(SRC, "RobotoMono-%s.ttf" % weight), size)
+    font = ImageFont.truetype(os.path.join(SRC, FACE), size)
+    font.set_variation_by_axes([WEIGHTS[weight]])
     ascent, descent = font.getmetrics()
     line_h = ascent + descent
 
@@ -85,7 +90,7 @@ def build(font_id, stem, weight, size, chars):
     img.save(os.path.join(OUT, stem + ".png"))
 
     with open(os.path.join(OUT, stem + ".fnt"), "w") as f:
-        f.write('info face="Roboto Mono %s" size=%d bold=%d italic=0 charset="" unicode=1 '
+        f.write('info face="Roboto Condensed %s" size=%d bold=%d italic=0 charset="" unicode=1 '
                 'stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=%d,%d\n'
                 % (weight, size, 1 if weight == "Bold" else 0, PAD, PAD))
         f.write("common lineHeight=%d base=%d scaleW=%d scaleH=%d pages=1 packed=0\n"
@@ -103,7 +108,7 @@ def main():
         build(font_id, stem, weight, size, chars)
         filt = chars.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
         # Full-ASCII fonts need no filter; digit fonts keep only the glyphs they use.
-        attr = '' if chars == ASCII else ' filter="%s"' % filt
+        attr = '' if chars == TEXT else ' filter="%s"' % filt
         xml.append('    <font id="%s" filename="%s.fnt" antialias="true"%s/>' % (font_id, stem, attr))
     xml.append("</fonts>")
     with open(os.path.join(OUT, "fonts.xml"), "w") as f:

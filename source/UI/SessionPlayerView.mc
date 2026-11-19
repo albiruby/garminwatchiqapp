@@ -65,112 +65,123 @@ class SessionPlayerView extends WatchUi.View {
     }
 
     // ---- Session HUD -------------------------------------------------------
-    // 390-px grid. Rings: bezel r190 (steps), r177 (breathing phases).
-    // All text stays inside Theme.SAFE_HUD (r160), >= 13 px clear of the rings.
-    //    56  STEP 04/05              (label, sage)
-    //    79  EXERCISE NAME           (body, shrinks to label if long)
-    //   114  ---- hairline ----
-    //   117  INHALE                  (title, breathing only)
-    //   114 / 134  hero timer        (80 px mono; ink 140-199 / 160-219)
-    //   208  HOLD POSITION / RIGHT SIDE
-    //   228  cue | NEXT: X | PAUSED | START: NEXT
-    //   260  ---- hairline ----
-    //   266/285  LEFT 04:24 | DONE 56%   (label over body value)
-    //   324  haptic mark
+    // 390-px grid, safe circle r160 (Theme.SAFE_HUD):
+    //    34  clock                       54  exercise name (green)
+    //   ring r88 around y186: phases (breathing) or step progress
+    //   inside: 120 marker / 128-132 phase or type / 150-162 timer / 218 side
+    //   286 state line (cue | Next: X | PAUSED | START: next)
+    //   308 info row: icon + pattern or session time left, step n/N
+    //   336 segmented bar, one segment per exercise
 
     function onUpdate(dc as Graphics.Dc) as Void {
-        dc.setColor(Theme.IVORY, Theme.BG);
+        dc.setColor(Theme.WHITE, Theme.BG);
         dc.clear();
         var st = _engine.state;
         var counting = (st == SessionEngine.COUNTDOWN) || (st == SessionEngine.PAUSED && _engine.countdownMs > 0);
         var paused = (st == SessionEngine.PAUSED);
-        var heroColor = paused ? Theme.GREY : Theme.IVORY;
         var safe = Theme.SAFE_HUD;
-
-        drawStepRing(dc);
-
         var steps = _engine.steps;
         var ex = _engine.currentExercise();
-        var top = counting ? "GET READY"
-            : "STEP " + (_engine.stepIndex + 1).format("%02d") + "/" + steps.size().format("%02d");
-        Theme.fitLine(dc, Theme.px(dc, 56), top, Theme.label(), null, safe, Theme.SAGE);
-        if (ex != null) {
-            Theme.fitLine(dc, Theme.px(dc, 79), ex[ExerciseLibrary.F_NAME].toUpper(), Theme.body(), Theme.label(), safe, Theme.IVORY);
-        }
-        Theme.divider(dc, Theme.px(dc, 114), safe, 0);
+        var ringCy = Theme.px(dc, Hud.RING_CY);
+        var ringColor = paused ? Theme.AMBER : Theme.GREEN;
+        var heroColor = paused ? Theme.GREY : Theme.WHITE;
+        var breathing = !counting && ex != null && ex[ExerciseLibrary.F_TYPE] == Models.TYPE_BREATHING;
+        var pattern = breathing ? ex[ExerciseLibrary.F_PATTERN] : null;
+        var stepDur = _engine.stepDurationMs();
+        var stepPermille = (stepDur > 0 && !counting) ? _engine.stepElapsedMs * 1000 / stepDur : 0;
+
+        Theme.centerText(dc, Theme.px(dc, 34), Theme.label(), Theme.SOFT, Theme.clock());
+        var title = counting ? "Get ready" : ((ex != null) ? ex[ExerciseLibrary.F_NAME] : "");
+        Theme.fitLine(dc, Theme.px(dc, 54), title, Theme.title(), Theme.body(), safe, Theme.GREEN);
+
+        var remainingStep = (_engine.stepRemainingMs() + 999) / 1000;
+        var sessionLeft = _engine.plannedSeconds() - _engine.activeMs / 1000;
 
         if (counting) {
-            heroText(dc, 114, ((_engine.countdownMs + 999) / 1000).toString(), heroColor);
-            statusRow(dc, paused ? "PAUSED" : "START TO PAUSE", paused ? Theme.AMBER : Theme.GREY);
-            bottom(dc, "STEPS", steps.size().toString(), "TOTAL", Hud.mmss(_engine.plannedSeconds()));
+            Hud.segmentRing(dc, ringCy, [1], 0, 0, Hud.RING_R, Hud.RING_PEN, ringColor);
+            Theme.centerText(dc, Theme.px(dc, 128), Theme.label(), Theme.GREY, "STARTS IN");
+            Theme.centerText(dc, Theme.px(dc, 150), Theme.hero(), heroColor,
+                ((_engine.countdownMs + 999) / 1000).toString());
+            var first = _engine.currentExercise();
+            stateLine(dc, paused ? "PAUSED" : ((first != null) ? first[ExerciseLibrary.F_NAME] : ""),
+                paused ? Theme.AMBER : Theme.GREY);
+            infoRow(dc, Icons.CLOCK, Hud.mmss(_engine.plannedSeconds()));
+            Hud.segmentBar(dc, Theme.px(dc, 336), Theme.px(dc, 56), barWeights(), 0, 0);
             return;
         }
         if (ex == null) {
             return;
         }
 
-        var remainingStep = (_engine.stepRemainingMs() + 999) / 1000;
-        var sessionLeft = _engine.plannedSeconds() - _engine.activeMs / 1000;
-
-        if (ex[ExerciseLibrary.F_TYPE] == Models.TYPE_BREATHING) {
-            var pattern = ex[ExerciseLibrary.F_PATTERN];
+        if (breathing) {
             var phase = _engine.breathingPhase();
             var remainMs = BreathingCalculator.phaseRemainingMs(pattern, _engine.stepElapsedMs);
-            drawPhaseRing(dc, pattern, phase, remainMs);
-            var words = ["INHALE", "HOLD", "EXHALE", "HOLD"];
-            Theme.centerText(dc, Theme.px(dc, 117), Theme.title(), paused ? Theme.GREY : Theme.MINT,
-                (phase == null) ? "" : words[phase]);
+            var phaseMs = (phase == null) ? 0 : pattern[phase] * 1000;
+            var phasePermille = (phaseMs > 0 && remainMs != null) ? (phaseMs - remainMs) * 1000 / phaseMs : 0;
+            Hud.segmentRing(dc, ringCy, pattern, (phase == null) ? 0 : phase, phasePermille,
+                Hud.RING_R, Hud.RING_PEN, ringColor);
+            if (phase == 0 || phase == 2) {
+                Icons.draw(dc, (phase == 0) ? Icons.UP : Icons.DOWN, Theme.cx(dc), Theme.px(dc, 120), Theme.px(dc, 10),
+                    paused ? Theme.GREY : Theme.GREEN);
+            }
+            var words = ["Inhale", "Hold", "Exhale", "Hold"];
+            Theme.centerText(dc, Theme.px(dc, 132), Theme.title(), Theme.WHITE, (phase == null) ? "" : words[phase]);
             var phaseSec = ((remainMs == null) ? 0 : remainMs + 999) / 1000;
-            heroText(dc, 134, phaseSec.format("%02d"), heroColor);
-            var cycles = _engine.cycles;
-            var cur = BreathingCalculator.completedCycles(pattern, _engine.stepElapsedMs);
-            if (cur != null) {
-                cycles += cur;
-            }
-            stateRow(dc, st, remainingStep,
-                "PATTERN " + pattern[0] + "-" + pattern[1] + "-" + pattern[2] + "-" + pattern[3]);
-            bottom(dc, "CYCLES", cycles.format("%02d"), "LEFT", Hud.mmss(sessionLeft));
-        } else {
-            heroText(dc, 114, Hud.mmss(remainingStep), heroColor);
-            var side = _engine.currentSide();
-            var typeLabel = typeName(ex[ExerciseLibrary.F_TYPE]);
-            if (side != null) {
-                typeLabel = side.equals(Models.TAG_LEFT) ? "LEFT SIDE" : "RIGHT SIDE";
-            }
-            Theme.centerText(dc, Theme.px(dc, 208), Theme.label(), (side != null) ? Theme.MINT : Theme.SAGE, typeLabel);
+            Theme.centerText(dc, Theme.px(dc, 162), Theme.hero(), heroColor, phaseSec.toString());
             stateRow(dc, st, remainingStep, ex[ExerciseLibrary.F_CUE]);
-            bottom(dc, "LEFT", Hud.mmss(sessionLeft), "DONE", _engine.progressPercent().toString() + "%");
+            infoRow(dc, Icons.LUNGS, pattern[0].toString() + "-" + pattern[1] + "-" + pattern[2] + "-" + pattern[3]);
+        } else {
+            Hud.segmentRing(dc, ringCy, [1], 0, stepPermille, Hud.RING_R, Hud.RING_PEN, ringColor);
+            Theme.centerText(dc, Theme.px(dc, 128), Theme.label(), Theme.GREEN, typeName(ex[ExerciseLibrary.F_TYPE]));
+            Theme.centerText(dc, Theme.px(dc, 150), Theme.hero(), heroColor, Hud.mmss(remainingStep));
+            var side = _engine.currentSide();
+            if (side != null) {
+                Theme.centerText(dc, Theme.px(dc, 218), Theme.label(), Theme.WHITE,
+                    side.equals(Models.TAG_LEFT) ? "LEFT" : "RIGHT");
+            }
+            stateRow(dc, st, remainingStep, ex[ExerciseLibrary.F_CUE]);
+            infoRow(dc, Icons.CLOCK, Hud.mmss(sessionLeft));
         }
+        Hud.segmentBar(dc, Theme.px(dc, 336), Theme.px(dc, 56), barWeights(), _engine.stepIndex, stepPermille);
         if (st == SessionEngine.AWAITING_NEXT) {
             Theme.startHint(dc);
         }
     }
 
-    hidden function heroText(dc as Graphics.Dc, y as Number, s as String, color as Number) as Void {
-        Theme.centerText(dc, Theme.px(dc, y), Theme.hero(), color, s);
+    hidden function barWeights() as Array {
+        var steps = _engine.steps;
+        var w = new [steps.size()];
+        for (var i = 0; i < steps.size(); i++) {
+            w[i] = steps[i][1];
+        }
+        return w;
     }
 
-    hidden function bottom(dc as Graphics.Dc, l1 as String, v1 as String, l2 as String, v2 as String) as Void {
-        Theme.divider(dc, Theme.px(dc, 260), Theme.SAFE_HUD, 0);
-        Hud.fieldPair(dc, 266, 285, 52, l1, v1, l2, v2, Theme.body());
-        Hud.hapticMark(dc, 324);
+    //! Info row: green icon + value on the left, step n/N on the right.
+    hidden function infoRow(dc as Graphics.Dc, iconId as Number, value as String) as Void {
+        var y = Theme.px(dc, 308);
+        var leftX = Theme.cx(dc) - Theme.px(dc, 70);
+        Icons.draw(dc, iconId, leftX, y + Theme.px(dc, 9), Theme.px(dc, 14), Theme.GREEN);
+        Theme.text(dc, leftX + Theme.px(dc, 12), y, Theme.body(), Theme.WHITE, value, Graphics.TEXT_JUSTIFY_LEFT);
+        var step = (_engine.stepIndex + 1).toString() + "/" + _engine.steps.size().toString();
+        Theme.text(dc, Theme.cx(dc) + Theme.px(dc, 74), y, Theme.body(), Theme.WHITE, step, Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
-    //! Row under the timer: PAUSED / START: NEXT / NEXT: X (last 10 s) / info.
+    //! State line: PAUSED / START: next / Next: X (last 10 s) / cue.
     hidden function stateRow(dc as Graphics.Dc, st as Number, remainingStep as Number, info as String) as Void {
         if (st == SessionEngine.PAUSED) {
-            statusRow(dc, "PAUSED", Theme.AMBER);
+            stateLine(dc, "PAUSED", Theme.AMBER);
         } else if (st == SessionEngine.AWAITING_NEXT) {
-            statusRow(dc, "START: NEXT", Theme.MINT);
+            stateLine(dc, "START: next exercise", Theme.GREEN);
         } else if (remainingStep <= 10 && nextName() != null) {
-            statusRow(dc, "NEXT: " + nextName(), Theme.MINT);
+            stateLine(dc, "Next: " + nextName(), Theme.GREEN);
         } else {
-            statusRow(dc, info, Theme.GREY);
+            stateLine(dc, info, Theme.GREY);
         }
     }
 
-    hidden function statusRow(dc as Graphics.Dc, s as String, color as Number) as Void {
-        Theme.fitLine(dc, Theme.px(dc, 228), s.toUpper(), Theme.label(), null, Theme.SAFE_HUD, color);
+    hidden function stateLine(dc as Graphics.Dc, s as String, color as Number) as Void {
+        Theme.fitLine(dc, Theme.px(dc, 286), s, Theme.small(), null, Theme.SAFE_HUD, color);
     }
 
     hidden function nextName() {
@@ -183,36 +194,8 @@ class SessionPlayerView extends WatchUi.View {
     }
 
     hidden function typeName(type as Number) as String {
-        var names = ["BREATHING", "HOLD POSITION", "REPEAT GENTLY", "ALTERNATE SIDES", "INTERVAL", "REST", "TRANSITION"];
+        var names = ["BREATHING", "HOLD", "REPEAT", "ALTERNATE", "INTERVAL", "REST", "TRANSITION"];
         return (type >= 0 && type < names.size()) ? names[type] : "";
-    }
-
-    //! Bezel: one segment per exercise, sized by duration.
-    hidden function drawStepRing(dc as Graphics.Dc) as Void {
-        var steps = _engine.steps;
-        var weights = new [steps.size()];
-        for (var i = 0; i < steps.size(); i++) {
-            weights[i] = steps[i][1];
-        }
-        var dur = _engine.stepDurationMs();
-        var permille = (dur > 0) ? (_engine.stepElapsedMs * 1000 / dur) : 0;
-        var active = _engine.isFinished() ? steps.size() : _engine.stepIndex;
-        if (_engine.state == SessionEngine.COUNTDOWN) {
-            permille = 0;
-        }
-        Hud.segmentRing(dc, weights, active, permille, Hud.BEZEL_R, 6,
-            (_engine.state == SessionEngine.PAUSED) ? Theme.AMBER : Theme.SAGE);
-    }
-
-    //! Inner ring for breathing: segments = phase lengths, active phase fills.
-    hidden function drawPhaseRing(dc as Graphics.Dc, pattern, phase, remainMs) as Void {
-        if (phase == null || remainMs == null) {
-            return;
-        }
-        var phaseMs = pattern[phase] * 1000;
-        var permille = (phaseMs > 0) ? (phaseMs - remainMs) * 1000 / phaseMs : 1000;
-        Hud.segmentRing(dc, pattern, phase, permille, Hud.PHASE_R, 8,
-            (_engine.state == SessionEngine.PAUSED) ? Theme.AMBER : Theme.MINT);
     }
 }
 

@@ -1,99 +1,102 @@
-# RESTORA Design System — "Calm Precision"
+# RESTORA Design System — Sport-tech Recovery
 
-A quiet interface for intentional recovery. The navigation is calm and minimal. The session HUD is data-first, like a modern running watch: hairline dividers, small uppercase labels, big monospaced numerals and segmented bezel rings. RESTORA should not look like a small copy of Garmin Connect.
+RESTORA uses running-watch instrumentation (structured data, segmented progress, high contrast) applied to recovery practice. It is a recovery app with a sport-tech character, not a soft meditation app.
 
-Code: `source/Utils/Theme.mc` (tokens), `source/UI/Hud.mc` (HUD primitives), `source/UI/Icons.mc` (module icons), `source/UI/MenuKit.mc` (lists). Mockups: `docs/mockups/`, rendered by `tools/mockups/`.
+Code: `source/Utils/Theme.mc` (tokens), `source/UI/Hud.mc` (ring and bar), `source/UI/Icons.mc` (vector icons), `source/UI/MenuKit.mc` (lists). Mockups: `docs/mockups/`, rendered by `tools/mockups/`.
 
-## Typography: Roboto Mono only
+## Typography: Roboto Condensed
 
-Every glyph is Roboto Mono. Mono digits keep timers from jittering as they count down. Connect IQ cannot load TTF files, so `tools/make_fonts.py` pre-renders bitmap fonts into `resources/fonts/`, anti-aliased.
+The type is condensed and firm, so more data fits across the round screen. Roboto Condensed digits are tabular, so timers do not jitter. Connect IQ cannot load TTF files, so `tools/make_fonts.py` pre-renders bitmap fonts from the variable font (`tools/fonts/RobotoCondensed-VF.ttf`, SIL OFL 1.1) into `resources/fonts/`.
 
-| Token | Weight | px | Use | Glyphs |
-|---|---|---|---|---|
-| `Theme.label()` | Medium | 17 | uppercase labels, hints, table rows | ASCII |
-| `Theme.body()` | Regular | 21 | exercise name, list rows | ASCII |
-| `Theme.title()` | Bold | 27 | titles, phase word, field values | ASCII |
-| `Theme.num()` | Bold | 44 | headline numbers (summary, week) | `0-9 : - / % .` |
-| `Theme.hero()` | Bold | 80 | main timer ("03:24" = 240 px, ~62% of the diameter) | `0-9 :` |
+| Token | Weight | px | Use |
+|---|---|---|---|
+| `Theme.label()` | Medium | 15 | small UPPERCASE labels (`STARTS IN`, `SESSIONS`) |
+| `Theme.small()` | Regular | 17 | subtitles, cues, table rows |
+| `Theme.body()` | Medium | 20 | list names, info row, clock |
+| `Theme.title()` | Bold | 24 | titles, phase word, metric values, pills |
+| `Theme.num()` | Bold | 40 | headline numbers (digits only) |
+| `Theme.hero()` | Bold | 60 | timer inside the HUD ring (digits only) |
 
-The large fonts carry only digits, to save memory. `Theme.releaseLarge()` drops them after leaving the session screens. Roboto Mono is under the SIL OFL 1.1 licence (`tools/fonts/OFL.txt`).
+The text fonts include `·`, `↑` and `↓`. Names are in sentence case ("Leg Relief"); small labels are in UPPERCASE.
 
-Inter is the brand typeface for marketing material such as the store listing and slides. It is not used on the watch, which keeps a single font family.
-
-## Colour
+## Colour (AMOLED black, one green accent)
 
 | Token | Hex | Role |
 |---|---|---|
-| `BG` | `#000000` | Canvas. AMOLED pixels are off, which saves battery |
-| `DEEP` | `#142A22` | Deep Forest: focused row surface |
-| `SURFACE` | `#243F33` | Forest: inactive ring segments, bars |
-| `SAGE` | `#8FAF96` | Accent: labels, module name, active segment |
-| `MINT` | `#C7DCC9` | Highlight: completed, active phase, START hint, ON |
-| `IVORY` | `#F1EEE4` | Primary text and numbers |
-| `GREY` | `#77847B` | Secondary text, field labels |
-| `LINE` | `#2C3631` | Hairline dividers |
-| `AMBER` | `#D9A441` | Paused |
-| `ORANGE` / `RED` | `#E08A4F` / `#D9706A` | Warning / error |
-
-There is one identity across all modules, with no colour per module. Modules are told apart by icon and name.
+| `BG` | `#000000` | Canvas. AMOLED pixels are off |
+| `SURFACE` | `#17211B` | Focused row, pills |
+| `TRACK` | `#26302A` | Ring and bar track, inactive segments |
+| `LINE` | `#2A322D` | Hairlines |
+| `GREEN` | `#4FC97A` | Accent: active state, progress, HUD title, focused icon, values that are on |
+| `GREEN_DIM` | `#2C6B45` | Secondary green (module share) |
+| `WHITE` | `#F2F3EF` | Primary text and numbers |
+| `SOFT` | `#C9CEC9` | Unfocused names and icons |
+| `GREY` | `#8A918C` | Labels, secondary text |
+| `AMBER` | `#E2A93B` | Paused |
+| `RED` | `#E06C61` | Error |
 
 ## Layout grid and safe circles
 
-All layouts are specified on a **390 px grid** (the FR165 screen) and scaled with `Theme.px()`. Content never crosses a **safe circle**, so nothing presses against the round bezel:
+All layouts use a **390 px grid** (FR165), scaled with `Theme.px()`. Content stays inside a **safe circle**:
 
-| Screen | Safe radius | Why |
-|---|---|---|
-| Session HUD | **160 px** | the bezel ring (r190) and breathing ring (r177) need ≥ 13 px of air |
-| Detail, summary, history | **170 px** | only the START hint sits on the bezel |
-| Menus | **160 px** | `MenuMask` blacks out everything outside r160, so rows never appear cut by the bezel |
+| Screen | Safe radius |
+|---|---|
+| Session HUD | **160 px** |
+| Detail, summary, history | **170 px** |
+| Menus | **164 px**. `MenuMask` also blacks out y < 62 and y > 316 |
 
-Rules:
-- Line widths come from the safe circle at that height (`Theme.lineWidth`, `Theme.safeHalf`). Text that is too wide first drops to a smaller font (`Theme.fitLine`), and only then is cut with `.`.
-- Exercise names are at most 22 characters and cues at most 26, so neither is cut. `testContentFitsHud` checks this.
-- Menu rows are tall (96 / 104 px). Only the focused row and one neighbour on each side show, so a list never shows a row half-cut at the edge. If a name does not fit next to its value, the value moves to the sub line.
-- `tools/mockups/` runs an automatic **layout check**. It measures the ink box of every text and icon, then reports any box outside the safe circle and any two boxes that overlap. `node tools/mockups/render.js` must print `layout check: no issues`. Add `?debug=1` to the HTML to see the boxes.
+- Line widths come from the safe circle at that height. Text that is too wide drops to a smaller font, and only then is cut (`Theme.fitLine`).
+- Exercise names are at most 22 characters and cues at most 26 (`testContentFitsHud`).
+- `node tools/mockups/render.js` runs the **layout check**. It flags any ink box outside the safe circle, any box touching the HUD ring, and any two boxes that overlap. It must print `layout check: no issues`.
 
-## Session HUD
+## Screens
+
+### Home and lists (`MenuKit`)
+
+- Header: green leaf logo, **RESTORA**, `RECOVERY COMPANION`.
+- Rows are 88 px: an icon (x 84), the name, a grey subtitle, and a chevron or a value on the right.
+- The focused row sits on a `SURFACE` rounded card (x 48–342) with a green bar on the left; its name is bold and its icon is green.
+- The bands and the circle mask show either the title or the focused row with one neighbour on each side. No row is ever half-cut by the bezel.
+
+### Session HUD
 
 ```
-   ╭─ bezel r190: one segment per exercise ─╮   ╭─ r177: breathing phases ─╮
-    56  STEP 04/05               label, sage
-    79  LEGS UP THE WALL         body (drops to label if long)
-   114  ─────────────            hairline, spans r160
-   117  INHALE                   title, mint (breathing only)
-   114  03:24                    hero 80 px (breathing: phase seconds at 134)
-   208  HOLD POSITION / RIGHT SIDE
-   228  cue | NEXT: X (last 10 s) | PAUSED | START: NEXT
-   260  ─────────────
-   266  LEFT │ DONE              label
-   285  04:24 │ 56%              body
-   324  haptic mark (when haptics are on)
+    34  10:47                         clock
+    54  Legs Up the Wall              exercise, green
+        ╭──── ring r88 @ y186 ────╮   breathing: one segment per phase, active fills
+        │   ▲  Inhale / HOLD      │   other: one ring = exercise progress
+        │      4  /  03:24        │   timer 60 px
+        │      RIGHT              │   side for alternating exercises
+        ╰─────────────────────────╯
+   286  cue | Next: X (last 10 s) | PAUSED (amber) | START: next exercise
+   308  ⌚ 04:24          4/5          icon + pattern or session time left, step
+   336  ▬▬ ▬ ▬ ▬▬▬▬▬ ▬               segmented bar, one segment per exercise
 ```
 
-- **Bezel ring** (6 px): the segments before the current one are mint, the current one fills in sage (amber when paused), and the later ones are forest. There is a 3° gap between segments.
-- **Breathing ring** (8 px): one segment per phase, sized by phase length, so 4-7-8 looks different from 4-4-4-4. Zero-length phases are skipped. The active phase fills in mint.
-- **NEXT line**: in the last 10 s of an exercise, the cue line changes to `NEXT: <exercise>` in mint.
-- **Paused**: the timer turns grey, the state line shows `PAUSED` in amber, and the active ring segment turns amber.
+When paused, the active segment and the state line turn amber and the timer turns grey.
 
-## Navigation
+### Summary
 
-- Custom-drawn lists (`CustomMenu`) so lists can use Roboto Mono and icons. The focused row is 104 px, on a Deep Forest rounded surface (x 55–335, always inside r160) with a mint marker bar, and shows its subtitle.
-- **Button-first**: START selects, starts and pauses; DOWN skips; BACK goes back or asks to end the session. A short mint arc at the 2 o'clock bezel position marks the START button wherever START has a meaning.
+- A check mark in a circle (green when completed, amber when ended early), **Session complete**, then the session name and data source.
+- Three metric rows, each an icon followed by a bold value over a grey label:
+  - Duration.
+  - Breathing cycles, leg elevation or exercises, whichever fits the session.
+  - HR change, marked `Garmin`, or completion when there is no HR reading.
+- A **Done** pill and the START hint on the bezel.
+
+### History
+
+- Page 1: a 2 × 2 grid of green 40 px numbers (sessions, minutes, modules, day streak), the module-share bar, and the completion line.
+- Page 2: a label/value table.
+- Both pages are labelled `RESTORA CALC`.
+
+## Interaction
+
+- **Button-first**: START selects, starts and pauses; DOWN skips; BACK goes back or asks to end the session.
+- A green arc at the 2 o'clock bezel position marks START wherever START has a meaning.
 - Any session is at most 3 presses from Home.
 
-## Module icons (vector, `Icons.mc`)
+## Icons (`Icons.mc`)
 
-| Module | Motif | Character |
-|---|---|---|
-| BREATHE | wind lines with curls | flow |
-| MIND | concentric rings | stillness |
-| CIRCULATE | two flowing sine lines | circulation |
-| MOBILITY | rising diagonal strokes + dot | movement |
-| SLEEP | crescent | rest |
-| RECOVER | leaf with midrib | restoration |
-
-## Rules
-
-- One main piece of information at a time. Avoid paragraphs; long text is cut to fit the round screen's chord at that height (`Theme.fit`, `Theme.chordHalf`).
-- Every number shows its source (`GARMIN` / `RESTORA` calc). Missing data shows as `--`, never as an estimate.
-- Motion is slow: the screen redraws once per second, with no continuous animation.
+- **Modules**: wind curls (Breathe), concentric rings (Mind), three waves (Circulate), runner (Mobility), crescent (Sleep), leaf (Recover, also the logo).
+- **Metrics and controls**: lungs, clock, heart, check, chevron, phase markers ▲ and ▼, play, history bars, settings.

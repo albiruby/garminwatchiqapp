@@ -5,18 +5,18 @@ import Toybox.WatchUi;
 //! Any session is reachable in <= 3 presses: module -> session -> START.
 module HomeMenu {
     function build() as WatchUi.CustomMenu {
-        var menu = MenuKit.newMenu("RESTORA");
+        var menu = MenuKit.newMenu("RESTORA", "RECOVERY COMPANION", true);
         var lastId = HistoryRepository.lastSessionId();
         var last = SessionLibrary.get(lastId);
         if (last != null) {
-            menu.addItem(new RowItem(:continue, "CONTINUE", last[SessionLibrary.F_NAME].toUpper() + "  "
-                + Hud.mmss(SessionLibrary.totalSeconds(last)), RowItem.ICON_PLAY, null));
+            menu.addItem(new RowItem(:continue, "Continue", last[SessionLibrary.F_NAME] + " · "
+                + RecordUtil.toMinutes(SessionLibrary.totalSeconds(last)).toString() + " min", Icons.PLAY, null));
         }
         for (var c = 0; c < Models.CAT_COUNT; c++) {
-            menu.addItem(new RowItem(c, Models.categoryName(c), Models.categorySubtitle(c).toUpper(), c, null));
+            menu.addItem(new RowItem(c, Models.categoryName(c), Models.categorySubtitle(c), c, null));
         }
-        menu.addItem(new RowItem(:history, "HISTORY", "THIS WEEK", RowItem.ICON_HISTORY, null));
-        menu.addItem(new RowItem(:settings, "SETTINGS", "HAPTICS, COUNTDOWN", RowItem.ICON_SETTINGS, null));
+        menu.addItem(new RowItem(:history, "History", "This week", Icons.HISTORY, null));
+        menu.addItem(new RowItem(:settings, "Settings", "Haptics, countdown", Icons.SETTINGS, null));
         return menu;
     }
 }

@@ -57,7 +57,7 @@ module Models {
     const SECONDS_PER_DAY = 86400;
 
     function categoryName(cat as Number) as String {
-        var names = ["BREATHE", "MIND", "CIRCULATE", "MOBILITY", "SLEEP", "RECOVER"];
+        var names = ["Breathe", "Mind", "Circulate", "Mobility", "Sleep", "Recover"];
         if (cat >= 0 && cat < names.size()) {
             return names[cat];
         }
@@ -65,7 +65,7 @@ module Models {
     }
 
     function categorySubtitle(cat as Number) as String {
-        var names = ["Breathing", "Meditation", "Leg & circulation", "Stretch & move", "Wind down", "Post-activity"];
+        var names = ["Calm your breath", "Meditate & focus", "Legs & circulation", "Stretch & move", "Wind down", "Post-activity"];
         if (cat >= 0 && cat < names.size()) {
             return names[cat];
         }

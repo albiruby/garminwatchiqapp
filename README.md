@@ -28,7 +28,7 @@ source/
   Data/                Models, HistoryRepository (Storage, 100 records), SettingsRepository (Properties)
   Sensors/             SensorManager, HeartRateProvider, SensorAvailability (all optional)
   Calculation/         Calculation Engine (pure, unit-tested) — see docs/CALCULATION_ENGINE.md
-  Utils/               TimeFormatter, Theme (palette, Roboto Mono fonts, layout helpers)
+  Utils/               TimeFormatter, Theme (palette, Roboto Condensed fonts, layout helpers)
   Tests/               (:test) unit tests
 ```
 
@@ -67,9 +67,9 @@ Each session shows a safety note. Elevation and inversion sessions carry a speci
 
 ## Design
 
-The design language is "Calm Precision", using Roboto Mono throughout and a data-first sports-watch HUD. See `docs/DESIGN_SYSTEM.md`.
+The design is a sport-tech recovery look: Roboto Condensed, AMOLED black, one green accent, a segmented progress ring and bar, and safe-circle layouts. See `docs/DESIGN_SYSTEM.md`.
 
-- Fonts: `python3 tools/make_fonts.py` regenerates `resources/fonts/` from `tools/fonts/RobotoMono-*.ttf` (SIL OFL).
-- Mockups: `node tools/mockups/render.js` renders `docs/mockups/` from `tools/mockups/restora_mockups.html`. The mockups use the same per-mille layout, palette, font metrics, ring geometry and icons as the Monkey C views. They are not simulator screenshots: CustomMenu scrolling is approximated and the data is illustrative.
+- Fonts: `python3 tools/make_fonts.py` regenerates `resources/fonts/` from `tools/fonts/RobotoCondensed-VF.ttf` (SIL OFL).
+- Mockups: `node tools/mockups/render.js` renders `docs/mockups/` from `tools/mockups/restora_mockups.html`. The mockups use the same per-mille layout, palette, font metrics, ring geometry and icons as the Monkey C views. They are not simulator screenshots: CustomMenu scrolling is approximated and the data is illustrative. The renderer also runs a layout check (safe circle, ring clearance, overlaps).
 
 ![RESTORA UI mockups](docs/mockups/restora-ui-mockups.png)
