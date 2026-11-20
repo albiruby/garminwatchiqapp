@@ -441,12 +441,12 @@ def bust_pose(tilt=0.0, ll=0.0, lr=0.0):
 
 def neck_side_poses():
     # Front view: ear toward the shoulder; the opposite shoulder stays down.
-    return [bust_pose(), bust_pose(tilt=30.0, ll=0.0, lr=-1.0)]
+    return [bust_pose(), bust_pose(tilt=28.0, ll=0.0, lr=-0.6)]
 
 
 def shoulder_roll_poses():
     # Front view: shoulders lift toward the ears, then roll back and down.
-    return [bust_pose(), bust_pose(ll=7.0, lr=7.0), bust_pose(ll=3.0, lr=3.0)]
+    return [bust_pose(), bust_pose(ll=4.5, lr=4.5), bust_pose(ll=2.0, lr=2.0)]
 
 
 def ankle_circle_poses():
@@ -672,16 +672,16 @@ ANIMS = {
     "neck_side": dict(
         type=A_HOLD, view=VIEW_BUST, poses=neck_side_poses(),
         seq=[[0, 1, 2200, EASE_IN_OUT_SINE, "TILT"]], loop=False, holdLabel="HOLD",
-        cam=[0.0, 32.0, 1.05], props=0, highlight=2, cue="Ear toward shoulder, soft",
-        arrows=[[ARROW_ARC, 0.0, 44.0, 26.0, 70.0, 104.0, 0]],
+        cam=[0.0, 19.0, 1.25], props=0, highlight=2, cue="Ear toward shoulder, soft",
+        arrows=[[ARROW_ARC, 0.0, 31.0, 19.0, 72.0, 104.0, 0]],
     ),
     "shoulder_rolls": dict(
         type=A_REPETITION, view=VIEW_BUST, poses=shoulder_roll_poses(),
         seq=[[0, 1, 1100, EASE_IN_OUT_SINE, "UP"], [1, 2, 900, EASE_IN_OUT_SINE, "BACK"],
              [2, 0, 900, EASE_IN_OUT_SINE, "DOWN"]], loop=True,
-        cam=[0.0, 33.0, 0.97], props=0, highlight=2, cue="Roll shoulders back slowly",
-        arrows=[[ARROW_ARC, -21.0, 38.0, 6.0, 270.0, 90.0, 0], [ARROW_ARC, -21.0, 38.0, 6.0, 90.0, 0.0, 1],
-                [ARROW_ARC, -21.0, 38.0, 6.0, 0.0, -90.0, 2]],
+        cam=[0.0, 19.0, 1.25], props=0, highlight=2, cue="Roll shoulders back slowly",
+        arrows=[[ARROW_ARC, -14.5, 28.5, 4.5, 270.0, 90.0, 0], [ARROW_ARC, -14.5, 28.5, 4.5, 90.0, 0.0, 1],
+                [ARROW_ARC, -14.5, 28.5, 4.5, 0.0, -90.0, 2]],
     ),
     "ankle_circles": dict(
         type=A_REPETITION, poses=ankle_circle_poses(),
@@ -771,7 +771,7 @@ def validate():
     for name, a in ANIMS.items():
         if a.get("view") == VIEW_BUST:
             for p in a["poses"]:
-                if abs(p[0]) > 40 or not (-2 <= p[1] <= 9) or not (-2 <= p[2] <= 9):
+                if abs(p[0]) > 40 or not (-2 <= p[1] <= 6) or not (-2 <= p[2] <= 6):
                     problems.append("%s: bust pose out of range %s" % (name, p[:3]))
             continue
         frames = [sample(a, t)[0] for t in range(0, cycle_ms(a) + 1, 50)] + a["poses"]
@@ -872,84 +872,82 @@ class Ops:
 # [1] left shoulder lift, [2] right shoulder lift (figure units).
 # Same numbers as FigureRenderer.drawBust in Monkey C.
 # ---------------------------------------------------------------------------
-B_SH_Y, B_SH_X, B_NECK_PIVOT, B_HEAD_R = 40.0, 19.0, 44.0, 8.5
-B_ARM_LEN, B_ARM_W, B_CHEST_X = 30.0, 3.4, 14.0
+# Front figure, hip up, built like the side figure: tapered limb segments with
+# rounded joints, a torso that narrows to the waist, neck, skull and jaw.
+# Units match the side skeleton (torso 30, upper arm 16, forearm 15).
+# Pose reuse: [0] head tilt (deg, + = toward screen left), [1] left / [2] right
+# shoulder lift. 3/4 view: the figure's right side (x > 0) is foreshortened
+# and drawn darker. FigureRenderer.drawFront mirrors this line for line.
+F_NEAR_K, F_FAR_K = 0.95, 0.62
+F_TORSO_Y = [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 29.0]
+F_TORSO_W = [7.4, 6.9, 6.5, 6.8, 7.9, 8.9, 9.0]
+F_TORSO_LIFT = [0.0, 0.0, 0.0, 0.0, 0.2, 0.6, 1.0]
 
 
-def bust_rot(x, y, deg):
+def f_proj(x, y):
+    return (x * (F_FAR_K if x > 0 else F_NEAR_K), y)
+
+
+def f_rot(x, y, deg, py):
     c, sn = math.cos(d2r(deg)), math.sin(d2r(deg))
-    return (x * c - (y - B_NECK_PIVOT) * sn, B_NECK_PIVOT + x * sn + (y - B_NECK_PIVOT) * c)
+    return (x * c - (y - py) * sn, py + x * sn + (y - py) * c)
 
 
-# Outline tables: [x, y, lift, k]. lift: 0 = left shoulder lift, 1 = right,
-# 2 = shrug (0.8 * max lift), 3 = fixed. y += k * lift. NECK and HEAD also
-# rotate by the head tilt around (0, B_NECK_PIVOT). Shared with Monkey C
-# through FigureShapes.mc (generated).
-def _mirror(side):
-    out = []
-    for x, y, lift, k in reversed(side):
-        out.append([-x, y, {0: 1, 1: 0}.get(lift, lift), k])
-    return out
+def f_capsule(ax, ay, bx, by, w0, w1):
+    dx, dy = bx - ax, by - ay
+    ln = math.hypot(dx, dy) or 1.0
+    nx, ny = -dy / ln, dx / ln
+    poly = [(ax + nx * w0, ay + ny * w0), (bx + nx * w1, by + ny * w1),
+            (bx - nx * w1, by - ny * w1), (ax - nx * w0, ay - ny * w0)]
+    return poly, [(ax, ay, w0), (bx, by, w1)]
 
 
-_TORSO_L = [[-4.6, 46.0, 2, 1.0], [-9.5, 44.2, 0, 0.5], [-14.0, 42.6, 0, 1.0], [-17.5, 41.6, 0, 1.0],
-            [-20.5, 39.8, 0, 1.0], [-22.2, 36.5, 0, 1.0], [-22.4, 32.0, 0, 1.0], [-20.6, 28.2, 0, 0.6],
-            [-16.8, 27.0, 0, 0.3], [-16.2, 18.0, 3, 0.0], [-14.4, 9.0, 3, 0.0], [-13.2, 2.0, 3, 0.0],
-            [-13.6, 0.0, 3, 0.0]]
-BUST_TORSO = _TORSO_L + _mirror(_TORSO_L)
-_ARM_L = [[-23.9, 34.0, 0, 1.0], [-25.0, 25.0, 0, 0.7], [-24.6, 15.0, 0, 0.4], [-24.2, 6.0, 0, 0.2],
-          [-23.4, 1.0, 3, 0.0], [-20.4, 1.0, 3, 0.0], [-20.0, 6.0, 0, 0.2], [-19.7, 15.0, 0, 0.4],
-          [-19.4, 24.0, 0, 0.7], [-19.8, 30.5, 0, 1.0]]
-BUST_ARM_L = _ARM_L
-BUST_ARM_R = _mirror(_ARM_L)
-_TRAP_L = [[-4.6, 46.0, 2, 1.0], [-9.5, 44.2, 0, 0.5], [-14.0, 42.6, 0, 1.0], [-17.5, 41.6, 0, 1.0],
-           [-15.0, 39.0, 0, 1.0], [-9.0, 40.6, 2, 0.5], [-4.2, 41.6, 2, 1.0]]
-BUST_TRAP_L = _TRAP_L
-BUST_TRAP_R = _mirror(_TRAP_L)
-BUST_NECK = [[-4.4, 42.0, 2, 1.0], [-3.5, 47.0, 2, 1.0], [-3.3, 53.0, 2, 1.0], [3.3, 53.0, 2, 1.0],
-             [3.5, 47.0, 2, 1.0], [4.4, 42.0, 2, 1.0]]
-BUST_HEAD = []
-for _i in range(20):
-    _a = 2 * math.pi * _i / 20
-    _sx, _sy = math.cos(_a), math.sin(_a)
-    _taper = 1.0 - 0.22 * max(0.0, -_sy)            # narrower jaw and chin
-    BUST_HEAD.append([round(7.0 * _sx * _taper, 2), round(60.5 + 9.0 * _sy, 2), 2, 1.0])
-
-
-# 3/4 view: the figure turns toward screen left; its right side (x > 0) is
-# foreshortened. Applied after the head tilt.
-B_NEAR_K, B_FAR_K = 0.95, 0.6
-BUST_NOSE = [[-6.2, 62.0, 2, 1.0], [-8.6, 59.2, 2, 1.0], [-6.4, 57.4, 2, 1.0]]
-
-
-def bust_proj(pt):
-    x, y = pt
-    return (x * (B_FAR_K if x > 0 else B_NEAR_K), y)
-
-
-def bust_lift(pt, ll, lr):
-    lift = {0: ll, 1: lr, 2: 0.8 * max(ll, lr)}.get(pt[2], 0.0)
-    return pt[0], pt[1] + pt[3] * lift
-
-
-def bust_shapes(p):
-    """(kind, part, points) in figure units. part 1 = body/arms, 2 = neck and trapezius, 0 = head."""
+def front_shapes(p):
+    """[(colour_key, kind, data)] in figure units after 3/4 projection.
+    colour_key: 'far', 'body' (part 1), 'neck' (part 2), 'head'."""
     tilt, ll, lr = p[0], p[1], p[2]
+    shrug = 0.8 * max(ll, lr)
     out = []
 
-    def flat(table):
-        return [bust_proj(bust_lift(q, ll, lr)) for q in table]
+    def add_capsule(key, ax, ay, bx, by, w0, w1):
+        poly, caps = f_capsule(ax, ay, bx, by, w0, w1)
+        out.append((key, "poly", [f_proj(*q) for q in poly]))
+        for cx_, cy_, r in caps:
+            out.append((key, "circle", f_proj(cx_, cy_) + (r * (F_FAR_K + 0.2 if cx_ > 0 else 1.0),)))
 
-    def turned(table):
-        return [bust_proj(bust_rot(*bust_lift(q, ll, lr), tilt)) for q in table]
-    out.append(("far", 1, flat(BUST_ARM_R)))          # far arm, behind and darker
-    out.append(("poly", 1, flat(BUST_TORSO)))
-    out.append(("poly", 1, flat(BUST_ARM_L)))
-    out.append(("poly", 2, turned(BUST_NECK)))
-    out.append(("trap", 2, flat(BUST_TRAP_L)))
-    out.append(("trap", 2, flat(BUST_TRAP_R)))
-    out.append(("poly", 0, turned(BUST_HEAD)))
-    out.append(("poly", 0, turned(BUST_NOSE)))
+    def arm(side, lift, key):
+        sx_ = side
+        add_capsule(key, sx_ * 14.0, -1.5 + 0.3 * lift, sx_ * 14.1, -6.0 + 0.3 * lift, 1.5, 0.8)    # hand
+        add_capsule(key, sx_ * 13.4, 12.5 + 0.6 * lift, sx_ * 14.0, -1.5 + 0.3 * lift, 2.0, 1.4)    # forearm
+        add_capsule(key, sx_ * 11.4, 27.5 + lift, sx_ * 13.4, 12.5 + 0.6 * lift, 2.6, 1.9)          # upper arm
+        c = f_proj(sx_ * 10.6, 27.4 + lift)
+        out.append((key, "circle", c + (3.4 * (F_FAR_K + 0.2 if side > 0 else 1.0),)))           # deltoid
+
+    arm(1, lr, "far")
+    # torso: waist to shoulders, then trapezius up to the neck
+    left = [(-F_TORSO_W[i], F_TORSO_Y[i] + F_TORSO_LIFT[i] * ll) for i in range(len(F_TORSO_Y))]
+    left += [(-9.0, 31.4 + ll), (-5.6, 32.6 + 0.6 * shrug), (-2.5, 33.4 + shrug)]
+    right = [(-x, y) for x, y in left]
+    right = [(x, y + (F_TORSO_LIFT[i] * (lr - ll) if i < len(F_TORSO_Y) else (lr - ll if i == len(F_TORSO_Y) else 0)))
+             for i, (x, y) in enumerate(right)]
+    out.append(("body", "poly", [f_proj(*q) for q in left + list(reversed(right))]))
+    # trapezius (highlight overlay)
+    for side, lift in ((-1, ll), (1, lr)):
+        trap = [(side * 2.5, 33.4 + shrug), (side * 5.6, 32.6 + 0.6 * shrug), (side * 9.0, 31.4 + lift),
+                (side * 9.4, 29.0 + lift), (side * 5.0, 30.0 + 0.6 * shrug), (side * 2.2, 30.6 + shrug)]
+        out.append(("trap", "poly", [f_proj(*q) for q in trap]))
+    arm(-1, ll, "body")
+    # neck, skull, jaw, nose - rotate with the head tilt around the neck base
+    py = 31.0 + shrug
+    n0, n1 = f_rot(0.0, py, tilt, py), f_rot(0.0, py + 6.0, tilt, py)
+    poly, caps = f_capsule(n0[0], n0[1], n1[0], n1[1], 2.4, 2.1)
+    out.append(("neck", "poly", [f_proj(*q) for q in poly]))
+    jaw = f_rot(-1.0, py + 8.2, tilt, py)
+    skull = f_rot(0.0, py + 11.5, tilt, py)
+    nose = f_rot(-5.4, py + 10.6, tilt, py)
+    out.append(("head", "circle", f_proj(*jaw) + (3.9,)))
+    out.append(("head", "circle", f_proj(*skull) + (6.0,)))
+    out.append(("head", "circle", f_proj(*nose) + (1.2,)))
     return out
 
 
@@ -963,12 +961,24 @@ def render_bust(a, t_ms, box, mirror, reduced):
         return (cx + m * (pt[0] - camx) * scale, cy - (pt[1] - camy) * scale)
     o = Ops()
     hl = a["highlight"]
-    for kind, part, data in bust_shapes(p):
-        on = bool(part and (hl & part))
-        if kind == "trap" and not on:
-            continue
-        col = FAR if kind == "far" else (GREEN if on else SOFT)
-        o.add("poly", col, [list(S(q)) for q in data])
+    for key, kind, data in front_shapes(p):
+        if key == "far":
+            col = SOFT                      # same tone as the near arm (front view)
+        elif key == "trap":
+            if not hl & 2:
+                continue
+            col = GREEN
+        elif key == "neck":
+            col = GREEN if hl & 2 else SOFT
+        elif key == "body":
+            col = GREEN if hl & 1 else SOFT
+        else:
+            col = SOFT
+        if kind == "poly":
+            o.add("poly", col, [list(S(q)) for q in data])
+        else:
+            c = S((data[0], data[1]))
+            o.add("circle", col, c[0], c[1], data[2] * scale)
     holding = (not a["loop"]) and t_ms >= cycle_ms(a)
     for ar in a.get("arrows", []):
         if not ((ar[-1] == ON_HOLD and holding) or (ar[-1] == seg and not holding)):
@@ -1247,17 +1257,6 @@ def gen_shapes():
              "    const TORSO_N = %d;" % TORSO_N,
              "    const TORSO_BACK = %s;" % arr(TORSO_BACK), "    const TORSO_FRONT = %s;" % arr(TORSO_FRONT),
              "    const HEAD_DRAW_R = %s;" % mc_num(HEAD_DRAW_R), "    const JAW_R = %s;" % mc_num(JAW_R),
-             "    //! Front-view bust outlines [x, y, lift, k] (see bust_shapes()).",
-             "    const BUST_TORSO = %s;" % bust_arr(BUST_TORSO),
-             "    const BUST_ARM_L = %s;" % bust_arr(BUST_ARM_L),
-             "    const BUST_ARM_R = %s;" % bust_arr(BUST_ARM_R),
-             "    const BUST_TRAP_L = %s;" % bust_arr(BUST_TRAP_L),
-             "    const BUST_TRAP_R = %s;" % bust_arr(BUST_TRAP_R),
-             "    const BUST_NECK = %s;" % bust_arr(BUST_NECK),
-             "    const BUST_HEAD = %s;" % bust_arr(BUST_HEAD),
-             "    const BUST_NOSE = %s;" % bust_arr(BUST_NOSE),
-             "    const BUST_NEAR_K = %s;" % mc_num(B_NEAR_K),
-             "    const BUST_FAR_K = %s;" % mc_num(B_FAR_K),
              "    //! Foot outline in the foot frame (x along ankle -> toe).",
              "    const FOOT_OUTLINE = [%s];" % foot,
              "}"]

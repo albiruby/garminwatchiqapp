@@ -151,60 +151,120 @@ class FigureRenderer {
     // Pose reuse: p[0] head tilt (deg), p[1] / p[2] left / right shoulder lift.
     // Mirrors bust_shapes() in tools/motion/motion_model.py.
     static const VIEW_BUST = 1;
-    static const B_PIVOT = 44.0;
 
-    hidden function bustPt(x, y, tilt) as Array {
-        var r = Math.toRadians(tilt);
-        var c = Math.cos(r);
-        var sn = Math.sin(r);
-        var dy = y - B_PIVOT;
-        return projPt(x * c - dy * sn, B_PIVOT + x * sn + dy * c);
-    }
+    // Front figure, hip up, built like the side figure (tapered segments with
+    // rounded joints). Mirrors front_shapes() in tools/motion/motion_model.py.
+    static const F_NEAR_K = 0.95;
+    static const F_FAR_K = 0.62;
+    static const F_TORSO_Y = [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 29.0];
+    static const F_TORSO_W = [7.4, 6.9, 6.5, 6.8, 7.9, 8.9, 9.0];
+    static const F_TORSO_LIFT = [0.0, 0.0, 0.0, 0.0, 0.2, 0.6, 1.0];
 
-    //! 3/4 view: the figure's right side (x > 0) is foreshortened.
-    hidden function projPt(x, y) as Array {
-        var k = (x > 0) ? FigureShapes.BUST_FAR_K : FigureShapes.BUST_NEAR_K;
+    //! 3/4 projection (figure's right side foreshortened) to screen px.
+    hidden function fp(x, y) as Array {
+        var k = (x > 0) ? F_FAR_K : F_NEAR_K;
         return [sx(x * k).toNumber(), sy(y).toNumber()];
     }
 
-    //! Outline point [x, y, lift, k] -> screen point, with shoulder lift and
-    //! (for neck and head) the head tilt. Mirrors bust_lift / bust_rot.
-    hidden function bustPoly(table as Array, ll, lr, tilt, rotate as Boolean) as Array {
-        var shrug = 0.8 * ((ll > lr) ? ll : lr);
-        var out = new [table.size()];
-        for (var i = 0; i < table.size(); i++) {
-            var q = table[i];
-            var lift = (q[2] == 0) ? ll : ((q[2] == 1) ? lr : ((q[2] == 2) ? shrug : 0.0));
-            var x = q[0];
-            var y = q[1] + q[3] * lift;
-            if (rotate) {
-                out[i] = bustPt(x, y, tilt);
-            } else {
-                out[i] = projPt(x, y);
-            }
+    hidden function fCircle(dc as Graphics.Dc, x, y, r) as Void {
+        var pt = fp(x, y);
+        var rr = (x > 0) ? r * (F_FAR_K + 0.2) : r;
+        dc.fillCircle(pt[0], pt[1], (rr * _scale).toNumber());
+    }
+
+    hidden function fCapsule(dc as Graphics.Dc, ax, ay, bx, by, w0, w1) as Void {
+        var dx = bx - ax;
+        var dy = by - ay;
+        var ln = Math.sqrt(dx * dx + dy * dy);
+        if (ln <= 0) {
+            ln = 1.0;
         }
-        return out;
+        var nx = -dy / ln;
+        var ny = dx / ln;
+        dc.fillPolygon([fp(ax + nx * w0, ay + ny * w0), fp(bx + nx * w1, by + ny * w1),
+            fp(bx - nx * w1, by - ny * w1), fp(ax - nx * w0, ay - ny * w0)]);
+        fCircle(dc, ax, ay, w0);
+        fCircle(dc, bx, by, w1);
+    }
+
+    hidden function fArm(dc as Graphics.Dc, side, lift) as Void {
+        fCapsule(dc, side * 14.0, -1.5 + 0.3 * lift, side * 14.1, -6.0 + 0.3 * lift, 1.5, 0.8);
+        fCapsule(dc, side * 13.4, 12.5 + 0.6 * lift, side * 14.0, -1.5 + 0.3 * lift, 2.0, 1.4);
+        fCapsule(dc, side * 11.4, 27.5 + lift, side * 13.4, 12.5 + 0.6 * lift, 2.6, 1.9);
+        fCircle(dc, side * 10.6, 27.4 + lift, 3.4);
+    }
+
+    hidden function fRot(x, y, tilt, py) as Array {
+        var r = Math.toRadians(tilt);
+        var c = Math.cos(r);
+        var sn = Math.sin(r);
+        return [x * c - (y - py) * sn, py + x * sn + (y - py) * c];
     }
 
     hidden function drawBust(dc as Graphics.Dc, p as Array) as Void {
         var tilt = p[0];
         var ll = p[1];
         var lr = p[2];
+        var shrug = 0.8 * ((ll > lr) ? ll : lr);
         var neckOn = (_highlight & 2) != 0;
-        dc.setColor(C_FAR, Graphics.COLOR_TRANSPARENT);
-        dc.fillPolygon(bustPoly(FigureShapes.BUST_ARM_R, ll, lr, tilt, false));   // far arm, behind
-        dc.setColor(color(1, C_NEAR), Graphics.COLOR_TRANSPARENT);
-        dc.fillPolygon(bustPoly(FigureShapes.BUST_TORSO, ll, lr, tilt, false));
-        dc.fillPolygon(bustPoly(FigureShapes.BUST_ARM_L, ll, lr, tilt, false));
-        dc.setColor(color(2, C_NEAR), Graphics.COLOR_TRANSPARENT);
-        dc.fillPolygon(bustPoly(FigureShapes.BUST_NECK, ll, lr, tilt, true));
-        if (neckOn) {
-            dc.fillPolygon(bustPoly(FigureShapes.BUST_TRAP_L, ll, lr, tilt, false));
-            dc.fillPolygon(bustPoly(FigureShapes.BUST_TRAP_R, ll, lr, tilt, false));
-        }
+        // far arm first (behind the torso), same tone as the near arm
         dc.setColor(C_NEAR, Graphics.COLOR_TRANSPARENT);
-        dc.fillPolygon(bustPoly(FigureShapes.BUST_HEAD, ll, lr, tilt, true));
-        dc.fillPolygon(bustPoly(FigureShapes.BUST_NOSE, ll, lr, tilt, true));
+        fArm(dc, 1, lr);
+        // torso: left edge up, trapezius to the neck, then the right side down
+        var n = F_TORSO_Y.size();
+        var pts = new [2 * (n + 3)];
+        var k = 0;
+        for (var i = 0; i < n; i++) {
+            pts[k] = fp(-F_TORSO_W[i], F_TORSO_Y[i] + F_TORSO_LIFT[i] * ll);
+            k++;
+        }
+        pts[k] = fp(-9.0, 31.4 + ll);
+        pts[k + 1] = fp(-5.6, 32.6 + 0.6 * shrug);
+        pts[k + 2] = fp(-2.5, 33.4 + shrug);
+        pts[k + 3] = fp(2.5, 33.4 + shrug);
+        pts[k + 4] = fp(5.6, 32.6 + 0.6 * shrug);
+        pts[k + 5] = fp(9.0, 31.4 + lr);
+        k += 6;
+        for (var i = n - 1; i >= 0; i--) {
+            pts[k] = fp(F_TORSO_W[i], F_TORSO_Y[i] + F_TORSO_LIFT[i] * lr);
+            k++;
+        }
+        dc.setColor(color(1, C_NEAR), Graphics.COLOR_TRANSPARENT);
+        dc.fillPolygon(pts);
+        if (neckOn) {
+            dc.setColor(Theme.GREEN, Graphics.COLOR_TRANSPARENT);
+            for (var sd = -1; sd <= 1; sd += 2) {
+                var lift = (sd < 0) ? ll : lr;
+                dc.fillPolygon([fp(sd * 2.5, 33.4 + shrug), fp(sd * 5.6, 32.6 + 0.6 * shrug), fp(sd * 9.0, 31.4 + lift),
+                    fp(sd * 9.4, 29.0 + lift), fp(sd * 5.0, 30.0 + 0.6 * shrug), fp(sd * 2.2, 30.6 + shrug)]);
+            }
+        }
+        dc.setColor(color(1, C_NEAR), Graphics.COLOR_TRANSPARENT);
+        fArm(dc, -1, ll);
+        // neck, jaw, skull, nose rotate with the head tilt around the neck base
+        var py = 31.0 + shrug;
+        var n1 = fRot(0.0, py + 6.0, tilt, py);
+        dc.setColor(neckOn ? Theme.GREEN : C_NEAR, Graphics.COLOR_TRANSPARENT);
+        var dx = n1[0];
+        var dy = n1[1] - py;
+        var ln = Math.sqrt(dx * dx + dy * dy);
+        var nx = -dy / ln;
+        var ny = dx / ln;
+        dc.fillPolygon([fp(nx * 2.4, py + ny * 2.4), fp(n1[0] + nx * 2.1, n1[1] + ny * 2.1),
+            fp(n1[0] - nx * 2.1, n1[1] - ny * 2.1), fp(-nx * 2.4, py - ny * 2.4)]);
+        dc.setColor(C_NEAR, Graphics.COLOR_TRANSPARENT);
+        var jaw = fRot(-1.0, py + 8.2, tilt, py);
+        var skull = fRot(0.0, py + 11.5, tilt, py);
+        var nose = fRot(-5.4, py + 10.6, tilt, py);
+        fHead(dc, jaw, 3.9);
+        fHead(dc, skull, 6.0);
+        fHead(dc, nose, 1.2);
+    }
+
+    //! Head parts keep their radius (not foreshortened), as in the preview.
+    hidden function fHead(dc as Graphics.Dc, c as Array, r) as Void {
+        var pt = fp(c[0], c[1]);
+        dc.fillCircle(pt[0], pt[1], (r * _scale).toNumber());
     }
 
     hidden function color(part as Number, base as Number) as Number {
