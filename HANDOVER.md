@@ -28,25 +28,31 @@ The user writes in Indonesian; reply in Indonesian.
 |---|---|
 | Calculation Engine (`source/Calculation/`) | done; unit tests written |
 | Session Engine (`source/Engine/SessionEngine.mc`) | done; state machine driven by real time (`System.getTimer` deltas); unit tests written |
-| Content: 27 exercises, 17 sessions (`source/Content/`) | done (seed set) |
-| UI: sport-tech style (Roboto Condensed, green accent, central ring HUD) | done |
-| Motion Engine + 3 exercise prototypes (Calf Stretch, Cat-Cow, Ankle Pumps) with anatomical figures | done; unit tests written |
-| **Compiled / run in the simulator** | **NEVER.** The cloud session had no Connect IQ SDK. This is the next step. |
+| Content: 32 exercises, 17 sessions (`source/Content/`) | done |
+| UI: sport-tech style (Oswald, green accent, central ring HUD, RESTORA logo) | done; checked in the simulator (Home, module lists, session detail, breathing and Calf Stretch HUD) |
+| Motion: 17 animated exercise figures (see `docs/mockups/motion-*.png`) | done; all poses pass `motion_model.py` validation |
+| Build | compiles for fr165 and fr165m; 38/38 unit tests pass; release package `bin/RESTORA.iq` builds |
+| Physical FR165 test, battery measurement | **not done** |
+
+Animated: calf_stretch, cat_cow, ankle_pumps, heel_raises, knee_bends (heel slides), childs_pose, legs_wall, legs_chair, seated_march, walk_cool, hamstring, quad_stretch, hip_flexor, knee_chest, hip_mobility (figure four), transition, relax (savasana). Breathing exercises use the breathing ring instead of a figure. Not yet animated: ankle_circles, thoracic_rot, neck_side, shoulder_rolls; these need a front or top view in the renderer.
+
+Build notes: `monkey.jungle` pins `base.sourcePath`/`resourcePath`, because the repo also holds other watch projects under `projects/`. Python 3.12 + Pillow is installed for the generators. `developer_key.der` is a local test key; use your permanent key for store uploads.
 
 ## Next steps (in order)
 
-1. **Build and test** with the Connect IQ SDK, then fix compile and type errors. Small API or syntax mistakes are likely, because none of this code has ever been compiled.
-   ```powershell
-   monkeyc -f monkey.jungle -d fr165 -o bin\restora-test.prg -y developer_key.der --unit-test
-   connectiq
-   monkeydo bin\restora-test.prg fr165 /t
-   monkeyc -f monkey.jungle -d fr165 -o bin\restora.prg -y developer_key.der
-   monkeydo bin\restora.prg fr165
-   ```
-   APIs most at risk of failing: `WatchUi.CustomMenu` with the `:foreground` / `:titleItemHeight` options, custom bitmap fonts (`resources/fonts/*.fnt`), `Dc.setAntiAlias`, `Dc.setClip`, `fillPolygon` with Number points, class `const` members, and dictionary literals with symbol keys.
-2. Check the three motion prototypes on the FR165 simulator: drawing, frame rate (125 ms frames while animating) and memory. Use the profiler.
-3. Once they are correct, add the other exercises. Each one is data only, added in `tools/motion/motion_model.py`; there is no per-exercise drawing code.
-4. Measure battery use and performance on the simulator or device.
+1. Sideload `bin\restora.prg` to a physical FR165 (copy to `GARMIN\APPS`), then check haptics, readability on AMOLED, buttons and battery during a 20-minute session.
+2. Go through every session in the simulator once (all 17), using the QA checklist in `docs/DESIGN_SYSTEM.md`.
+3. Add a front view to the figure renderer, then animate the upper-body exercises (neck, shoulders, arms, thoracic rotation, ankle circles) and the rest of the 42-movement library.
+4. Regenerate `docs/mockups/screen-*.png` (needs Playwright for `tools/mockups/render.js`); they still show Roboto.
+5. Store listing: screenshots, description, and the permanent signing key.
+
+```powershell
+monkeyc -f monkey.jungle -d fr165 -o bin\restora-test.prg -y developer_key.der --unit-test
+monkeydo bin\restora-test.prg fr165 /t
+monkeyc -f monkey.jungle -d fr165 -o bin\restora.prg -y developer_key.der
+monkeydo bin\restora.prg fr165
+monkeyc -f monkey.jungle -e -r -o bin\RESTORA.iq -y developer_key.der
+```
 
 ## Architecture (`source/`)
 

@@ -389,6 +389,38 @@ def knee_chest_poses():
     return [start, hold]
 
 
+def figure_four_poses():
+    # Lying on the back, far foot flat with the knee bent; the near ankle
+    # crosses over the far knee and the near knee opens out (figure four).
+    arms = dict(uan=-4, fan=-2, uaf=-4, faf=-2)
+
+    def base():
+        p = pose(x=0, y=SUPINE["y"], torso=180, head=178, ftf=FLAT_FOOT, **arms)
+        with_leg(p, "f", (30.0, ANKLE_H), bend=1)
+        return p
+    start = base()
+    with_leg(start, "n", (29.0, ANKLE_H), bend=1)
+    start[P_FTN] = FLAT_FOOT
+    hold = base()
+    kf = fk(hold)[J_KNEE_F]
+    with_leg(hold, "n", (kf[0] - 1.0, kf[1] + 4.5), bend=1)
+    hold[P_FTN] = hold[P_SHN] + NEUTRAL_ANKLE
+    return [start, hold]
+
+
+def transition_poses():
+    # Slow transition: from lying on the back, roll up to sitting with the
+    # hands beside the hips.
+    lie = pose(x=0, y=SUPINE["y"], torso=180, head=178, thn=0, shn=0, thf=0, shf=0,
+               ftn=NEUTRAL_ANKLE, ftf=NEUTRAL_ANKLE, uan=-4, fan=-2, uaf=-4, faf=-2)
+    # Arms stay low and forward the whole way (no swing through the floor):
+    # propped on the hands beside the hips, then hands resting on the thighs.
+    legs = dict(thn=0, shn=0, thf=0, shf=0, ftn=NEUTRAL_ANKLE, ftf=NEUTRAL_ANKLE)
+    prop = pose(x=0, y=5.3, torso=155, head=140, uan=-52, fan=-4, uaf=-54, faf=-6, **legs)
+    sit = pose(x=0, y=5.0, torso=92, head=90, uan=-100, fan=-20, uaf=-102, faf=-22, **legs)
+    return [lie, prop, sit]
+
+
 def savasana_poses():
     # Lying still on the back, arms long by the sides, feet falling open.
     p = pose(x=0, y=SUPINE["y"], torso=180, head=178, thn=0, shn=0, thf=0, shf=0,
@@ -528,6 +560,18 @@ ANIMS = {
         seq=[[0, 1, 2200, EASE_IN_OUT_SINE, "DRAW IN"]], loop=False, holdLabel="HOLD",
         cam=[-12.0, 16.0, 1.0], props=PROP_FLOOR, floorHalf=40.0,
         highlight=PART_THIGH_N, cue="Hug knee in, back relaxed",
+    ),
+    "hip_mobility": dict(
+        type=A_HOLD, poses=figure_four_poses(),
+        seq=[[0, 1, 2200, EASE_IN_OUT_SINE, "CROSS"]], loop=False, holdLabel="HOLD",
+        cam=[-6.0, 16.0, 1.05], props=PROP_FLOOR, floorHalf=44.0,
+        highlight=PART_THIGH_N, cue="Figure four, ease into it",
+    ),
+    "transition": dict(
+        type=A_HOLD, poses=transition_poses(), handBend=0.0,
+        seq=[[0, 1, 2000, EASE_IN_OUT_SINE, "ROLL UP"], [1, 2, 2000, EASE_IN_OUT_SINE, "SIT UP"]], loop=False,
+        holdLabel="SIT", cam=[-6.0, 18.0, 1.0], props=PROP_FLOOR, floorHalf=46.0,
+        highlight=PART_TORSO, cue="Exit the position slowly",
     ),
     "relax": dict(
         type=A_STATIC, poses=savasana_poses(),
