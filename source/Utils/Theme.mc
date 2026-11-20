@@ -184,7 +184,7 @@ module Theme {
 
     //! Centred line inside safe circle r: tries `font`, then `smaller`, then truncates.
     function fitLine(dc as Graphics.Dc, yy as Number, s as String, font, smaller, r as Number, color as Number) as Void {
-        var w = lineWidth(dc, yy, dc.getFontHeight(font), r) - px(dc, 8);
+        var w = lineWidth(dc, yy, dc.getFontHeight(font), r) - px(dc, SP_M);
         var f = font;
         if (smaller != null && dc.getTextWidthInPixels(s, font) > w) {
             f = smaller;

@@ -42,7 +42,7 @@ class SessionDetailView extends WatchUi.View {
         Theme.centerText(dc, Theme.px(dc, 113), Theme.small(), Theme.GREY,
             RecordUtil.toMinutes(SessionLibrary.totalSeconds(_def)).toString() + " min · "
                 + steps.size().toString() + (steps.size() == 1 ? " step" : " steps"));
-        Theme.divider(dc, Theme.px(dc, 140), safe, Theme.px(dc, 16));
+        Theme.divider(dc, Theme.px(dc, 140), safe, Theme.px(dc, Theme.SP_XL));
 
         // Step table: "1  Name ............ 2:00", each row inside the safe circle.
         var rowH = Theme.px(dc, 22);
@@ -50,7 +50,7 @@ class SessionDetailView extends WatchUi.View {
         var maxRows = 5;
         var shown = (steps.size() > maxRows) ? maxRows - 1 : steps.size();
         for (var i = 0; i < shown; i++) {
-            var half = Theme.lineWidth(dc, y + Theme.px(dc, 4), Theme.px(dc, 14), safe) / 2 - Theme.px(dc, 8);
+            var half = Theme.lineWidth(dc, y + Theme.px(dc, Theme.SP_S), Theme.px(dc, 14), safe) / 2 - Theme.px(dc, Theme.SP_M);
             var ex = ExerciseLibrary.get(steps[i][0]);
             var name = (ex != null) ? ex[ExerciseLibrary.F_NAME] : steps[i][0];
             var time = Hud.mss(steps[i][1]);
@@ -67,8 +67,8 @@ class SessionDetailView extends WatchUi.View {
             Theme.centerText(dc, y, Theme.small(), Theme.GREY, "+" + (steps.size() - shown).toString() + " more");
         }
 
-        Theme.divider(dc, Theme.px(dc, 260), safe, Theme.px(dc, 16));
-        var noteW = Theme.lineWidth(dc, Theme.px(dc, 266), Theme.px(dc, 40), safe) - Theme.px(dc, 8);
+        Theme.divider(dc, Theme.px(dc, 260), safe, Theme.px(dc, Theme.SP_XL));
+        var noteW = Theme.lineWidth(dc, Theme.px(dc, 266), Theme.px(dc, 40), safe) - Theme.px(dc, Theme.SP_M);
         // Own wrap: Graphics.fitTextToArea appends U+2026, which the bitmap
         // fonts do not contain (it rendered as a box).
         var lines = Theme.wrap(dc, _def[SessionLibrary.F_SAFETY], Theme.label(), noteW, 2);

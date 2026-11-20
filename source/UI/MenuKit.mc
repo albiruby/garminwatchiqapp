@@ -119,29 +119,29 @@ class RowItem extends WatchUi.CustomMenuItem {
 
         if (focused) {
             dc.setColor(Theme.SURFACE, Graphics.COLOR_TRANSPARENT);
-            dc.fillRoundedRectangle(x0, Theme.px(dc, 6), surfaceR - x0, h - Theme.px(dc, 12), Theme.px(dc, 12));
+            dc.fillRoundedRectangle(x0, Theme.px(dc, Theme.SP_M), surfaceR - x0, h - Theme.px(dc, 2 * Theme.SP_M), Theme.px(dc, Theme.SP_L));
             dc.setColor(Theme.GREEN, Graphics.COLOR_TRANSPARENT);
             dc.fillRoundedRectangle(x0, midY - Theme.px(dc, 18), Theme.px(dc, 4), Theme.px(dc, 36), 2);
         }
         if (_icon != ICON_NONE) {
             Icons.draw(dc, _icon, iconX, midY, Theme.px(dc, 26), focused ? Theme.GREEN : Theme.SOFT);
         }
-        var right = rightX - Theme.px(dc, 12);
+        var right = rightX - Theme.px(dc, Theme.SP_L);
         if (value != null) {
-            right = rightX - dc.getTextWidthInPixels(value, Theme.body()) - Theme.px(dc, 10);
+            right = rightX - dc.getTextWidthInPixels(value, Theme.body()) - Theme.px(dc, Theme.SP_M);
         }
         var nameFont = focused ? Theme.title() : Theme.body();
-        Theme.text(dc, textX, midY - dc.getFontHeight(nameFont) + Theme.px(dc, 4), nameFont,
+        Theme.text(dc, textX, midY - dc.getFontHeight(nameFont) + Theme.px(dc, Theme.SP_S), nameFont,
             focused ? Theme.WHITE : Theme.SOFT, Theme.fit(dc, name, nameFont, right - textX), Graphics.TEXT_JUSTIFY_LEFT);
         if (sub != null) {
-            Theme.text(dc, textX, midY + Theme.px(dc, 6), Theme.small(), Theme.GREY,
+            Theme.text(dc, textX, midY + Theme.px(dc, Theme.SP_M), Theme.small(), Theme.GREY,
                 Theme.fit(dc, sub, Theme.small(), right - textX), Graphics.TEXT_JUSTIFY_LEFT);
         }
         if (value != null) {
             Theme.text(dc, rightX, midY - dc.getFontHeight(Theme.body()) / 2, Theme.body(),
                 valueOn ? Theme.GREEN : Theme.GREY, value, Graphics.TEXT_JUSTIFY_RIGHT);
         } else {
-            Icons.draw(dc, Icons.CHEVRON, rightX - Theme.px(dc, 4), midY, Theme.px(dc, 18), focused ? Theme.SOFT : Theme.GREY);
+            Icons.draw(dc, Icons.CHEVRON, rightX - Theme.px(dc, Theme.SP_S), midY, Theme.px(dc, 18), focused ? Theme.SOFT : Theme.GREY);
         }
     }
 }

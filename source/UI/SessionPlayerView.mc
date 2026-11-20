@@ -219,7 +219,7 @@ class SessionPlayerView extends WatchUi.View {
         var y = Theme.px(dc, 308);
         var leftX = Theme.cx(dc) - Theme.px(dc, 70);
         Icons.draw(dc, iconId, leftX, y + Theme.px(dc, 9), Theme.px(dc, 14), Theme.GREEN);
-        Theme.text(dc, leftX + Theme.px(dc, 12), y, Theme.body(), Theme.WHITE, value, Graphics.TEXT_JUSTIFY_LEFT);
+        Theme.text(dc, leftX + Theme.px(dc, Theme.SP_L), y, Theme.body(), Theme.WHITE, value, Graphics.TEXT_JUSTIFY_LEFT);
         var step = (_engine.stepIndex + 1).toString() + "/" + _engine.steps.size().toString();
         Theme.text(dc, Theme.cx(dc) + Theme.px(dc, 74), y, Theme.body(), Theme.WHITE, step, Graphics.TEXT_JUSTIFY_RIGHT);
     }

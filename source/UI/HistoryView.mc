@@ -29,7 +29,7 @@ class HistoryView extends WatchUi.View {
         var safe = Theme.SAFE_PAGE;
         Theme.centerText(dc, Theme.px(dc, 44), Theme.body(), Theme.WHITE, Theme.clock());
         Theme.centerText(dc, Theme.px(dc, 70), Theme.title(), Theme.WHITE, "This week");
-        Theme.divider(dc, Theme.px(dc, 108), safe, Theme.px(dc, 16));
+        Theme.divider(dc, Theme.px(dc, 108), safe, Theme.px(dc, Theme.SP_XL));
 
         if (page == 0) {
             var off = Theme.px(dc, 62);
@@ -50,16 +50,16 @@ class HistoryView extends WatchUi.View {
                 ["Circulation", "circulation"], ["Leg elevation", "elevation"], ["Wind-down", "windDown"],
                 ["Avg session", "avgSession"], ["Pre-session HR (14 d)", "hrBaseline"]
             ];
-            var rowH = Theme.px(dc, 32);
+            var rowH = Theme.px(dc, Theme.SP_XXXL);
             var y = Theme.px(dc, 116);
             for (var i = 0; i < rows.size(); i++) {
-                var half = Theme.lineWidth(dc, y + Theme.px(dc, 4), Theme.px(dc, 16), safe) / 2 - Theme.px(dc, 8);
+                var half = Theme.lineWidth(dc, y + Theme.px(dc, Theme.SP_S), Theme.px(dc, 16), safe) / 2 - Theme.px(dc, Theme.SP_M);
                 var metric = _m.get(rows[i][1]);
                 var v = metric.display();
                 if (rows[i][1].equals("avgSession") && metric.isAvailable()) {
                     v = Hud.mss(metric.value);
                 }
-                Theme.text(dc, cx - half, y + Theme.px(dc, 2), Theme.small(), Theme.GREY, rows[i][0], Graphics.TEXT_JUSTIFY_LEFT);
+                Theme.text(dc, cx - half, y + Theme.px(dc, Theme.SP_XS), Theme.small(), Theme.GREY, rows[i][0], Graphics.TEXT_JUSTIFY_LEFT);
                 Theme.text(dc, cx + half, y, Theme.body(), metric.isAvailable() ? Theme.WHITE : Theme.GREY, v,
                     Graphics.TEXT_JUSTIFY_RIGHT);
                 if (i < rows.size() - 1) {
