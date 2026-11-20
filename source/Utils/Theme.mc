@@ -74,6 +74,15 @@ module Theme {
     // ---- Layout ----------------------------------------------------------
     // Layouts are specified in px of a 390 px round screen (FR165) and scaled.
     // Safe circles (390-px units): content never crosses these radii.
+    // Spacing scale (390-px units, pass through px()). See docs/DESIGN_SYSTEM.md.
+    const SP_XS = 2;     // icon to detail
+    const SP_S = 4;      // related elements (title -> subtitle)
+    const SP_M = 8;      // between groups
+    const SP_L = 12;     // component padding
+    const SP_XL = 16;    // between sections
+    const SP_XXL = 24;   // between main areas
+    const SP_XXXL = 32;  // large separations
+
     const SAFE_HUD = 160;
     const SAFE_PAGE = 170;
     const SAFE_MENU = 164;

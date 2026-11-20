@@ -4,20 +4,38 @@ RESTORA uses running-watch instrumentation (structured data, segmented progress,
 
 Code: `source/Utils/Theme.mc` (tokens), `source/UI/Hud.mc` (ring and bar), `source/UI/Icons.mc` (vector icons), `source/UI/MenuKit.mc` (lists). Mockups: `docs/mockups/`, rendered by `tools/mockups/`.
 
-## Typography: Roboto Condensed
+The design system has six foundations: layout, typography, components, colour, interaction and state, and motion and rendering. Every screen is built from them. A screen is not finished until it passes the [QA checklist](#design-qa-checklist).
 
-The type is condensed and firm, so more data fits across the round screen. Roboto Condensed digits are tabular, so timers do not jitter. Connect IQ cannot load TTF files, so `tools/make_fonts.py` pre-renders bitmap fonts from the variable font (`tools/fonts/RobotoCondensed-VF.ttf`, SIL OFL 1.1) into `resources/fonts/`.
+## Typography: Oswald
+
+The type is condensed and firm, so more data fits across the round screen. Connect IQ cannot load TTF files, so `tools/make_fonts.py` pre-renders bitmap fonts from the variable font (`tools/fonts/Oswald-VF.ttf`, SIL OFL 1.1) into `resources/fonts/`. Oswald digits are proportional; the generator gives 0–9 one common advance (tabular numerals), so `00:09` → `00:10` does not change the timer's width.
 
 | Token | Weight | px | Use |
 |---|---|---|---|
-| `Theme.label()` | Medium | 15 | small UPPERCASE labels (`STARTS IN`, `SESSIONS`) |
-| `Theme.small()` | Regular | 17 | subtitles, cues, table rows |
-| `Theme.body()` | Medium | 20 | list names, info row, clock |
-| `Theme.title()` | Bold | 24 | titles, phase word, metric values, pills |
-| `Theme.num()` | Bold | 40 | headline numbers (digits only) |
-| `Theme.hero()` | Bold | 60 | timer inside the HUD ring (digits only) |
+| `Theme.label()` | Medium | 14 | small UPPERCASE labels (`STARTS IN`, `SESSIONS`) |
+| `Theme.small()` | Regular | 16 | subtitles, cues, table rows |
+| `Theme.body()` | Medium | 18 | list names, info row, clock |
+| `Theme.title()` | SemiBold | 22 | titles, phase word, metric values, pills |
+| `Theme.num()` | SemiBold | 36 | headline numbers (digits only) |
+| `Theme.hero()` | SemiBold | 54 | timer inside the HUD ring (digits only) |
 
-The text fonts include `·`, `↑` and `↓`. Names are in sentence case ("Leg Relief"); small labels are in UPPERCASE.
+The text fonts include `·`, `↑`, `↓` and `…`. Names are in sentence case ("Leg Relief"); small labels are in UPPERCASE.
+
+## Spacing scale
+
+Margins and gaps come from one scale (`Theme.SP_*`, 390-px units, scaled with `Theme.px()`). Values are a starting point; adjust after testing on the device, not per screen.
+
+| Token | px | Use |
+|---|---|---|
+| `SP_XS` | 2 | icon to a small detail |
+| `SP_S` | 4 | related elements (title → subtitle) |
+| `SP_M` | 8 | between groups |
+| `SP_L` | 12 | component padding (row card inset, pill padding) |
+| `SP_XL` | 16 | between sections |
+| `SP_XXL` | 24 | between main areas |
+| `SP_XXXL` | 32 | large separations |
+
+Fixed component sizes: list row 88, focused card radius 12, pill 120 × 30 (radius 15), hairline 1, row icon 26, chevron 18, focus bar 4 × 36.
 
 ## Colour (AMOLED black, one green accent)
 
@@ -45,6 +63,8 @@ All layouts use a **390 px grid** (FR165), scaled with `Theme.px()`. Content sta
 | Detail, summary, history | **170 px** |
 | Menus | **164 px**. `MenuMask` also blacks out y < 62 and y > 316 |
 
+Radial zones: the **core** (r ≤ 120) holds the primary content (timer, figure, focused row); the **central safe zone** (up to the screen's safe radius) holds supporting text; the **peripheral zone** (r 160–190) holds only the HUD ring, the START arc and indicators; nothing is drawn in the **edge exclusion** beyond that.
+
 - Line widths come from the safe circle at that height. Text that is too wide drops to a smaller font, and only then is cut (`Theme.fitLine`).
 - Exercise names are at most 22 characters and cues at most 26 (`testContentFitsHud`).
 - `node tools/mockups/render.js` runs the **layout check**. It flags any ink box outside the safe circle, any box touching the HUD ring, and any two boxes that overlap. It must print `layout check: no issues`.
@@ -53,8 +73,8 @@ All layouts use a **390 px grid** (FR165), scaled with `Theme.px()`. Content sta
 
 ### Home and lists (`MenuKit`)
 
-- Header: green leaf logo, **RESTORA**, `RECOVERY COMPANION`.
-- Rows are 88 px: an icon (x 84), the name, a grey subtitle, and a chevron or a value on the right.
+- Header: RESTORA logo mark (`resources/drawables/logo_mark.png`, from `LogoStandaloneRESTORA`), **RESTORA**, `RECOVERY COMPANION`.
+- Rows are 88 px: an icon (x 84), the name, a grey subtitle, and a chevron or a value on the right. Row x positions are screen positions: the item dc starts right of the system scroll strip, so `RowItem` subtracts that offset.
 - The focused row sits on a `SURFACE` rounded card (x 48–342) with a green bar on the left; its name is bold and its icon is green.
 - The bands and the circle mask show either the title or the focused row with one neighbour on each side. No row is ever half-cut by the bezel.
 
@@ -90,11 +110,55 @@ When paused, the active segment and the state line turn amber and the timer turn
 - Page 2: a label/value table.
 - Both pages are labelled `RESTORA CALC`.
 
+## Components and states
+
+| Component | Default | Focused / active | Paused | Completed | Disabled / no data |
+|---|---|---|---|---|---|
+| Navigation row (`RowItem`) | SOFT name, GREY subtitle, GREY chevron | SURFACE card, green bar, WHITE bold name, green icon | — | — | value shows `--` |
+| Session step (detail table) | green index, WHITE name, GREY time | — | — | — | — |
+| Metric (summary, history) | WHITE/green value over GREY label + source tag | — | — | — | `--`, never an estimate |
+| Primary action pill | SURFACE pill, green label (Start, Done) | — | — | — | not drawn |
+| HUD ring / segmented bar | TRACK | GREEN fill | AMBER | full GREEN | — |
+
+Session states keep one layout: `IDLE → COUNTDOWN → RUNNING ⇄ PAUSED → (AWAITING_NEXT) → COMPLETED`. Only colour and the state line change; nothing moves.
+
+## Content and data rules
+
+- Exercise names ≤ 22 characters, cues ≤ 26 (`testContentFitsHud`). Longer text falls to a smaller font, then truncates (`Theme.fitLine`); notes wrap to at most two lines (`Theme.wrap`).
+- Missing data is `--`. With no history, the completion line reads "No sessions yet" instead of a percentage.
+- Every number carries its source: `Garmin` (measured), `RESTORA CALC` (derived), `USER` (entered). Formulas, denominators and periods are in `docs/CALCULATION_ENGINE.md`; a derived number never reads like a medical measurement.
+- One screen, one purpose: the HUD shows only the movement, timer, phase and progress.
+
 ## Interaction
 
 - **Button-first**: START selects, starts and pauses; DOWN skips; BACK goes back or asks to end the session.
 - A green arc at the 2 o'clock bezel position marks START wherever START has a meaning.
 - Any session is at most 3 presses from Home.
+- Haptics mark events, not time: step start (2 pulses), side change (1 long), completion (3). Breathing and breath-synced phase cues are throttled to one per ~9 s.
+
+## Motion and rendering
+
+- Animation never owns time: the Session Engine measures it; pausing freezes the figure.
+- Frames run at 125 ms only while something moves; held poses and paused sessions drop to 1 s.
+- Animations never move the timer, ring or text, and every screen reads correctly with animation off (Settings → Motion).
+- Exercise figures come only from `tools/motion/motion_model.py` (validated poses, ring check).
+
+## Design QA checklist
+
+A screen is done when all of these hold:
+
+1. Nothing leaves the circular safe area; no text or icon is clipped.
+2. Spacing and alignment use the spacing scale.
+3. The hierarchy reads at a glance: primary → supporting → metadata → action.
+4. Text and icons have enough contrast on black.
+5. Focused, active, paused, completed and no-data states are designed.
+6. Long names and changing numbers are tested (tabular digits, no layout shift).
+7. Empty and unavailable data are handled.
+8. Physical buttons work end to end (touch is optional).
+9. No components overlap.
+10. Animation does not disturb the timer or hide information.
+11. Checked in the simulator and on a physical FR165.
+12. Redraw rate and battery checked (profiler).
 
 ## Icons (`Icons.mc`)
 
