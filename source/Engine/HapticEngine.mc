@@ -54,13 +54,18 @@ module HapticEngine {
         } else if ((evt & SessionEngine.EVT_SIDE) != 0) {
             side();
         } else if ((evt & SessionEngine.EVT_PHASE) != 0) {
-            // Breathing changes phase every few seconds: buzz at most about
-            // once per breath cycle so the wrist is not vibrating constantly.
-            var now = System.getTimer();
-            if (_lastPhaseMs == null || now - _lastPhaseMs >= PHASE_MIN_GAP_MS) {
-                _lastPhaseMs = now;
-                single();
-            }
+            phaseCue();
+        }
+    }
+
+    //! Breathing / breath-synced movement phase change. Phases change every
+    //! few seconds: buzz at most about once per breath cycle so the wrist is
+    //! not vibrating constantly.
+    function phaseCue() as Void {
+        var now = System.getTimer();
+        if (_lastPhaseMs == null || now - _lastPhaseMs >= PHASE_MIN_GAP_MS) {
+            _lastPhaseMs = now;
+            single();
         }
     }
 }

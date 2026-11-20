@@ -179,6 +179,126 @@ def ankle_pump_poses():
     return [point, flex]
 
 
+STAND_HIP_Y = ANKLE_H + THIGH + SHIN          # hip height standing straight
+SUPINE = dict(y=5.6, torso=180, head=178, uan=178, fan=178, uaf=178, faf=178)   # lying on the back
+
+
+def heel_raise_poses():
+    # Standing, arms by the sides; rise onto the balls of the feet. The foot
+    # pivots on the toe, so the ankle (and the whole body) moves up and a
+    # little forward.
+    arms = dict(uan=-92, fan=-86, uaf=-90, faf=-84, torso=90, head=90, spine=0)
+    flat = pose(x=0, y=STAND_HIP_Y, thn=-90, shn=-90, thf=-90, shf=-90, ftn=FLAT_FOOT, ftf=FLAT_FOOT, **arms)
+    toe = (FOOT * math.cos(d2r(FLAT_FOOT)), ANKLE_H + FOOT * math.sin(d2r(FLAT_FOOT)))
+    up_ft = FLAT_FOOT - 30.0
+    ankle = (toe[0] - FOOT * math.cos(d2r(up_ft)), toe[1] - FOOT * math.sin(d2r(up_ft)))
+    up = pose(x=round(ankle[0], 2), y=round(ankle[1] + THIGH + SHIN, 2), thn=-90, shn=-90, thf=-90, shf=-90,
+              ftn=up_ft, ftf=up_ft, **arms)
+    return [flat, up]
+
+
+def heel_slide_poses():
+    # Lying on the back: the near heel slides along the floor toward the hip
+    # (knee rises), then back out. The far leg stays straight.
+    # Keyframes along the slide keep the heel on the floor: the ankle path is
+    # sampled and the foot angle solved so the heel just touches the floor.
+    frames = []
+    y0 = SUPINE["y"]
+    for s in (0.0, 0.25, 0.5, 0.75, 1.0):
+        ax = (THIGH + SHIN) + (30.0 - (THIGH + SHIN)) * s
+        ay = y0 + (ANKLE_H - y0) * s
+        p = pose(x=0, thf=0, shf=0, ftf=NEUTRAL_ANKLE, ftn=NEUTRAL_ANKLE, **SUPINE)
+        if s > 0.0:
+            with_leg(p, "n", (ax, ay), bend=1)
+            # foot angle within the ankle's range that brings the heel closest
+            # to the floor, preferring a relaxed ankle
+            best, cost = None, 1e9
+            for k in range(-480, 300):
+                dors = k * 0.1
+                fa = p[P_SHN] + NEUTRAL_ANKLE + dors
+                hy = ay + HEEL_LOCAL[0] * math.sin(d2r(fa)) + HEEL_LOCAL[1] * math.cos(d2r(fa))
+                c = abs(hy - 0.2) + 0.02 * abs(dors)
+                ty = ay + FOOT * math.sin(d2r(fa))
+                if hy > -0.3 and ty > 0.4 and c < cost:
+                    best, cost = fa, c
+            p[P_FTN] = round(best, 1)
+        frames.append(p)
+    return frames
+
+
+def childs_pose_poses():
+    # From all fours, sink the hips back toward the heels, chest down, arms
+    # long on the floor, forehead resting near the floor.
+    # Keyframes are built geometrically at several points of the movement (knee
+    # fixed on the floor, hands sliding forward on the floor) so the linear
+    # blend between neighbours never pushes a knee or hand into the floor.
+    knee = (0.0, 2.9)
+    legs = dict(shn=180, ftn=192, shf=180, ftf=192)
+    a_start, a_hold = 90.0, 180.0 - 36.87                # hip angle around the knee
+    sh_start_y = UARM + FARM + 2.0
+    wrist_start = None
+    frames = []
+    for s in (0.0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6, 1.0):
+        a = a_start + (a_hold - a_start) * s
+        hip = (knee[0] + THIGH * math.cos(d2r(a)), knee[1] + THIGH * math.sin(d2r(a)))
+        th = round(a - 180.0, 1)                         # hip -> knee
+        sh_y = sh_start_y + (10.0 - sh_start_y) * s
+        t = round(math.degrees(math.asin((sh_y - hip[1]) / TORSO)), 1)
+        p = pose(x=round(hip[0], 2), y=round(hip[1], 2), torso=t, head=-20, thn=th, thf=th, spine=3.0 * s, **legs)
+        sh = shoulder_of(p)
+        if wrist_start is None:
+            wrist_start = sh[0]
+        wx = wrist_start + 9.0 * s                       # hands walk forward a little
+        reach = min(UARM + FARM - 1.5, math.hypot(1, sh[1] - 1.8) + 0.0)
+        wx = max(wx, sh[0] + math.sqrt(max(0.0, (UARM + FARM - 2.0) ** 2 - (sh[1] - 1.8) ** 2)) * s)
+        with_arms(p, (wx, 2.6 + 3.2 * math.sin(math.pi * s)), (wx - 1.0, 2.6 + 3.2 * math.sin(math.pi * s)), bend=1)
+        frames.append(p)
+    return frames
+
+
+def legs_wall_poses():
+    # Lying on the back, hips close to the wall, legs resting up the wall.
+    # Start with knees bent (feet on the wall), then straighten the legs up.
+    hold = pose(x=0, thn=90, shn=90, thf=90, shf=90, ftn=90 + NEUTRAL_ANKLE - 20, ftf=90 + NEUTRAL_ANKLE - 20,
+                **SUPINE)
+    start = pose(x=0, ftn=90 + NEUTRAL_ANKLE - 40, ftf=90 + NEUTRAL_ANKLE - 40, **SUPINE)
+    with_leg(start, "n", (2.0, 33.0), bend=1)
+    with_leg(start, "f", (2.0, 33.0), bend=1)
+    return [start, hold]
+
+
+LEGS_CHAIR_SHIN_Y = 24.0
+
+
+def legs_chair_poses():
+    # Lying on the back, calves resting on a chair seat, knees bent ~90 deg.
+    k_dy = LEGS_CHAIR_SHIN_Y - SUPINE["y"]
+    k_dx = math.sqrt(THIGH ** 2 - k_dy ** 2)
+    th = round(math.degrees(math.atan2(k_dy, k_dx)), 1)
+    rest = pose(x=0, thn=th, shn=0, thf=th, shf=0, ftn=NEUTRAL_ANKLE - 15, ftf=NEUTRAL_ANKLE - 15, **SUPINE)
+    return [rest]
+
+
+SEAT_Y = 23.0          # chair seat top for a seated figure (knee height ~28)
+
+
+def seated_march_poses():
+    # Sitting upright on a chair, hands on the thighs; lift one knee, lower,
+    # then the other.
+    hip = (0.0, ANKLE_H + SHIN)
+    base = dict(x=hip[0], y=hip[1], torso=90, head=90, spine=0)
+
+    def seated(lift_n, lift_f):
+        p = pose(thn=lift_n, shn=-90, thf=lift_f, shf=-90, ftn=FLAT_FOOT, ftf=FLAT_FOOT, **base)
+        kn = (hip[0] + THIGH * math.cos(d2r(lift_n)), hip[1] + THIGH * math.sin(d2r(lift_n)))
+        kf = (hip[0] + THIGH * math.cos(d2r(lift_f)), hip[1] + THIGH * math.sin(d2r(lift_f)))
+        # hands rest on the thighs, two thirds of the way to the knee
+        with_arms(p, (hip[0] + (kn[0] - hip[0]) * 0.62, hip[1] + (kn[1] - hip[1]) * 0.62 + 4.5),
+                  (hip[0] + (kf[0] - hip[0]) * 0.62 - 1.0, hip[1] + (kf[1] - hip[1]) * 0.62 + 4.5), bend=-1)
+        return p
+    return [seated(0, 0), seated(28, 0), seated(0, 28)]
+
+
 # Figure centre in the HUD ring (390-px units), shared with SessionPlayerView.
 FIG_CY = 150.0
 
@@ -189,7 +309,7 @@ EASE_LINEAR, EASE_IN_OUT_SINE, EASE_OUT_CUBIC, EASE_IN_OUT_QUAD = 0, 1, 2, 3
 A_STATIC, A_HOLD, A_REPETITION, A_SEQUENCE, A_BREATH_SYNC = 0, 1, 2, 3, 4
 
 # Props
-PROP_FLOOR, PROP_WALL = 1, 2
+PROP_FLOOR, PROP_WALL, PROP_CHAIR = 1, 2, 4
 
 # Arrow kinds: straight (x0,y0,x1,y1) / arc (cx,cy,r,a0,a1). The last field
 # binds the arrow to a segment index, or ON_HOLD (shown once a HOLD is reached).
@@ -236,6 +356,49 @@ ANIMS = {
         # range arc around the ankle covering point..flex, plus a direction arc per segment
         rangeJoint=J_ANKLE_N, range=[10.0, NEUTRAL_ANKLE - 40, NEUTRAL_ANKLE + 22],
         arrows=[[ARROW_ARC, 49.0, 4.6, 12.0, 34.0, 82.0, 0], [ARROW_ARC, 49.0, 4.6, 12.0, 82.0, 34.0, 1]],
+    ),
+    "heel_raises": dict(
+        type=A_REPETITION, poses=heel_raise_poses(), handBend=10.0,
+        seq=[[0, 1, 1200, EASE_IN_OUT_SINE, "RISE"], [1, 0, 1500, EASE_IN_OUT_SINE, "LOWER"]], loop=True,
+        cam=[3.0, 52.0, 0.74], props=PROP_FLOOR, floorHalf=26.0,
+        highlight=PART_SHIN_N | PART_SHIN_F, cue="Up on toes, lower slowly",
+        arrows=[[ARROW_LINE, -9.0, 6.0, -9.0, 20.0, 0], [ARROW_LINE, -9.0, 20.0, -9.0, 6.0, 1]],
+    ),
+    "knee_bends": dict(
+        type=A_REPETITION, poses=heel_slide_poses(),
+        seq=[[0, 1, 500, EASE_LINEAR, "SLIDE IN"], [1, 2, 500, EASE_LINEAR, "SLIDE IN"],
+             [2, 3, 500, EASE_LINEAR, "SLIDE IN"], [3, 4, 500, EASE_LINEAR, "SLIDE IN"],
+             [4, 3, 500, EASE_LINEAR, "SLIDE OUT"], [3, 2, 500, EASE_LINEAR, "SLIDE OUT"],
+             [2, 1, 500, EASE_LINEAR, "SLIDE OUT"], [1, 0, 500, EASE_LINEAR, "SLIDE OUT"]], loop=True,
+        cam=[7.0, 14.0, 0.98], props=PROP_FLOOR, floorHalf=52.0,
+        highlight=PART_THIGH_N | PART_SHIN_N, cue="Heel stays on the floor",
+        arrows=[[ARROW_LINE, 50.0, -5.0, 34.0, -5.0, i] for i in range(4)]
+               + [[ARROW_LINE, 34.0, -5.0, 50.0, -5.0, i] for i in range(4, 8)],
+    ),
+    "childs_pose": dict(
+        type=A_HOLD, poses=childs_pose_poses(), handBend=80.0,
+        seq=[[i, i + 1, 450, EASE_LINEAR, "SINK BACK"] for i in range(6)], loop=False, holdLabel="REST",
+        cam=[8.0, 16.0, 1.2], props=PROP_FLOOR, floorHalf=46.0,
+        highlight=PART_TORSO, cue="Breathe into the back",
+    ),
+    "legs_wall": dict(
+        type=A_HOLD, poses=legs_wall_poses(),
+        seq=[[0, 1, 2500, EASE_IN_OUT_SINE, "LEGS UP"]], loop=False, holdLabel="RELAX",
+        cam=[-14.0, 27.0, 1.12], props=PROP_FLOOR | PROP_WALL, wallX=6.0, wallY=[0.0, 60.0], floorHalf=36.0,
+        highlight=PART_THIGH_N | PART_SHIN_N, cue="Let the legs rest",
+    ),
+    "legs_chair": dict(
+        type=A_STATIC, poses=legs_chair_poses(),
+        seq=[[0, 0, 1000, EASE_LINEAR, "REST"]], loop=False, holdLabel="REST",
+        cam=[2.0, 16.0, 1.05], props=PROP_FLOOR | PROP_CHAIR, chair=[14.0, 44.0, 21.0, 0.0, 0.0], floorHalf=50.0,
+        highlight=PART_SHIN_N, cue="Calves rest on the seat",
+    ),
+    "seated_march": dict(
+        type=A_REPETITION, poses=seated_march_poses(), handBend=-20.0,
+        seq=[[0, 1, 900, EASE_IN_OUT_SINE, "LIFT"], [1, 0, 900, EASE_IN_OUT_SINE, "LOWER"],
+             [0, 2, 900, EASE_IN_OUT_SINE, "LIFT"], [2, 0, 900, EASE_IN_OUT_SINE, "LOWER"]], loop=True,
+        cam=[6.0, 42.0, 0.95], props=PROP_FLOOR | PROP_CHAIR, chair=[-11.0, 10.0, SEAT_Y, -11.0, 54.0],
+        floorHalf=34.0, highlight=PART_THIGH_N | PART_THIGH_F, cue="Lift knees, alternate",
     ),
 }
 
@@ -397,8 +560,19 @@ def render(a, t_ms, box, mirror=False, reduced=False):
         x0, x1 = S((camx - fh, 0)), S((camx + fh, 0))
         o.add("line", PROP, 2, x0[0], x0[1], x1[0], x1[1])
     if a["props"] & PROP_WALL:
-        w0, w1 = S((a["wallX"], 56)), S((a["wallX"], 90))
+        wy = a.get("wallY", (56.0, 90.0))
+        w0, w1 = S((a["wallX"], wy[0])), S((a["wallX"], wy[1]))
         o.add("line", PROP, 3, w0[0], w0[1], w1[0], w1[1])
+    if a["props"] & PROP_CHAIR:
+        c = a["chair"]
+        s0, s1 = S((c[0], c[2])), S((c[1], c[2]))
+        o.add("line", PROP, 3, s0[0], s0[1], s1[0], s1[1])
+        for lx in (c[0] + 1.5, c[1] - 1.5):
+            l0, l1 = S((lx, c[2])), S((lx, 0))
+            o.add("line", PROP, 2, l0[0], l0[1], l1[0], l1[1])
+        if c[4] > c[2]:
+            b0, b1 = S((c[3], c[2])), S((c[3], c[4]))
+            o.add("line", PROP, 3, b0[0], b0[1], b1[0], b1[1])
 
     hl = a["highlight"]
     parts = a.get("parts", ALL_PARTS)
@@ -569,6 +743,10 @@ def gen_monkeyc():
         out.append("            :props => %d," % a["props"])
         if "wallX" in a:
             out.append("            :wallX => %s," % mc_num(a["wallX"]))
+        if "wallY" in a:
+            out.append("            :wallY => %s," % mc_arr(a["wallY"]))
+        if "chair" in a:
+            out.append("            :chair => %s," % mc_arr(a["chair"]))
         out.append("            :highlight => %d," % a["highlight"])
         if "parts" in a:
             out.append("            :parts => %d," % a["parts"])

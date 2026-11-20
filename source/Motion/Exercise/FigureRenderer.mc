@@ -152,7 +152,21 @@ class FigureRenderer {
         }
         if ((props & 2) != 0 && def[:wallX] != null) {
             dc.setPenWidth(3);
-            dc.drawLine(sx(def[:wallX]).toNumber(), sy(56).toNumber(), sx(def[:wallX]).toNumber(), sy(90).toNumber());
+            var wy = (def[:wallY] != null) ? def[:wallY] : [56.0, 90.0];
+            dc.drawLine(sx(def[:wallX]).toNumber(), sy(wy[0]).toNumber(), sx(def[:wallX]).toNumber(), sy(wy[1]).toNumber());
+        }
+        // Chair / stool: [seatX0, seatX1, seatY, backX (or seatX0 with backTop 0), backTop]
+        if ((props & 4) != 0 && def[:chair] != null) {
+            var c = def[:chair];
+            dc.setPenWidth(3);
+            dc.drawLine(sx(c[0]).toNumber(), sy(c[2]).toNumber(), sx(c[1]).toNumber(), sy(c[2]).toNumber());
+            dc.setPenWidth(2);
+            dc.drawLine(sx(c[0] + 1.5).toNumber(), sy(c[2]).toNumber(), sx(c[0] + 1.5).toNumber(), sy(0).toNumber());
+            dc.drawLine(sx(c[1] - 1.5).toNumber(), sy(c[2]).toNumber(), sx(c[1] - 1.5).toNumber(), sy(0).toNumber());
+            if (c[4] > c[2]) {
+                dc.setPenWidth(3);
+                dc.drawLine(sx(c[3]).toNumber(), sy(c[2]).toNumber(), sx(c[3]).toNumber(), sy(c[4]).toNumber());
+            }
         }
         dc.setPenWidth(1);
     }

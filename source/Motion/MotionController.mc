@@ -65,7 +65,7 @@ class MotionController {
         sampler.sample(sideElapsedMs(engine), !MotionConfig.smooth());
         if (sampler.type() == PoseSampler.TYPE_BREATH_SYNC && engine.state == SessionEngine.RUNNING) {
             if (_lastSegment >= 0 && sampler.segment != _lastSegment) {
-                HapticEngine.single();
+                HapticEngine.phaseCue();   // throttled: not every 4 s
             }
             _lastSegment = sampler.segment;
         }
