@@ -10,6 +10,9 @@ Premium race-pacing data field untuk Garmin Connect IQ, target awal **Forerunner
 - `ARCHITECTURE.md` — peta modul dan alur data
 - `ROADMAP.md`, `HARDWARE_TEST_CHECKLIST.md` — status dan rencana pengujian
 - `STORE_METADATA_DRAFT.md`, `STORE_UPLOAD_v2.2.0.md` — material publikasi store
+- `docs/store/` — aset Developer Portal (cover, hero, screen images)
+- `docs/screenshots/multi-device/` — screenshot simulator lintas perangkat
+- `docs/screenshots/v2.2.0/` — HUD/redesign terbaru + store shots
 - `LogoRacePilot.png` — aset branding
 - `buildandsim.bat`, `RunSimulator.bat`, `start.bat` — helper build/simulator Windows
 
