@@ -82,9 +82,16 @@ module Theme {
     function cy(dc as Graphics.Dc) as Number { return dc.getHeight() / 2; }
 
     //! Scale a 390-px design value to this screen.
+    //! Uses the device screen height, not the dc: inside a CustomMenuItem the
+    //! dc is only one row tall, which would shrink every size to a quarter.
     function px(dc as Graphics.Dc, v) as Number {
-        return (v * dc.getHeight() / 390).toNumber();
+        if (_screenH == 0) {
+            _screenH = System.getDeviceSettings().screenHeight;
+        }
+        return (v * _screenH / 390).toNumber();
     }
+
+    var _screenH as Number = 0;
 
     //! Half-width of the safe circle (radius r, 390-px units) at screen y.
     function safeHalf(dc as Graphics.Dc, yy as Number, r as Number) as Number {
