@@ -28,9 +28,9 @@ The user writes in Indonesian; reply in Indonesian.
 |---|---|
 | Calculation Engine (`source/Calculation/`) | done; unit tests written |
 | Session Engine (`source/Engine/SessionEngine.mc`) | done; state machine driven by real time (`System.getTimer` deltas); unit tests written |
-| Content: 40 exercises (incl. custom breathing), 29 sessions, 4–6 per module (`source/Content/`) | done |
+| Content: 51 exercises (incl. custom breathing), 33 sessions, 5–7 per module (`source/Content/`) | done |
 | UI: sport-tech style (Oswald, green accent, central ring HUD, RESTORA logo) | done; checked in the simulator (Home, module lists, session detail, breathing and Calf Stretch HUD) |
-| Motion: 25 animated exercise figures (side view + front-view bust) (see `docs/mockups/motion-*.png`) | done; all poses pass `motion_model.py` validation |
+| Motion: 36 animated exercise figures (side view, close-ups, 3/4 front figure with posable arms) (see `docs/mockups/motion-*.png`) | done; all poses pass `motion_model.py` validation |
 | Sensors: HR and HRV (RMSSD from Garmin beat intervals), optional | done; unit tests; **not yet verified on a real sensor** |
 | History: weekly dashboard, last 20 sessions, detail page | done |
 | Store material (`docs/store/`: listing, privacy, release notes, screenshots), version 1.0.0 | done |

@@ -433,9 +433,18 @@ def transition_poses():
     return [lie, prop, sit]
 
 
-def bust_pose(tilt=0.0, ll=0.0, lr=0.0):
+F_ARM_DEFAULT_L = (-97.6, -92.5)    # upper arm, forearm (deg) hanging by the side
+F_ARM_DEFAULT_R = (-82.4, -87.5)
+
+
+def bust_pose(tilt=0.0, ll=0.0, lr=0.0, la=F_ARM_DEFAULT_L, ra=F_ARM_DEFAULT_R, r_front=0):
+    """Front figure pose: [0] head tilt, [1] / [2] shoulder lift, [3] / [4] left
+    upper arm / forearm angle, [5] / [6] right, [7] 1 = right arm in front of
+    the torso (e.g. holding the other arm)."""
     p = [0.0] * POSE_LEN
     p[0], p[1], p[2] = float(tilt), float(ll), float(lr)
+    p[3], p[4], p[5], p[6] = float(la[0]), float(la[1]), float(ra[0]), float(ra[1])
+    p[7] = float(r_front)
     return p
 
 
@@ -508,6 +517,140 @@ def toe_curl_poses():
     base = dict(x=0, y=4.6, torso=180, head=178, thn=0, shn=0, thf=0, shf=0, uan=178, fan=178, uaf=178, faf=178)
     return [pose(ftn=NEUTRAL_ANKLE + 4, ftf=NEUTRAL_ANKLE + 4, **base),
             pose(ftn=NEUTRAL_ANKLE - 30, ftf=NEUTRAL_ANKLE - 30, **base)]
+
+
+def hip_9090_poses():
+    # Seated, hands behind on the floor, feet wide: the knees drop to one side
+    # then the other ("windshield wipers"), rotating the hips.
+    def seated(near_down, far_down):
+        p = pose(x=0, y=5.0, torso=104, head=96, ftn=FLAT_FOOT, ftf=FLAT_FOOT)
+        with_leg(p, "n", (20.0, 9.0) if near_down else (24.0, ANKLE_H), bend=1)
+        with_leg(p, "f", (20.0, 9.0) if far_down else (24.0, ANKLE_H), bend=1)
+        if near_down:
+            p[P_THN], p[P_SHN], p[P_FTN] = 20.0, -20.0, -20.0 + NEUTRAL_ANKLE - 20.0
+        if far_down:
+            p[P_THF], p[P_SHF], p[P_FTF] = 20.0, -20.0, -20.0 + NEUTRAL_ANKLE - 20.0
+        with_arms(p, (-13.0, 2.6), (-14.0, 2.6), bend=-1)
+        return p
+    return [seated(False, False), seated(True, False), seated(False, True)]
+
+
+def worlds_greatest_poses():
+    # Long lunge, rear knee off the floor, both hands down inside the front
+    # foot; the near arm then rotates up toward the ceiling (gaze follows).
+    rear = -138.0
+    hip_y = ANKLE_H + 2.0 + (THIGH + SHIN) * -math.sin(d2r(rear))
+    base = dict(x=0, y=round(hip_y, 1), torso=32, thn=rear, shn=rear, ftn=-38.0,
+                ftf=FLAT_FOOT, spine=2.0)
+    down = pose(head=8, **base)
+    with_leg(down, "f", (22.0, ANKLE_H), bend=1)
+    with_arms(down, (17.0, 2.4), (16.0, 2.4), bend=1)
+    up = pose(head=70, **base)
+    with_leg(up, "f", (22.0, ANKLE_H), bend=1)
+    with_arms(up, (17.0, 2.4), (16.0, 2.4), bend=1)
+    up[P_UAN], up[P_FAN] = 96.0, 94.0
+    return [down, up]
+
+
+def hip_circle_poses():
+    # Standing, hands on the hips, feet still: the pelvis circles forward,
+    # side, back, side while the chest stays over the feet.
+    frames = []
+    for hx, t in ((3.0, 85.0), (0.0, 90.0), (-3.0, 95.0), (0.0, 90.0)):
+        hy = ANKLE_H + math.sqrt((THIGH + SHIN - 0.6) ** 2 - hx ** 2)
+        p = pose(x=hx, y=round(hy, 2), torso=t, head=90, ftn=FLAT_FOOT, ftf=FLAT_FOOT)
+        with_leg(p, "n", (0.0, ANKLE_H), bend=1)
+        with_leg(p, "f", (0.0, ANKLE_H), bend=1)
+        with_arms(p, (hx + 4.0, hy + 3.0), (hx + 3.0, hy + 3.0), bend=-1)
+        frames.append(p)
+    return frames
+
+
+def knee_raise_poses():
+    # Standing tall; one knee lifts to hip height, lowers, then the other.
+    def stand(lift_n, lift_f):
+        p = pose(x=0, y=STAND_HIP_Y, torso=90, head=90, thn=-90, shn=-90, thf=-90, shf=-90,
+                 ftn=FLAT_FOOT, ftf=FLAT_FOOT, uan=-96, fan=-70, uaf=-84, faf=-60)
+        if lift_n:
+            p[P_THN], p[P_SHN], p[P_FTN] = 0.0, -90.0, FLAT_FOOT - 10.0
+        if lift_f:
+            p[P_THF], p[P_SHF], p[P_FTF] = 0.0, -90.0, FLAT_FOOT - 10.0
+        return p
+    return [stand(False, False), stand(True, False), stand(False, True)]
+
+
+def cross_body_poses():
+    # Front 3/4: the near arm crosses the chest; the other hand holds it just
+    # above the elbow.
+    hold = bust_pose(la=(6.0, 12.0), ra=(-122.0, 98.0), r_front=1)
+    return [bust_pose(), hold]
+
+
+def chest_opener_poses():
+    # Front 3/4: both arms open wide and slightly back, chest lifts.
+    return [bust_pose(), bust_pose(tilt=0.0, la=(-164.0, -160.0), ra=(-16.0, -20.0))]
+
+
+def thoracic_ext_poses():
+    # Seated on a chair with a low backrest, hands behind the head: the upper
+    # back extends over the backrest, then returns.
+    def seated(t, head, spine):
+        p = pose(x=0, y=SEAT_Y + 5.0, torso=t, head=head, spine=spine, thn=0, shn=-90, thf=0, shf=-90,
+                 ftn=FLAT_FOOT, ftf=FLAT_FOOT)
+        sh = shoulder_of(p)
+        hd = dirv(head)
+        back = (sh[0] + 9.0 * hd[0] - 5.0 * hd[1] * 0.0 - 4.0, sh[1] + 9.0 * hd[1])
+        with_arms(p, back, (back[0] - 0.8, back[1]), bend=1)
+        return p
+    return [seated(92.0, 92.0, 0.0), seated(110.0, 118.0, -3.0)]
+
+
+def reclined_butterfly_poses():
+    # Lying on the back, soles together close to the hips. In a side view the
+    # knees opening out to the sides shows as the knees lowering a little with
+    # the feet resting on their outer edges; an arrow shows the opening.
+    start = pose(x=0, ftn=FLAT_FOOT, ftf=FLAT_FOOT, **SUPINE)
+    with_leg(start, "n", (24.0, ANKLE_H), bend=1)
+    with_leg(start, "f", (24.0, ANKLE_H), bend=1)
+    hold = pose(x=0, **SUPINE)
+    with_leg(hold, "n", (20.0, ANKLE_H + 1.5), bend=1)
+    with_leg(hold, "f", (20.0, ANKLE_H + 1.5), bend=1)
+    hold[P_FTN] = hold[P_SHN] + NEUTRAL_ANKLE - 25.0
+    hold[P_FTF] = hold[P_SHF] + NEUTRAL_ANKLE - 25.0
+    return [start, hold]
+
+
+def supine_twist_poses():
+    # Lying on the back, knees bent; both knees lower to one side while the
+    # shoulders stay down.
+    start = pose(x=0, ftn=FLAT_FOOT, ftf=FLAT_FOOT, **SUPINE)
+    with_leg(start, "n", (22.0, ANKLE_H), bend=1)
+    with_leg(start, "f", (22.0, ANKLE_H), bend=1)
+    # knees roll to one side: in profile they lower and the feet roll onto
+    # their edges; the arrow shows the direction of the twist
+    hold = pose(x=0, **SUPINE)
+    with_leg(hold, "n", (27.0, ANKLE_H + 2.0), bend=1)
+    with_leg(hold, "f", (27.5, ANKLE_H + 1.0), bend=1)
+    hold[P_FTN] = hold[P_SHN] + NEUTRAL_ANKLE - 25.0
+    hold[P_FTF] = hold[P_SHF] + NEUTRAL_ANKLE - 25.0
+    return [start, hold]
+
+
+def open_book_poses():
+    # Lying on the side, seen from above: knees bent forward, arms reaching
+    # forward together; the top arm sweeps open over the body to the back.
+    base = dict(x=0, y=40.0, torso=180, head=178, thn=90, shn=0, thf=90, shf=0,
+                ftn=NEUTRAL_ANKLE, ftf=NEUTRAL_ANKLE, uaf=90, faf=90)
+    return [pose(uan=90, fan=90, **base), pose(uan=180, fan=180, **base), pose(uan=262, fan=262, **base)]
+
+
+def supported_rest_poses():
+    return legs_chair_poses(11.0)
+
+
+def supported_rest_support():
+    k_dx = math.sqrt(THIGH ** 2 - (11.0 - SUPINE["y"]) ** 2)
+    return [round(k_dx + 1.0, 1), round(k_dx + 27.0, 1), 8.0, 0.0, 0.0]
 
 
 def savasana_poses():
@@ -716,6 +859,75 @@ ANIMS = {
         cam=[44.0, 6.0, 3.2], parts=PART_SHIN_N | PART_FOOT_N, floorHalf=16.0,
         props=PROP_FLOOR, highlight=PART_FOOT_N, cue="Curl, then spread the toes",
     ),
+    "hip_9090": dict(
+        type=A_REPETITION, poses=hip_9090_poses(), handBend=60.0,
+        seq=[[0, 1, 1400, EASE_IN_OUT_SINE, "ROTATE"], [1, 0, 1200, EASE_IN_OUT_SINE, "CENTRE"],
+             [0, 2, 1400, EASE_IN_OUT_SINE, "ROTATE"], [2, 0, 1200, EASE_IN_OUT_SINE, "CENTRE"]], loop=True,
+        cam=[6.0, 18.0, 1.15], props=PROP_FLOOR, floorHalf=40.0,
+        highlight=PART_THIGH_N | PART_THIGH_F, cue="Knees side to side, slow",
+    ),
+    "worlds_greatest": dict(
+        type=A_REPETITION, poses=worlds_greatest_poses(), handBend=80.0,
+        seq=[[0, 1, 1800, EASE_IN_OUT_SINE, "REACH UP"], [1, 0, 1500, EASE_IN_OUT_SINE, "HAND DOWN"]], loop=True,
+        cam=[2.0, 32.0, 0.68], props=PROP_FLOOR, floorHalf=46.0,
+        highlight=PART_THIGH_N | PART_TORSO, cue="Lunge, hand down, reach up",
+    ),
+    "hip_circles": dict(
+        type=A_REPETITION, poses=hip_circle_poses(), handBend=20.0,
+        seq=[[i, (i + 1) % 4, 700, EASE_IN_OUT_SINE, "CIRCLE"] for i in range(4)], loop=True,
+        cam=[1.0, 52.0, 0.74], props=PROP_FLOOR, floorHalf=24.0,
+        highlight=PART_TORSO, cue="Slow circles, knees soft",
+        arrows=[[ARROW_ARC, 0.0, 52.0, 9.0, 300.0 - 90.0 * i, 220.0 - 90.0 * i, i] for i in range(4)],
+    ),
+    "knee_raise": dict(
+        type=A_REPETITION, poses=knee_raise_poses(), handBend=10.0,
+        seq=[[0, 1, 900, EASE_IN_OUT_SINE, "LIFT"], [1, 0, 900, EASE_IN_OUT_SINE, "LOWER"],
+             [0, 2, 900, EASE_IN_OUT_SINE, "LIFT"], [2, 0, 900, EASE_IN_OUT_SINE, "LOWER"]], loop=True,
+        cam=[6.0, 52.0, 0.74], props=PROP_FLOOR, floorHalf=26.0,
+        highlight=PART_THIGH_N | PART_THIGH_F, cue="Lift knee, stand tall",
+    ),
+    "cross_body": dict(
+        type=A_HOLD, view=VIEW_BUST, poses=cross_body_poses(),
+        seq=[[0, 1, 2000, EASE_IN_OUT_SINE, "CROSS"]], loop=False, holdLabel="HOLD",
+        cam=[0.0, 19.0, 1.25], props=0, highlight=0, cue="Arm across, gentle hold",
+    ),
+    "chest_opener": dict(
+        type=A_HOLD, view=VIEW_BUST, poses=chest_opener_poses(),
+        seq=[[0, 1, 2000, EASE_IN_OUT_SINE, "OPEN"]], loop=False, holdLabel="HOLD",
+        cam=[0.0, 19.0, 0.94], props=0, highlight=0, cue="Open arms, lift the chest",
+    ),
+    "thoracic_ext": dict(
+        type=A_REPETITION, poses=thoracic_ext_poses(), handBend=40.0,
+        seq=[[0, 1, 2000, EASE_IN_OUT_SINE, "EXTEND"], [1, 0, 1800, EASE_IN_OUT_SINE, "RETURN"]], loop=True,
+        cam=[4.0, 42.0, 0.92], props=PROP_FLOOR | PROP_CHAIR, chair=[-11.0, 10.0, SEAT_Y, -11.0, 46.0],
+        floorHalf=34.0, highlight=PART_TORSO, cue="Lean back over the chair",
+    ),
+    "reclined_butterfly": dict(
+        type=A_HOLD, poses=reclined_butterfly_poses(),
+        seq=[[0, 1, 2500, EASE_IN_OUT_SINE, "OPEN"]], loop=False, holdLabel="REST",
+        cam=[-4.0, 14.0, 1.1], props=PROP_FLOOR, floorHalf=44.0,
+        highlight=PART_THIGH_N | PART_THIGH_F, cue="Soles together, knees open",
+        arrows=[[ARROW_ARC, 0.0, 5.6, 22.0, 62.0, 38.0, ON_HOLD]],
+    ),
+    "supine_twist": dict(
+        type=A_HOLD, poses=supine_twist_poses(),
+        seq=[[0, 1, 2500, EASE_IN_OUT_SINE, "TWIST"]], loop=False, holdLabel="HOLD",
+        cam=[-4.0, 14.0, 1.1], props=PROP_FLOOR, floorHalf=44.0,
+        highlight=PART_TORSO, cue="Knees to one side, breathe",
+        arrows=[[ARROW_ARC, 0.0, 5.6, 24.0, 64.0, 40.0, 0]],
+    ),
+    "open_book": dict(
+        type=A_REPETITION, poses=open_book_poses(), handBend=0.0,
+        seq=[[0, 1, 1400, EASE_IN_OUT_SINE, "OPEN"], [1, 2, 1400, EASE_IN_OUT_SINE, "OPEN"],
+             [2, 1, 1400, EASE_IN_OUT_SINE, "CLOSE"], [1, 0, 1400, EASE_IN_OUT_SINE, "CLOSE"]], loop=True,
+        cam=[-4.0, 40.0, 0.95], props=0, highlight=PART_ARM_N | PART_TORSO, cue="Top arm opens behind you",
+    ),
+    "supported_rest": dict(
+        type=A_STATIC, poses=supported_rest_poses(),
+        seq=[[0, 0, 1000, EASE_LINEAR, "REST"]], loop=False, holdLabel="REST",
+        cam=[2.0, 10.0, 1.0], props=PROP_FLOOR | PROP_CHAIR, chair=supported_rest_support(), floorHalf=50.0,
+        highlight=0, cue="Pillow under calves, rest",
+    ),
     "relax": dict(
         type=A_STATIC, poses=savasana_poses(),
         seq=[[0, 0, 1000, EASE_LINEAR, "REST"]], loop=False, holdLabel="REST",
@@ -771,7 +983,8 @@ def validate():
     for name, a in ANIMS.items():
         if a.get("view") == VIEW_BUST:
             for p in a["poses"]:
-                if abs(p[0]) > 40 or not (-2 <= p[1] <= 6) or not (-2 <= p[2] <= 6):
+                if abs(p[0]) > 40 or not (-2 <= p[1] <= 6) or not (-2 <= p[2] <= 6) \
+                        or abs(rel_angle(p[3], p[4])) > 150 or abs(rel_angle(p[5], p[6])) > 150:
                     problems.append("%s: bust pose out of range %s" % (name, p[:3]))
             continue
         frames = [sample(a, t)[0] for t in range(0, cycle_ms(a) + 1, 50)] + a["poses"]
@@ -879,6 +1092,8 @@ class Ops:
 # shoulder lift. 3/4 view: the figure's right side (x > 0) is foreshortened
 # and drawn darker. FigureRenderer.drawFront mirrors this line for line.
 F_NEAR_K, F_FAR_K = 0.95, 0.62
+F_UARM, F_FARM, F_HAND = 15.1, 14.0, 4.5
+F_GAP = 0.7                       # outline width around arms in front of the torso
 F_TORSO_Y = [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 29.0]
 F_TORSO_W = [7.4, 6.9, 6.5, 6.8, 7.9, 8.9, 9.0]
 F_TORSO_LIFT = [0.0, 0.0, 0.0, 0.0, 0.2, 0.6, 1.0]
@@ -915,15 +1130,26 @@ def front_shapes(p):
         for cx_, cy_, r in caps:
             out.append((key, "circle", f_proj(cx_, cy_) + (r * (F_FAR_K + 0.2 if cx_ > 0 else 1.0),)))
 
-    def arm(side, lift, key):
-        sx_ = side
-        add_capsule(key, sx_ * 14.0, -1.5 + 0.3 * lift, sx_ * 14.1, -6.0 + 0.3 * lift, 1.5, 0.8)    # hand
-        add_capsule(key, sx_ * 13.4, 12.5 + 0.6 * lift, sx_ * 14.0, -1.5 + 0.3 * lift, 2.0, 1.4)    # forearm
-        add_capsule(key, sx_ * 11.4, 27.5 + lift, sx_ * 13.4, 12.5 + 0.6 * lift, 2.6, 1.9)          # upper arm
-        c = f_proj(sx_ * 10.6, 27.4 + lift)
-        out.append((key, "circle", c + (3.4 * (F_FAR_K + 0.2 if side > 0 else 1.0),)))           # deltoid
+    def arm(side, lift, ua, fa, key, outline=False):
+        shx, shy = side * 11.4, 27.5 + lift
+        ex, ey = shx + F_UARM * math.cos(d2r(ua)), shy + F_UARM * math.sin(d2r(ua))
+        wx, wy = ex + F_FARM * math.cos(d2r(fa)), ey + F_FARM * math.sin(d2r(fa))
+        hx, hy = wx + F_HAND * math.cos(d2r(fa)), wy + F_HAND * math.sin(d2r(fa))
+        if outline:
+            # thin black gap so an arm in front of the torso stays readable
+            g = F_GAP
+            add_capsule("gap", wx, wy, hx, hy, 1.5 + g, 0.8 + g)
+            add_capsule("gap", ex, ey, wx, wy, 2.0 + g, 1.4 + g)
+            add_capsule("gap", shx, shy, ex, ey, 2.6 + g, 1.9 + g)
+        add_capsule(key, wx, wy, hx, hy, 1.5, 0.8)            # hand
+        add_capsule(key, ex, ey, wx, wy, 2.0, 1.4)            # forearm
+        add_capsule(key, shx, shy, ex, ey, 2.6, 1.9)          # upper arm
+        c = f_proj(side * 10.6, 27.4 + lift)
+        out.append((key, "circle", c + (3.4 * (F_FAR_K + 0.2 if side > 0 else 1.0),)))   # deltoid
 
-    arm(1, lr, "far")
+    r_front = p[7] > 0.5
+    if not r_front:
+        arm(1, lr, p[5], p[6], "far")
     # torso: waist to shoulders, then trapezius up to the neck
     left = [(-F_TORSO_W[i], F_TORSO_Y[i] + F_TORSO_LIFT[i] * ll) for i in range(len(F_TORSO_Y))]
     left += [(-9.0, 31.4 + ll), (-5.6, 32.6 + 0.6 * shrug), (-2.5, 33.4 + shrug)]
@@ -936,7 +1162,9 @@ def front_shapes(p):
         trap = [(side * 2.5, 33.4 + shrug), (side * 5.6, 32.6 + 0.6 * shrug), (side * 9.0, 31.4 + lift),
                 (side * 9.4, 29.0 + lift), (side * 5.0, 30.0 + 0.6 * shrug), (side * 2.2, 30.6 + shrug)]
         out.append(("trap", "poly", [f_proj(*q) for q in trap]))
-    arm(-1, ll, "body")
+    arm(-1, ll, p[3], p[4], "body", outline=True)
+    if r_front:
+        arm(1, lr, p[5], p[6], "far", outline=True)
     # neck, skull, jaw, nose - rotate with the head tilt around the neck base
     py = 31.0 + shrug
     n0, n1 = f_rot(0.0, py, tilt, py), f_rot(0.0, py + 6.0, tilt, py)
@@ -962,7 +1190,9 @@ def render_bust(a, t_ms, box, mirror, reduced):
     o = Ops()
     hl = a["highlight"]
     for key, kind, data in front_shapes(p):
-        if key == "far":
+        if key == "gap":
+            col = "#000000"
+        elif key == "far":
             col = SOFT                      # same tone as the near arm (front view)
         elif key == "trap":
             if not hl & 2:

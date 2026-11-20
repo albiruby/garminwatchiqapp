@@ -187,10 +187,34 @@ class FigureRenderer {
         fCircle(dc, bx, by, w1);
     }
 
-    hidden function fArm(dc as Graphics.Dc, side, lift) as Void {
-        fCapsule(dc, side * 14.0, -1.5 + 0.3 * lift, side * 14.1, -6.0 + 0.3 * lift, 1.5, 0.8);
-        fCapsule(dc, side * 13.4, 12.5 + 0.6 * lift, side * 14.0, -1.5 + 0.3 * lift, 2.0, 1.4);
-        fCapsule(dc, side * 11.4, 27.5 + lift, side * 13.4, 12.5 + 0.6 * lift, 2.6, 1.9);
+    static const F_UARM = 15.1;
+    static const F_FARM = 14.0;
+    static const F_HAND = 4.5;
+    static const F_GAP = 0.7;
+
+    //! Arm from the shoulder by angles (deg). outline: thin black gap first,
+    //! so an arm in front of the torso stays readable.
+    hidden function fArm(dc as Graphics.Dc, side, lift, ua, fa, col as Number, outline as Boolean) as Void {
+        var shx = side * 11.4;
+        var shy = 27.5 + lift;
+        var ur = Math.toRadians(ua);
+        var fr = Math.toRadians(fa);
+        var ex = shx + F_UARM * Math.cos(ur);
+        var ey = shy + F_UARM * Math.sin(ur);
+        var wx = ex + F_FARM * Math.cos(fr);
+        var wy = ey + F_FARM * Math.sin(fr);
+        var hx = wx + F_HAND * Math.cos(fr);
+        var hy = wy + F_HAND * Math.sin(fr);
+        if (outline) {
+            dc.setColor(Theme.BG, Graphics.COLOR_TRANSPARENT);
+            fCapsule(dc, wx, wy, hx, hy, 1.5 + F_GAP, 0.8 + F_GAP);
+            fCapsule(dc, ex, ey, wx, wy, 2.0 + F_GAP, 1.4 + F_GAP);
+            fCapsule(dc, shx, shy, ex, ey, 2.6 + F_GAP, 1.9 + F_GAP);
+        }
+        dc.setColor(col, Graphics.COLOR_TRANSPARENT);
+        fCapsule(dc, wx, wy, hx, hy, 1.5, 0.8);
+        fCapsule(dc, ex, ey, wx, wy, 2.0, 1.4);
+        fCapsule(dc, shx, shy, ex, ey, 2.6, 1.9);
         fCircle(dc, side * 10.6, 27.4 + lift, 3.4);
     }
 
@@ -207,9 +231,10 @@ class FigureRenderer {
         var lr = p[2];
         var shrug = 0.8 * ((ll > lr) ? ll : lr);
         var neckOn = (_highlight & 2) != 0;
-        // far arm first (behind the torso), same tone as the near arm
-        dc.setColor(C_NEAR, Graphics.COLOR_TRANSPARENT);
-        fArm(dc, 1, lr);
+        var rFront = p[7] > 0.5;
+        if (!rFront) {
+            fArm(dc, 1, lr, p[5], p[6], C_NEAR, false);   // far arm behind the torso, same tone
+        }
         // torso: left edge up, trapezius to the neck, then the right side down
         var n = F_TORSO_Y.size();
         var pts = new [2 * (n + 3)];
@@ -239,8 +264,10 @@ class FigureRenderer {
                     fp(sd * 9.4, 29.0 + lift), fp(sd * 5.0, 30.0 + 0.6 * shrug), fp(sd * 2.2, 30.6 + shrug)]);
             }
         }
-        dc.setColor(color(1, C_NEAR), Graphics.COLOR_TRANSPARENT);
-        fArm(dc, -1, ll);
+        fArm(dc, -1, ll, p[3], p[4], color(1, C_NEAR), true);
+        if (rFront) {
+            fArm(dc, 1, lr, p[5], p[6], C_NEAR, true);    // e.g. holding the other arm
+        }
         // neck, jaw, skull, nose rotate with the head tilt around the neck base
         var py = 31.0 + shrug;
         var n1 = fRot(0.0, py + 6.0, tilt, py);
