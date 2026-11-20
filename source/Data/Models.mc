@@ -53,6 +53,10 @@ module Models {
     const K_TAGS = "t";      // Dictionary tag => seconds
     const K_HR_BEFORE = "hrB"; // optional, Garmin measured
     const K_HR_AFTER = "hrA";  // optional, Garmin measured
+    const K_HR_AVG = "hrAv";   // optional, average of Garmin HR samples during the session
+    const K_HR_MIN = "hrMn";   // optional, lowest Garmin HR sample during the session
+    const K_HRV_START = "hvS"; // optional, RMSSD ms of the first 2 min (Garmin RR, RESTORA calc)
+    const K_HRV_END = "hvE";   // optional, RMSSD ms of the last 2 min (Garmin RR, RESTORA calc)
 
     const SECONDS_PER_DAY = 86400;
 

@@ -279,3 +279,26 @@ function testSummarizeWeek(logger as Logger) as Boolean {
     Test.assert(empty.get("avgSession").value == null);
     return true;
 }
+
+(:test)
+function testHrvRmssd(logger as Logger) as Boolean {
+    // alternating 800 / 820 ms: every successive difference is 20 ms -> RMSSD 20
+    var rr = [];
+    for (var i = 0; i < 60; i++) {
+        rr.add((i % 2 == 0) ? 800 : 820);
+    }
+    Test.assertEqual(HrvCalculator.rmssd(rr), 20);
+    // too few beats -> no value, never an estimate
+    Test.assert(HrvCalculator.rmssd(rr.slice(0, 20)) == null);
+    Test.assert(HrvCalculator.rmssd(null) == null);
+    // artefacts (out of range, > 20 % jumps) are removed before the calculation
+    var noisy = rr.slice(0, rr.size());
+    noisy.add(250);
+    noisy.add(2500);
+    noisy.add(1400);
+    Test.assertEqual(HrvCalculator.clean(noisy).size(), 60);
+    // head / tail windows by summed time
+    Test.assertEqual(HrvCalculator.head(rr, 1620).size(), 2);
+    Test.assertEqual(HrvCalculator.tail(rr, 1620).size(), 2);
+    return true;
+}

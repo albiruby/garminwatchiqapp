@@ -22,11 +22,14 @@ class SessionPlayerView extends WatchUi.View {
     hidden var _startEpoch as Number = 0;
     hidden var _hrBefore = null;
     hidden var _finished as Boolean = false;
+    hidden var _sensors as SessionSensors;
 
     function initialize(id, def) {
         View.initialize();
         _engine = new SessionEngine(id, def, SettingsRepository.countdownSec(), SettingsRepository.autoAdvance());
         _hrBefore = SensorManager.snapshotHr();
+        _sensors = new SessionSensors();
+        _sensors.start();
         _startEpoch = Time.now().value();
         _weights = new [_engine.steps.size()];
         for (var i = 0; i < _weights.size(); i++) {
@@ -62,6 +65,9 @@ class SessionPlayerView extends WatchUi.View {
     }
 
     function onTick() as Void {
+        if (_engine.state == SessionEngine.RUNNING) {
+            _sensors.sampleHr();
+        }
         handle(_engine.tick(System.getTimer()));
     }
 
@@ -84,6 +90,8 @@ class SessionPlayerView extends WatchUi.View {
         _finished = true;
         _clock.stop();
         var record = _engine.buildRecord(_startEpoch, _hrBefore, SensorManager.snapshotHr());
+        _sensors.stop();
+        _sensors.addTo(record, _engine.activeMs);
         var saved = false;
         if (_engine.state == SessionEngine.COMPLETED || record.get(Models.K_DUR) >= MIN_SAVE_SECONDS) {
             saved = HistoryRepository.append(record);
@@ -257,6 +265,7 @@ class SessionPlayerView extends WatchUi.View {
 }
 
 //! START: pause/resume (or next in manual mode). DOWN: skip exercise.
+//! UP: previous / restart exercise.
 //! BACK: confirm ending the session.
 class SessionPlayerDelegate extends WatchUi.BehaviorDelegate {
 
@@ -276,6 +285,12 @@ class SessionPlayerDelegate extends WatchUi.BehaviorDelegate {
 
     function onNextPage() as Boolean {
         _view.handle(_view.engine().skip(System.getTimer()));
+        return true;
+    }
+
+    //! UP: restart the exercise, or go back one if it just started.
+    function onPreviousPage() as Boolean {
+        _view.handle(_view.engine().previous(System.getTimer()));
         return true;
     }
 

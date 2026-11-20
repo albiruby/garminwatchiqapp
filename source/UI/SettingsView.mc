@@ -12,7 +12,7 @@ module SettingsMenu {
         cd.valueOn = true;
         menu.addItem(cd);
         menu.addItem(toggle(:autoAdvance, "Auto next", "Advance exercises", SettingsRepository.autoAdvance()));
-        menu.addItem(toggle(:hrSnapshot, "HR check", "Garmin HR before/after", SettingsRepository.hrSnapshot()));
+        menu.addItem(toggle(:hrSnapshot, "HR & HRV", "Garmin sensor: " + SensorAvailability.summary(), SettingsRepository.hrSnapshot()));
         menu.addItem(toggle(:motion, "Motion", "Animations on/off", MotionConfig.enabled()));
         menu.addItem(toggle(:reducedMotion, "Reduced motion", "Key poses only", MotionConfig.reduced()));
         menu.addItem(toggle(:exerciseAnim, "Figure guide", "Animated exercise figure",

@@ -15,7 +15,7 @@ module HomeMenu {
         for (var c = 0; c < Models.CAT_COUNT; c++) {
             menu.addItem(new RowItem(c, Models.categoryName(c), Models.categorySubtitle(c), c, null));
         }
-        menu.addItem(new RowItem(:history, "History", "This week", Icons.HISTORY, null));
+        menu.addItem(new RowItem(:history, "History", "Week and sessions", Icons.HISTORY, null));
         menu.addItem(new RowItem(:settings, "Settings", "Haptics, countdown", Icons.SETTINGS, null));
         return menu;
     }
@@ -35,8 +35,7 @@ class HomeMenuDelegate extends WatchUi.Menu2InputDelegate {
                 SessionDetail.push(lastId);
             }
         } else if (id == :history) {
-            var hv = new HistoryView();
-            WatchUi.pushView(hv, new HistoryDelegate(hv), WatchUi.SLIDE_LEFT);
+            WatchUi.pushView(HistoryList.build(), new HistoryListDelegate(), WatchUi.SLIDE_LEFT);
         } else if (id == :settings) {
             WatchUi.pushView(SettingsMenu.build(), new SettingsMenuDelegate(), WatchUi.SLIDE_LEFT);
         } else if (id instanceof Number) {

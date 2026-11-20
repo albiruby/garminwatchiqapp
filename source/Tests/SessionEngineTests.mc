@@ -134,3 +134,28 @@ function testContentFitsHud(logger as Logger) as Boolean {
     }
     return true;
 }
+
+(:test)
+function testEnginePrevious(logger as Logger) as Boolean {
+    var e = newEngine("leg_relief_10", 0, true);
+    e.start(0);
+    e.tick(130000);                        // step 1 (ankle pumps), 10 s in
+    Test.assertEqual(e.stepIndex, 1);
+    // more than 3 s into the step: restart it
+    Test.assertEqual(e.previous(130000), SessionEngine.EVT_STEP_START);
+    Test.assertEqual(e.stepIndex, 1);
+    Test.assertEqual(e.stepElapsedMs, 0);
+    // within 3 s: go back one exercise
+    e.tick(131000);
+    e.previous(131000);
+    Test.assertEqual(e.stepIndex, 0);
+    Test.assertEqual(e.state, SessionEngine.RUNNING);
+    // first exercise: previous restarts it; a paused session stays paused
+    e.togglePause(132000);
+    e.previous(132000);
+    Test.assertEqual(e.stepIndex, 0);
+    Test.assertEqual(e.state, SessionEngine.PAUSED);
+    // active time already done is kept
+    Test.assert(e.activeMs >= 131000);
+    return true;
+}

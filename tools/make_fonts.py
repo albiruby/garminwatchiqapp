@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "tools", "fonts")
 OUT = os.path.join(ROOT, "resources", "fonts")
 
-TEXT = "".join(chr(c) for c in range(32, 127)) + "\u00b7\u2191\u2193\u2026"  # ASCII + middot, arrows, ellipsis
+TEXT = "".join(chr(c) for c in range(32, 127)) + "\u00b7\u2191\u2193\u2192\u2026"  # ASCII + middot, arrows, ellipsis
 DIGITS = "0123456789:-/%. "
 HERO = "0123456789:"
 FACE = "Oswald-VF.ttf"

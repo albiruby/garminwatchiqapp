@@ -26,6 +26,8 @@ class SessionEngine {
     static const EVT_COMPLETE = 8;
     static const EVT_STEP_DONE = 16;
 
+    static const PREV_RESTART_MS = 3000;
+
     var sessionId;
     var def;
     var steps;
@@ -184,6 +186,33 @@ class SessionEngine {
         _lastMs = nowMs;
         state = RUNNING;
         return advance();
+    }
+
+    //! Previous: within the first 3 s of a step go back one exercise,
+    //! otherwise restart the current one. Time already done stays counted;
+    //! a paused session stays paused.
+    function previous(nowMs as Number) as Number {
+        if (state != RUNNING && state != PAUSED && state != AWAITING_NEXT) {
+            return EVT_NONE;
+        }
+        var wasPaused = (state == PAUSED);
+        if (state == RUNNING) {
+            tick(nowMs);
+            if (isFinished() || state != RUNNING) {
+                return EVT_NONE;
+            }
+        }
+        accountStep();
+        if (state != AWAITING_NEXT && stepElapsedMs < PREV_RESTART_MS && stepIndex > 0) {
+            stepIndex--;
+        } else if (state == AWAITING_NEXT && completedCount > 0) {
+            completedCount--;   // finished step is replayed; it counts once when it ends again
+        }
+        stepElapsedMs = 0;
+        _stepAccounted = false;
+        state = wasPaused ? PAUSED : RUNNING;
+        _lastMs = nowMs;
+        return EVT_STEP_START;
     }
 
     function cancel(nowMs as Number) as Number {

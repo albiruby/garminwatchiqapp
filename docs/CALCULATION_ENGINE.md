@@ -22,7 +22,9 @@ Sensor-independent analytics. Every session produces data the engine can analyse
 
 ## Session record (Application.Storage)
 
-`id, cat, start (UTC epoch s), dur (active s, without countdown/pause), plan, st (0 completed / 1 cancelled), done, skip, tot, cyc, t {tag: seconds}, hrB?, hrA?`
+`id, cat, start (UTC epoch s), dur (active s, without countdown/pause), plan, st (0 completed / 1 cancelled), done, skip, tot, cyc, t {tag: seconds}, hrB?, hrA?, hrAv?, hrMn?, hvS?, hvE?`
+
+`hrAv`/`hrMn` are the mean and lowest Garmin HR samples taken once a second while the session runs. `hvS`/`hvE` are HRV values (below). All of them are absent, never zero, when the sensor gave nothing.
 
 Tags: `br` breathing, `mi` meditation, `el` leg elevation, `an` ankle movement, `mv` gentle movement, `st` stretching, `rs` rest, `tr` transition, `L`/`R` side seconds.
 History keeps the newest 100 records. A cancelled session shorter than 10 s is not saved.
@@ -90,6 +92,16 @@ Repetitions are not counted from wrist motion. The watch cannot see leg or hip m
 | Personal baseline | mean of the last 14 days, needs ≥ 5 valid points, else null |
 | vs baseline | `current − baseline` |
 | Daily / weekly recovery minutes | practice minutes on the local day / last 7 local days |
+
+## Heart rate and HRV (optional, Settings → HR & HRV, off by default)
+
+- Capability detection: `SensorAvailability` (`Sensor.getInfo`, `Sensor.registerSensorDataListener`, `ActivityMonitor.getHeartRateHistory`). Settings shows what the watch supports.
+- HR: Garmin measured. Before / after snapshots, plus mean and minimum during the session (`SessionSensors`).
+- HRV: RMSSD in ms from Garmin beat-to-beat intervals (`HrvCalculator`). The intervals are measured; the RMSSD is a RESTORA calculation.
+  - Cleaning: intervals outside 300–2000 ms are dropped, and so is any beat that differs more than 20 % from the previous one.
+  - At least 30 clean beats or the value is null.
+  - Sessions of 5 min or more store RMSSD for the first 2 min (`hvS`) and the last 2 min (`hvE`); shorter sessions store one value over the whole session (`hvE`).
+  - Wrist-optical RR is noisier than a chest strap. Values are shown as a within-session comparison, not as a health score.
 
 ## Facade
 

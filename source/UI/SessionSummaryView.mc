@@ -52,8 +52,11 @@ class SessionSummaryView extends WatchUi.View {
             var tot = RecordUtil.getNum(record, Models.K_TOTAL, 0);
             rows.add([Models.CAT_MOBILITY, done.toString() + "/" + tot.toString(), "Exercises"]);
         }
+        var hrv = SessionSummaryView.hrvText(record);
         var d = m.get("hrChange");
-        if (d.isAvailable()) {
+        if (hrv != null) {
+            rows.add([Icons.HEART, hrv, "HRV (RMSSD) · Garmin RR"]);
+        } else if (d.isAvailable()) {
             var change = -d.value; // after - before
             var arrow = (change < 0) ? "↓ " : ((change > 0) ? "↑ " : "");
             rows.add([Icons.HEART, arrow + change.abs().toString() + " bpm", "HR change · Garmin"]);
@@ -61,6 +64,19 @@ class SessionSummaryView extends WatchUi.View {
             rows.add([Icons.CHECK, m.get("completion").display(), "Completed"]);
         }
         return rows;
+    }
+
+    //! "38 → 46 ms", "46 ms", or null when no HRV was measured.
+    static function hrvText(record as Dictionary) {
+        var s = record.get(Models.K_HRV_START);
+        var e = record.get(Models.K_HRV_END);
+        if (s != null && e != null) {
+            return s.toString() + " → " + e.toString() + " ms";
+        }
+        if (e != null) {
+            return e.toString() + " ms";
+        }
+        return null;
     }
 
     // 390-px grid, safe circle r170:
