@@ -295,26 +295,67 @@ class SessionPlayerDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onBack() as Boolean {
-        WatchUi.pushView(new WatchUi.Confirmation("End session?"), new EndSessionDelegate(_view), WatchUi.SLIDE_UP);
+        WatchUi.pushView(new EndSessionView(), new EndSessionDelegate(_view), WatchUi.SLIDE_UP);
         return true;
     }
 }
 
-class EndSessionDelegate extends WatchUi.ConfirmationDelegate {
+//! RESTORA-styled end-session prompt (replaces the system Confirmation).
+//! START ends the session, BACK keeps going. The session keeps its real
+//! time while this is shown, exactly as before.
+class EndSessionView extends WatchUi.View {
+
+    function initialize() {
+        View.initialize();
+    }
+
+    // 390-px grid, safe circle r170:
+    //   96 PAUSE label / 120 title / 158 note / 196 hairline / 214 End pill /
+    //   262 BACK hint
+    function onUpdate(dc as Graphics.Dc) as Void {
+        dc.setColor(Theme.WHITE, Theme.BG);
+        dc.clear();
+        var cx = Theme.cx(dc);
+        Theme.centerText(dc, Theme.px(dc, 96), Theme.label(), Theme.AMBER, "SESSION RUNNING");
+        Theme.centerText(dc, Theme.px(dc, 120), Theme.title(), Theme.WHITE, "End session?");
+        Theme.centerText(dc, Theme.px(dc, 158), Theme.small(), Theme.GREY, "Saved if over 10 seconds");
+        Theme.divider(dc, Theme.px(dc, 196), Theme.SAFE_PAGE, Theme.px(dc, Theme.SP_XXXL));
+        var w = Theme.px(dc, 120);
+        var h = Theme.px(dc, 30);
+        var y = Theme.px(dc, 214);
+        dc.setColor(Theme.SURFACE, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(cx - w / 2, y, w, h, h / 2);
+        Theme.centerText(dc, y + Theme.px(dc, 1), Theme.title(), Theme.AMBER, "End");
+        Theme.centerText(dc, Theme.px(dc, 262), Theme.label(), Theme.GREY, "BACK · KEEP GOING");
+        // START hint on the bezel, amber for a stopping action
+        var r = dc.getWidth() / 2 - 4;
+        dc.setPenWidth(6);
+        dc.setColor(Theme.AMBER, Graphics.COLOR_TRANSPARENT);
+        dc.drawArc(cx, Theme.cy(dc), r, Graphics.ARC_COUNTER_CLOCKWISE, 22, 38);
+        dc.setPenWidth(1);
+    }
+}
+
+//! START = end the session; BACK = return to it. The engine is cancelled here;
+//! the player's next timer tick (after this view has closed) saves the record
+//! and shows the summary.
+class EndSessionDelegate extends WatchUi.BehaviorDelegate {
 
     hidden var _view as SessionPlayerView;
 
     function initialize(view as SessionPlayerView) {
-        ConfirmationDelegate.initialize();
+        BehaviorDelegate.initialize();
         _view = view;
     }
 
-    //! The engine is cancelled here; the player's next timer tick (after the
-    //! confirmation has closed) saves the record and shows the summary.
-    function onResponse(response as WatchUi.Confirm) as Boolean {
-        if (response == WatchUi.CONFIRM_YES) {
-            _view.engine().cancel(System.getTimer());
-        }
+    function onSelect() as Boolean {
+        _view.engine().cancel(System.getTimer());
+        WatchUi.popView(WatchUi.SLIDE_DOWN);
+        return true;
+    }
+
+    function onBack() as Boolean {
+        WatchUi.popView(WatchUi.SLIDE_DOWN);
         return true;
     }
 }

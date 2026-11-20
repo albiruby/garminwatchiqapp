@@ -41,8 +41,12 @@ module ExerciseLibrary {
             "mindful" => ["Mindful Breathing", R, Models.TAG_MIND, "Rest on the breath", null],
             "bodyscan" => ["Body Scan", R, Models.TAG_MIND, "Attention: feet to head", null],
             "present" => ["Present Moment", R, Models.TAG_MIND, "Sounds, then the body", null],
+            "unwind" => ["Mental Unwind", R, Models.TAG_MIND, "Let thoughts pass by", null],
+            "tension" => ["Tension Awareness", R, Models.TAG_MIND, "Notice tension, soften", null],
             "quiet" => ["Quiet Sitting", R, Models.TAG_MIND, "Sit comfortably and rest", null],
             // CIRCULATE
+            "supine_elev" => ["Supine Leg Elevation", H, Models.TAG_ELEV, "Legs on pillows, relax", null],
+            "toe_curls" => ["Toe Curls", P, Models.TAG_ANKLE, "Curl, then spread the toes", null],
             "legs_wall" => ["Legs Up the Wall", H, Models.TAG_ELEV, "Hips near wall, legs up", null],
             "legs_chair" => ["Legs on Chair", H, Models.TAG_ELEV, "Calves resting on a chair", null],
             "ankle_pumps" => ["Ankle Pumps", P, Models.TAG_ANKLE, "Point and flex your feet", null],
@@ -62,6 +66,8 @@ module ExerciseLibrary {
             "hip_flexor" => ["Hip Flexor Stretch", A, Models.TAG_STRETCH, "Tuck pelvis, shift forward", null],
             "knee_chest" => ["Knee to Chest", A, Models.TAG_STRETCH, "Hug knee in, back relaxed", null],
             "walk_cool" => ["Walking Cooldown", P, Models.TAG_MOVE, "Easy pace, loose arms", null],
+            "shoulder_mob" => ["Shoulder Mobility", P, Models.TAG_STRETCH, "Slow circles, easy range", null],
+            "ankle_mob" => ["Ankle Mobility", A, Models.TAG_ANKLE, "Knee over toes, heel down", null],
             "shoulder_rolls" => ["Shoulder Rolls", P, Models.TAG_STRETCH, "Roll shoulders back slowly", null],
             // REST / TRANSITION
             "relax" => ["Relaxation", R, Models.TAG_REST, "Lie still, soften the body", null],

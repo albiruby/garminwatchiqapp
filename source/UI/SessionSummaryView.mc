@@ -55,7 +55,7 @@ class SessionSummaryView extends WatchUi.View {
         var hrv = SessionSummaryView.hrvText(record);
         var d = m.get("hrChange");
         if (hrv != null) {
-            rows.add([Icons.HEART, hrv, "HRV (RMSSD) · Garmin RR"]);
+            rows.add([Icons.HEART, hrv, "HRV · Garmin RR"]);
         } else if (d.isAvailable()) {
             var change = -d.value; // after - before
             var arrow = (change < 0) ? "↓ " : ((change > 0) ? "↑ " : "");
@@ -79,24 +79,48 @@ class SessionSummaryView extends WatchUi.View {
         return null;
     }
 
-    // 390-px grid, safe circle r170:
-    //   58 check / 82 title / 111 subtitle / 138 hairline
-    //   146, 196, 246 metric rows (icon x112, value + label x140) / 306 Done pill
+    // 390-px grid, safe circle r170. Everything is centred on the round face:
+    //   46-94 badge (r24 @ 70) / 102 title / 134 subtitle / 164 hairline /
+    //   rows every 40 px from 176 (icon + grey label left, white value right,
+    //   width from the safe circle at that height) / 296 Done pill (to 326)
+    hidden const ROW_Y = 176;
+    hidden const ROW_H = 40;
+
     function onUpdate(dc as Graphics.Dc) as Void {
         dc.setColor(Theme.WHITE, Theme.BG);
         dc.clear();
-        CompletionAnimation.draw(dc, Theme.cx(dc), Theme.px(dc, 58), Theme.px(dc, 34), _completed ? Theme.GREEN : Theme.AMBER,
+        var cx = Theme.cx(dc);
+        var safe = Theme.SAFE_PAGE;
+        CompletionAnimation.draw(dc, cx, Theme.px(dc, 70), Theme.px(dc, 24), _completed ? Theme.GREEN : Theme.AMBER,
             _badge.value(System.getTimer()));
-        Theme.centerText(dc, Theme.px(dc, 82), Theme.title(), Theme.WHITE, _completed ? "Session complete" : "Session ended");
-        Theme.fitLine(dc, Theme.px(dc, 111), _subtitle, Theme.small(), null, Theme.SAFE_PAGE, Theme.GREY);
-        Theme.divider(dc, Theme.px(dc, 138), Theme.SAFE_PAGE, Theme.px(dc, 20));
+        Theme.fitLine(dc, Theme.px(dc, 102), _completed ? "Session complete" : "Session ended", Theme.title(), Theme.body(),
+            safe, Theme.WHITE);
+        Theme.fitLine(dc, Theme.px(dc, 134), _subtitle, Theme.small(), null, safe, Theme.GREY);
+        Theme.divider(dc, Theme.px(dc, 164), safe, Theme.px(dc, Theme.SP_XXL));
+
+        var iconS = Theme.px(dc, 18);
+        var lineH = dc.getFontHeight(Theme.body());
+        // one column width for every row (the narrowest, lowest row) so icons,
+        // labels and values line up vertically
+        var lastY = Theme.px(dc, ROW_Y + ROW_H * (_rows.size() - 1));
+        var half = Theme.lineWidth(dc, lastY, lineH, safe) / 2 - Theme.px(dc, Theme.SP_XL);
         for (var i = 0; i < _rows.size(); i++) {
-            var y = Theme.px(dc, 146 + 50 * i);
-            Icons.draw(dc, _rows[i][0], Theme.px(dc, 112), y + Theme.px(dc, 16), Theme.px(dc, 22), Theme.WHITE);
-            Theme.text(dc, Theme.px(dc, 140), y, Theme.title(), Theme.WHITE, _rows[i][1], Graphics.TEXT_JUSTIFY_LEFT);
-            Theme.text(dc, Theme.px(dc, 140), y + Theme.px(dc, 28), Theme.label(), Theme.GREY, _rows[i][2], Graphics.TEXT_JUSTIFY_LEFT);
+            var y = Theme.px(dc, ROW_Y + ROW_H * i);
+            var midY = y + lineH / 2;
+            Icons.draw(dc, _rows[i][0], cx - half + iconS / 2, midY, iconS, Theme.SOFT);
+            var labelX = cx - half + iconS + Theme.px(dc, Theme.SP_M);
+            var valueW = dc.getTextWidthInPixels(_rows[i][1], Theme.body());
+            var labelMax = (cx + half) - valueW - Theme.px(dc, Theme.SP_M) - labelX;
+            Theme.text(dc, labelX, midY - dc.getFontHeight(Theme.small()) / 2, Theme.small(), Theme.GREY,
+                Theme.fit(dc, _rows[i][2], Theme.small(), labelMax), Graphics.TEXT_JUSTIFY_LEFT);
+            Theme.text(dc, cx + half, y, Theme.body(), Theme.WHITE, _rows[i][1], Graphics.TEXT_JUSTIFY_RIGHT);
+            if (i < _rows.size() - 1) {
+                var ly = y + Theme.px(dc, ROW_H) - Theme.px(dc, Theme.SP_S) - Theme.px(dc, 2);
+                dc.setColor(Theme.LINE, Graphics.COLOR_TRANSPARENT);
+                dc.drawLine(cx - half, ly, cx + half, ly);
+            }
         }
-        Theme.pill(dc, 306, "Done");
+        Theme.pill(dc, 296, "Done");
         Theme.startHint(dc);
     }
 

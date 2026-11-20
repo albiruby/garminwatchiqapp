@@ -270,13 +270,25 @@ def legs_wall_poses():
 LEGS_CHAIR_SHIN_Y = 24.0
 
 
-def legs_chair_poses():
-    # Lying on the back, calves resting on a chair seat, knees bent ~90 deg.
-    k_dy = LEGS_CHAIR_SHIN_Y - SUPINE["y"]
+def legs_chair_poses(shin_y=None):
+    # Lying on the back, calves resting on a support (chair seat, or a lower
+    # stack of pillows), knees bent.
+    if shin_y is None:
+        shin_y = LEGS_CHAIR_SHIN_Y
+    k_dy = shin_y - SUPINE["y"]
     k_dx = math.sqrt(THIGH ** 2 - k_dy ** 2)
     th = round(math.degrees(math.atan2(k_dy, k_dx)), 1)
     rest = pose(x=0, thn=th, shn=0, thf=th, shf=0, ftn=NEUTRAL_ANKLE - 15, ftf=NEUTRAL_ANKLE - 15, **SUPINE)
     return [rest]
+
+
+PILLOW_SHIN_Y = 15.0
+
+
+def pillow_support():
+    # [x0, x1, top, backX, backTop]: a low block under the calves
+    k_dx = math.sqrt(THIGH ** 2 - (PILLOW_SHIN_Y - SUPINE["y"]) ** 2)
+    return [round(k_dx + 1.0, 1), round(k_dx + 27.0, 1), PILLOW_SHIN_Y - 3.0, 0.0, 0.0]
 
 
 SEAT_Y = 23.0          # chair seat top for a seated figure (knee height ~28)
@@ -521,6 +533,12 @@ ANIMS = {
         seq=[[0, 0, 1000, EASE_LINEAR, "REST"]], loop=False, holdLabel="REST",
         cam=[2.0, 16.0, 1.05], props=PROP_FLOOR | PROP_CHAIR, chair=[14.0, 44.0, 21.0, 0.0, 0.0], floorHalf=50.0,
         highlight=PART_SHIN_N, cue="Calves rest on the seat",
+    ),
+    "supine_elev": dict(
+        type=A_STATIC, poses=legs_chair_poses(PILLOW_SHIN_Y),
+        seq=[[0, 0, 1000, EASE_LINEAR, "REST"]], loop=False, holdLabel="REST",
+        cam=[2.0, 12.0, 1.05], props=PROP_FLOOR | PROP_CHAIR, chair=pillow_support(), floorHalf=50.0,
+        highlight=PART_SHIN_N, cue="Legs on pillows, relax",
     ),
     "seated_march": dict(
         type=A_REPETITION, poses=seated_march_poses(), handBend=-20.0,

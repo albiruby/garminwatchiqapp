@@ -161,6 +161,22 @@ module ExercisePoseData {
             :holdLabel => "REST",
             :arrows => []
         });
+        d.put("supine_elev", {
+            :type => 0,
+            :poses => [
+                [0.0, 5.6, 0.0, 180.0, 178.0, 178.0, 178.0, 178.0, 178.0, 22.1, 0.0, 51.4, 22.1, 0.0, 51.4]
+            ],
+            :seq => [[0, 0, 1000, 0, "REST"]],
+            :loop => false,
+            :cam => [2.0, 12.0, 1.05],
+            :props => 5,
+            :chair => [24.2, 50.2, 12.0, 0.0, 0.0],
+            :highlight => 32,
+            :floorHalf => 50.0,
+            :cue => "Legs on pillows, relax",
+            :holdLabel => "REST",
+            :arrows => []
+        });
         d.put("seated_march", {
             :type => 2,
             :poses => [

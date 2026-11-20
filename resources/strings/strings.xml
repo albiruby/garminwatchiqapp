@@ -3,7 +3,7 @@
     <string id="SetHaptics">Haptic feedback</string>
     <string id="SetCountdown">Countdown (sec)</string>
     <string id="SetAutoAdvance">Auto-advance exercises</string>
-    <string id="SetHrSnapshot">HR before/after</string>
+    <string id="SetHrSnapshot">HR &amp; HRV (Garmin sensor)</string>
     <string id="SetMotion">Motion</string>
     <string id="SetReducedMotion">Reduced motion</string>
     <string id="SetExerciseAnim">Exercise animation</string>

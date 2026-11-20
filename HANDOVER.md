@@ -28,13 +28,16 @@ The user writes in Indonesian; reply in Indonesian.
 |---|---|
 | Calculation Engine (`source/Calculation/`) | done; unit tests written |
 | Session Engine (`source/Engine/SessionEngine.mc`) | done; state machine driven by real time (`System.getTimer` deltas); unit tests written |
-| Content: 32 exercises, 17 sessions (`source/Content/`) | done |
+| Content: 38 exercises, 27 sessions, 4–6 per module (`source/Content/`) | done |
 | UI: sport-tech style (Oswald, green accent, central ring HUD, RESTORA logo) | done; checked in the simulator (Home, module lists, session detail, breathing and Calf Stretch HUD) |
-| Motion: 17 animated exercise figures (see `docs/mockups/motion-*.png`) | done; all poses pass `motion_model.py` validation |
-| Build | compiles for fr165 and fr165m; 38/38 unit tests pass; release package `bin/RESTORA.iq` builds |
+| Motion: 18 animated exercise figures (see `docs/mockups/motion-*.png`) | done; all poses pass `motion_model.py` validation |
+| Sensors: HR and HRV (RMSSD from Garmin beat intervals), optional | done; unit tests; **not yet verified on a real sensor** |
+| History: weekly dashboard, last 20 sessions, detail page | done |
+| Store material (`docs/store/`: listing, privacy, release notes, screenshots), version 1.0.0 | done |
+| Build | compiles for fr165 and fr165m; 40/40 unit tests pass; release package `bin/RESTORA.iq` builds |
 | Physical FR165 test, battery measurement | **not done** |
 
-Animated: calf_stretch, cat_cow, ankle_pumps, heel_raises, knee_bends (heel slides), childs_pose, legs_wall, legs_chair, seated_march, walk_cool, hamstring, quad_stretch, hip_flexor, knee_chest, hip_mobility (figure four), transition, relax (savasana). Breathing exercises use the breathing ring instead of a figure. Not yet animated: ankle_circles, thoracic_rot, neck_side, shoulder_rolls; these need a front or top view in the renderer.
+Animated: calf_stretch, cat_cow, ankle_pumps, heel_raises, knee_bends (heel slides), childs_pose, legs_wall, legs_chair, seated_march, walk_cool, hamstring, quad_stretch, hip_flexor, knee_chest, hip_mobility (figure four), transition, relax (savasana), supine_elev. Breathing exercises use the breathing ring instead of a figure. Not yet animated: ankle_circles, thoracic_rot, neck_side, shoulder_rolls, shoulder_mob, ankle_mob, toe_curls; these need a front or top view in the renderer (v1.1).
 
 Build notes: `monkey.jungle` pins `base.sourcePath`/`resourcePath`, because the repo also holds other watch projects under `projects/`. Python 3.12 + Pillow is installed for the generators. `developer_key.der` is a local test key; use your permanent key for store uploads.
 
