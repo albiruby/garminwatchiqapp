@@ -8,7 +8,6 @@ Monorepo untuk project Garmin Connect IQ pribadi: watch app, data field, dan工�
 |---|---|---|---|
 | **RESTORA** | `.` (root) | Watch app | Guided recovery & breathing companion untuk FR165/165 Music. Bukan perangkat medis. |
 | **RacePilot** | `projects/racepilot/` | Data field | Race-pacing data field: lap pace, projected finish, need pace; GPS/track/treadmill engine. |
-| **ReadyRun** | `projects/ready-run/` | Watch app | Readiness, training status, form, dan rekomendasi latihan. |
 | **Nusantara Batik** | `projects/batik-watchface/` | Watch face | Tiga varian watch face: Kawung, Megamendung, Parang. |
 
 Dokumen lanjutan:
@@ -17,20 +16,17 @@ Dokumen lanjutan:
 - [RacePilot architecture](projects/racepilot/ARCHITECTURE.md)
 - [RacePilot roadmap](projects/racepilot/ROADMAP.md)
 - [Batik watchfaces](projects/batik-watchface/README.md)
-- [ReadyRun](projects/ready-run/README.md)
 
 <!-- GALLERY:START -->
 
 ## Galeri
 
-Sekilas (klik project untuk detail):
+Foto per project (buka bagian yang ingin dilihat):
 
-| RESTORA | RacePilot | ReadyRun | Nusantara Batik |
-|---|---|---|---|
-| ![RESTORA](<docs/mockups/screen-01.png>) | ![RacePilot](<projects/racepilot/docs/screenshots/v2.2.0/fr165_standard_hud.png>) | ![ReadyRun](<projects/ready-run/docs/reference-ui.jpg>) | ![Batik Kawung](<projects/batik-watchface/nusantara-kawung/docs/mockups/01-main-fr165.png>) |
+### RESTORA
 
 <details>
-<summary>RESTORA — UI & motion mockups (22 gambar)</summary>
+<summary>Lihat semua 22 gambar</summary>
 
 | | | |
 |---|---|---|
@@ -45,8 +41,10 @@ Sekilas (klik project untuk detail):
 
 </details>
 
+### RacePilot
+
 <details>
-<summary>RacePilot — store assets, multi-device & v2.2.0 screenshots (23 gambar)</summary>
+<summary>Lihat semua 23 gambar</summary>
 
 | | | |
 |---|---|---|
@@ -61,17 +59,10 @@ Sekilas (klik project untuk detail):
 
 </details>
 
-<details>
-<summary>ReadyRun — referensi UI (1 gambar)</summary>
-
-| | | |
-|---|---|---|
-| ![reference-ui](<projects/ready-run/docs/reference-ui.jpg>) |  |  |
-
-</details>
+### Batik
 
 <details>
-<summary>Nusantara Batik — mockups & store assets (65 gambar)</summary>
+<summary>Lihat semua 65 gambar</summary>
 
 | | | |
 |---|---|---|
@@ -134,7 +125,6 @@ monkeydo bin/<nama>-test.prg fr165 /t
 ├── docs/                                             # dokumentasi tambahan
 ├── projects/
 │   ├── racepilot/
-│   ├── ready-run/
 │   └── batik-watchface/
 ├── HANDOVER.md
 └── .gitignore
