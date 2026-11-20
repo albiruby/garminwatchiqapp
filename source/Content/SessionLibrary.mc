@@ -85,12 +85,13 @@ module SessionLibrary {
                 "Release upper-body tension", SAFETY_GENERAL],
 
             "wind_down_5" => ["5-Min Wind Down", SL, [["extexh", 180], ["relax", 120]], "Calm breathing before bed", SAFETY_BREATH],
-            "evening_restore_20" => ["Evening Restore", SL, [["diaphragm", 180], ["cat_cow", 120], ["hip_mobility", 120],
+            "evening_restore_20" => ["Evening Restore", SL, [["diaphragm", 180], ["cat_cow", 120], ["knee_chest", 120],
                 ["legs_wall", 300], ["bodyscan", 300], ["relax", 180]], "Full evening routine", SAFETY_ELEVATION],
 
-            "post_run_15" => ["Post-Run Downshift", RE, [["slowbreath", 180], ["calf_stretch", 120], ["hip_mobility", 240],
-                ["legs_chair", 240], ["relax", 120]], "Breathing, mobility, elevation", SAFETY_ELEVATION],
-            "cooldown_5" => ["Workout Cooldown", RE, [["slowbreath", 120], ["calf_stretch", 120], ["relax", 60]],
+            "post_run_15" => ["Post-Run Downshift", RE, [["walk_cool", 120], ["calf_stretch", 120], ["quad_stretch", 120],
+                ["hamstring", 120], ["hip_flexor", 120], ["legs_chair", 180], ["relax", 120]],
+                "Cooldown, stretching, elevation", SAFETY_ELEVATION],
+            "cooldown_5" => ["Workout Cooldown", RE, [["walk_cool", 120], ["calf_stretch", 120], ["relax", 60]],
                 "Short gradual cooldown", SAFETY_GENERAL]
         };
     }

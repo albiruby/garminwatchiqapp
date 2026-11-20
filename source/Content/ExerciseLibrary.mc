@@ -57,6 +57,11 @@ module ExerciseLibrary {
             "childs_pose" => ["Child's Pose", H, Models.TAG_STRETCH, "Sink hips back, arms long", null],
             "thoracic_rot" => ["Thoracic Rotation", A, Models.TAG_STRETCH, "Open the chest to the side", null],
             "neck_side" => ["Neck Side Stretch", A, Models.TAG_STRETCH, "Ear toward shoulder, soft", null],
+            "hamstring" => ["Hamstring Stretch", A, Models.TAG_STRETCH, "Hinge at hips, back long", null],
+            "quad_stretch" => ["Quad Stretch", A, Models.TAG_STRETCH, "Heel to glute, knees close", null],
+            "hip_flexor" => ["Hip Flexor Stretch", A, Models.TAG_STRETCH, "Tuck pelvis, shift forward", null],
+            "knee_chest" => ["Knee to Chest", A, Models.TAG_STRETCH, "Hug knee in, back relaxed", null],
+            "walk_cool" => ["Walking Cooldown", P, Models.TAG_MOVE, "Easy pace, loose arms", null],
             "shoulder_rolls" => ["Shoulder Rolls", P, Models.TAG_STRETCH, "Roll shoulders back slowly", null],
             // REST / TRANSITION
             "relax" => ["Relaxation", R, Models.TAG_REST, "Lie still, soften the body", null],

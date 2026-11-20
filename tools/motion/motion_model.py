@@ -299,6 +299,103 @@ def seated_march_poses():
     return [seated(0, 0), seated(28, 0), seated(0, 28)]
 
 
+def walk_poses():
+    # Walking in place, side view: contact (near leg forward), passing, contact
+    # (far leg forward), passing. Arms swing opposite to the legs.
+    hy = 51.5
+    up = dict(x=0, y=hy, torso=88, head=88, spine=0)
+
+    def contact(front, back, arm_front_n):
+        p = pose(**up)
+        fs, bs = ("n", "f") if front == "n" else ("f", "n")
+        with_leg(p, fs, (12.0, ANKLE_H + 1.0), bend=1)
+        with_leg(p, bs, (-12.0, ANKLE_H + 5.0), bend=1)
+        p[P_FTN if fs == "n" else P_FTF] = FLAT_FOOT + 4.0          # heel strike, toes up
+        p[P_FTN if bs == "n" else P_FTF] = FLAT_FOOT - 20.0         # toe-off
+        fwd, back_ = (-68.0, -52.0), (-112.0, -104.0)
+        (p[P_UAN], p[P_FAN]), (p[P_UAF], p[P_FAF]) = (fwd, back_) if arm_front_n else (back_, fwd)
+        return p
+
+    def passing(stance):
+        p = pose(uan=-90, fan=-84, uaf=-90, faf=-84, **up)
+        p[P_Y] = hy + 1.0
+        ss, ws = ("n", "f") if stance == "n" else ("f", "n")
+        with_leg(p, ss, (0.0, ANKLE_H), bend=1)
+        with_leg(p, ws, (2.0, 16.0), bend=1)
+        p[P_FTN if ss == "n" else P_FTF] = FLAT_FOOT
+        p[P_FTN if ws == "n" else P_FTF] = FLAT_FOOT - 6.0
+        return p
+    # near leg forward pairs with the far arm forward
+    return [contact("n", "f", False), passing("n"), contact("f", "n", True), passing("f")]
+
+
+def hamstring_poses():
+    # Long sitting on the floor, legs straight, hinge forward from the hips
+    # and reach toward the shins.
+    legs = dict(thn=0, shn=0, thf=0, shf=0, ftn=NEUTRAL_ANKLE, ftf=NEUTRAL_ANKLE)
+    start = pose(x=0, y=5.0, torso=90, head=88, **legs)
+    with_arms(start, (16.0, 10.5), (15.0, 10.5), bend=-1)
+    hold = pose(x=0, y=5.0, torso=42, head=22, spine=2.5, **legs)
+    with_arms(hold, (40.0, 10.5), (39.0, 10.5), bend=-1)
+    return [start, hold]
+
+
+def quad_stretch_poses():
+    # Standing on the far leg, one hand on a wall; the near knee bends so the
+    # heel comes to the glute and the near hand holds the ankle. The shin and
+    # foot angles are unwrapped (-260 rather than 100) so the blend swings the
+    # heel backwards, not forwards through a kick.
+    stand = dict(x=0, y=STAND_HIP_Y, torso=90, head=90, thf=-90, shf=-90, ftf=FLAT_FOOT)
+    # weight already on the far leg, near foot just off the floor
+    start = pose(ftn=FLAT_FOOT, uan=-92, fan=-88, **stand)
+    with_leg(start, "n", (0.0, ANKLE_H + 3.0), bend=1)
+    with_arms(start, (2.0, STAND_HIP_Y - 25.0), (24.0, 80.0), bend=-1)
+    mid = pose(thn=-95.0, shn=-150.0, ftn=-150.0 + NEUTRAL_ANKLE, **stand)
+    with_arms(mid, (-4.0, STAND_HIP_Y - 18.0), (24.0, 80.0), bend=-1)
+    hold = pose(thn=-100.0, shn=-260.0, ftn=-260.0 + NEUTRAL_ANKLE - 40.0, **stand)
+    j = fk(hold)
+    with_arms(hold, (j[J_ANKLE_N][0] + 1.0, j[J_ANKLE_N][1] - 1.0), (24.0, 80.0), bend=-1)
+    return [start, mid, hold]
+
+
+def hip_flexor_poses():
+    # Half kneeling: near knee down behind, far foot flat in front. The hips
+    # shift forward to open the front of the near hip.
+    knee = (-8.0, 2.9)
+    front_ankle = (24.0, ANKLE_H)
+
+    def kneel(thigh):
+        hip = (knee[0] - THIGH * math.cos(d2r(thigh)), knee[1] - THIGH * math.sin(d2r(thigh)))
+        p = pose(x=round(hip[0], 2), y=round(hip[1], 2), torso=90, head=90, thn=thigh, shn=180, ftn=192,
+                 ftf=FLAT_FOOT)
+        with_leg(p, "f", front_ankle, bend=1)
+        j = fk(p)
+        with_arms(p, (j[J_KNEE_F][0] - 3.0, j[J_KNEE_F][1] + 5.0), (j[J_KNEE_F][0] - 4.0, j[J_KNEE_F][1] + 5.0),
+                  bend=-1)
+        return p
+    return [kneel(-90.0), kneel(-112.0)]
+
+
+def knee_chest_poses():
+    # Lying on the back; draw the near knee toward the chest and hold it
+    # just below the knee with both hands. The far leg stays long.
+    start = pose(x=0, thn=0, shn=0, thf=0, shf=0, ftn=NEUTRAL_ANKLE, ftf=NEUTRAL_ANKLE, **SUPINE)
+    start[P_UAN], start[P_FAN], start[P_UAF], start[P_FAF] = -4.0, -2.0, -4.0, -2.0   # arms by the sides
+    hold = pose(x=0, thn=132.0, shn=-6.0, thf=0, shf=0, ftn=-6.0 + NEUTRAL_ANKLE - 20.0, ftf=NEUTRAL_ANKLE,
+                **SUPINE)
+    j = fk(hold)
+    with_arms(hold, (j[J_KNEE_N][0] + 3.0, j[J_KNEE_N][1] + 2.5), (j[J_KNEE_N][0] + 2.0, j[J_KNEE_N][1] + 2.5),
+              bend=-1)
+    return [start, hold]
+
+
+def savasana_poses():
+    # Lying still on the back, arms long by the sides, feet falling open.
+    p = pose(x=0, y=SUPINE["y"], torso=180, head=178, thn=0, shn=0, thf=0, shf=0,
+             ftn=NEUTRAL_ANKLE - 25, ftf=NEUTRAL_ANKLE - 25, uan=-4, fan=-2, uaf=-4, faf=-2)
+    return [p]
+
+
 # Figure centre in the HUD ring (390-px units), shared with SessionPlayerView.
 FIG_CY = 150.0
 
@@ -399,6 +496,44 @@ ANIMS = {
              [0, 2, 900, EASE_IN_OUT_SINE, "LIFT"], [2, 0, 900, EASE_IN_OUT_SINE, "LOWER"]], loop=True,
         cam=[6.0, 42.0, 0.95], props=PROP_FLOOR | PROP_CHAIR, chair=[-11.0, 10.0, SEAT_Y, -11.0, 54.0],
         floorHalf=34.0, highlight=PART_THIGH_N | PART_THIGH_F, cue="Lift knees, alternate",
+    ),
+    "walk_cool": dict(
+        type=A_REPETITION, poses=walk_poses(), handBend=8.0,
+        seq=[[0, 1, 450, EASE_LINEAR, "STEP"], [1, 2, 450, EASE_LINEAR, "STEP"],
+             [2, 3, 450, EASE_LINEAR, "STEP"], [3, 0, 450, EASE_LINEAR, "STEP"]], loop=True,
+        cam=[0.0, 50.0, 0.74], props=PROP_FLOOR, floorHalf=30.0,
+        highlight=PART_THIGH_N | PART_SHIN_N, cue="Easy pace, loose arms",
+    ),
+    "hamstring": dict(
+        type=A_HOLD, poses=hamstring_poses(), handBend=0.0,
+        seq=[[0, 1, 2500, EASE_IN_OUT_SINE, "HINGE"]], loop=False, holdLabel="HOLD",
+        cam=[22.0, 20.0, 1.12], props=PROP_FLOOR, floorHalf=36.0,
+        highlight=PART_THIGH_N | PART_THIGH_F, cue="Hinge at hips, back long",
+    ),
+    "quad_stretch": dict(
+        type=A_HOLD, poses=quad_stretch_poses(), handBend=20.0,
+        seq=[[0, 1, 1000, EASE_IN_OUT_SINE, "HEEL UP"], [1, 2, 1000, EASE_IN_OUT_SINE, "HEEL UP"]], loop=False,
+        holdLabel="HOLD",
+        cam=[6.0, 48.0, 0.76], props=PROP_FLOOR | PROP_WALL, wallX=26.0, wallY=[50.0, 98.0], floorHalf=28.0,
+        highlight=PART_THIGH_N, cue="Heel to glute, knees close",
+    ),
+    "hip_flexor": dict(
+        type=A_HOLD, poses=hip_flexor_poses(), handBend=40.0,
+        seq=[[0, 1, 2200, EASE_IN_OUT_SINE, "SHIFT"]], loop=False, holdLabel="HOLD",
+        cam=[6.0, 35.0, 0.98], props=PROP_FLOOR, floorHalf=38.0,
+        highlight=PART_THIGH_N, cue="Tuck pelvis, shift forward",
+    ),
+    "knee_chest": dict(
+        type=A_HOLD, poses=knee_chest_poses(), handBend=40.0,
+        seq=[[0, 1, 2200, EASE_IN_OUT_SINE, "DRAW IN"]], loop=False, holdLabel="HOLD",
+        cam=[-12.0, 16.0, 1.0], props=PROP_FLOOR, floorHalf=40.0,
+        highlight=PART_THIGH_N, cue="Hug knee in, back relaxed",
+    ),
+    "relax": dict(
+        type=A_STATIC, poses=savasana_poses(),
+        seq=[[0, 0, 1000, EASE_LINEAR, "REST"]], loop=False, holdLabel="REST",
+        cam=[5.0, 8.0, 0.9], props=PROP_FLOOR, floorHalf=52.0,
+        highlight=0, cue="Lie still, soften the body",
     ),
 }
 
