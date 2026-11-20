@@ -12,8 +12,8 @@ import Toybox.Lang;
 //!   tick            -> TIMER_UPDATED; sampler.reps -> REPETITION_UPDATED
 class MotionController {
 
-    const STEP_IN_MS = 220;
-    const STEP_IN_PX = 24;
+    static const STEP_IN_MS = 220;
+    static const STEP_IN_PX = 24;
 
     var sampler = null;          // PoseSampler for the current exercise, or null
     var renderer as FigureRenderer;

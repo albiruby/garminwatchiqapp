@@ -76,7 +76,7 @@ class MenuTitle extends WatchUi.Drawable {
 //! One row: optional icon, name, subtitle, and a chevron or a value on the right.
 class RowItem extends WatchUi.CustomMenuItem {
 
-    const ICON_NONE = -1;
+    static const ICON_NONE = -1;
 
     var name as String;
     var sub;

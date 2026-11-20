@@ -7,11 +7,11 @@ import Toybox.Lang;
 //! session freezes the figure and nothing here can end an exercise.
 class PoseSampler {
 
-    const TYPE_STATIC = 0;
-    const TYPE_HOLD = 1;
-    const TYPE_REPETITION = 2;
-    const TYPE_SEQUENCE = 3;
-    const TYPE_BREATH_SYNC = 4;
+    static const TYPE_STATIC = 0;
+    static const TYPE_HOLD = 1;
+    static const TYPE_REPETITION = 2;
+    static const TYPE_SEQUENCE = 3;
+    static const TYPE_BREATH_SYNC = 4;
 
     var def;
     var pose as Array;        // current pose (Skeleton.POSE_LEN floats)

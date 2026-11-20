@@ -19,18 +19,18 @@ import Toybox.Math;
 //! buffers are preallocated, so a frame allocates nothing.
 class FigureRenderer {
 
-    const SILHOUETTE = 0;
-    const SKELETAL = 1;
+    static const SILHOUETTE = 0;
+    static const SKELETAL = 1;
 
-    const C_NEAR = 0xC9CEC9;
-    const C_FAR = 0x6E7570;
-    const C_PROP = 0x3A423D;
+    static const C_NEAR = 0xC9CEC9;
+    static const C_FAR = 0x6E7570;
+    static const C_PROP = 0x3A423D;
 
-    const ARROW_LINE = 0;
-    const ARROW_ARC = 1;
-    const ON_HOLD = 9;
-    const ALL_PARTS = 1023;
-    const NECK_EXTRA = 2.0;   // neck profile reaches into the skull
+    static const ARROW_LINE = 0;
+    static const ARROW_ARC = 1;
+    static const ON_HOLD = 9;
+    static const ALL_PARTS = 1023;
+    static const NECK_EXTRA = 2.0;   // neck profile reaches into the skull
 
     hidden var _j as Array;
     hidden var _prof as Array;    // 2 * PROFILE_T points

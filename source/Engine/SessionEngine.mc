@@ -10,21 +10,21 @@ import Toybox.Lang;
 class SessionEngine {
 
     // States
-    const IDLE = 0;
-    const COUNTDOWN = 1;
-    const RUNNING = 2;
-    const PAUSED = 3;
-    const AWAITING_NEXT = 4; // step finished, manual advance mode
-    const COMPLETED = 5;
-    const CANCELLED = 6;
+    static const IDLE = 0;
+    static const COUNTDOWN = 1;
+    static const RUNNING = 2;
+    static const PAUSED = 3;
+    static const AWAITING_NEXT = 4; // step finished, manual advance mode
+    static const COMPLETED = 5;
+    static const CANCELLED = 6;
 
     // Event bits returned by tick()/actions, consumed by the UI + haptics
-    const EVT_NONE = 0;
-    const EVT_STEP_START = 1;
-    const EVT_PHASE = 2;
-    const EVT_SIDE = 4;
-    const EVT_COMPLETE = 8;
-    const EVT_STEP_DONE = 16;
+    static const EVT_NONE = 0;
+    static const EVT_STEP_START = 1;
+    static const EVT_PHASE = 2;
+    static const EVT_SIDE = 4;
+    static const EVT_COMPLETE = 8;
+    static const EVT_STEP_DONE = 16;
 
     var sessionId;
     var def;
