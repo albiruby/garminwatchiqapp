@@ -158,7 +158,13 @@ class FigureRenderer {
         var c = Math.cos(r);
         var sn = Math.sin(r);
         var dy = y - B_PIVOT;
-        return [sx(x * c - dy * sn).toNumber(), sy(B_PIVOT + x * sn + dy * c).toNumber()];
+        return projPt(x * c - dy * sn, B_PIVOT + x * sn + dy * c);
+    }
+
+    //! 3/4 view: the figure's right side (x > 0) is foreshortened.
+    hidden function projPt(x, y) as Array {
+        var k = (x > 0) ? FigureShapes.BUST_FAR_K : FigureShapes.BUST_NEAR_K;
+        return [sx(x * k).toNumber(), sy(y).toNumber()];
     }
 
     //! Outline point [x, y, lift, k] -> screen point, with shoulder lift and
@@ -174,7 +180,7 @@ class FigureRenderer {
             if (rotate) {
                 out[i] = bustPt(x, y, tilt);
             } else {
-                out[i] = [sx(x).toNumber(), sy(y).toNumber()];
+                out[i] = projPt(x, y);
             }
         }
         return out;
@@ -185,10 +191,11 @@ class FigureRenderer {
         var ll = p[1];
         var lr = p[2];
         var neckOn = (_highlight & 2) != 0;
+        dc.setColor(C_FAR, Graphics.COLOR_TRANSPARENT);
+        dc.fillPolygon(bustPoly(FigureShapes.BUST_ARM_R, ll, lr, tilt, false));   // far arm, behind
         dc.setColor(color(1, C_NEAR), Graphics.COLOR_TRANSPARENT);
-        dc.fillPolygon(bustPoly(FigureShapes.BUST_ARM_L, ll, lr, tilt, false));
-        dc.fillPolygon(bustPoly(FigureShapes.BUST_ARM_R, ll, lr, tilt, false));
         dc.fillPolygon(bustPoly(FigureShapes.BUST_TORSO, ll, lr, tilt, false));
+        dc.fillPolygon(bustPoly(FigureShapes.BUST_ARM_L, ll, lr, tilt, false));
         dc.setColor(color(2, C_NEAR), Graphics.COLOR_TRANSPARENT);
         dc.fillPolygon(bustPoly(FigureShapes.BUST_NECK, ll, lr, tilt, true));
         if (neckOn) {
@@ -197,6 +204,7 @@ class FigureRenderer {
         }
         dc.setColor(C_NEAR, Graphics.COLOR_TRANSPARENT);
         dc.fillPolygon(bustPoly(FigureShapes.BUST_HEAD, ll, lr, tilt, true));
+        dc.fillPolygon(bustPoly(FigureShapes.BUST_NOSE, ll, lr, tilt, true));
     }
 
     hidden function color(part as Number, base as Number) as Number {

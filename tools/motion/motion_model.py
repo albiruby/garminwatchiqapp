@@ -916,6 +916,17 @@ for _i in range(20):
     BUST_HEAD.append([round(7.0 * _sx * _taper, 2), round(60.5 + 9.0 * _sy, 2), 2, 1.0])
 
 
+# 3/4 view: the figure turns toward screen left; its right side (x > 0) is
+# foreshortened. Applied after the head tilt.
+B_NEAR_K, B_FAR_K = 0.95, 0.6
+BUST_NOSE = [[-6.2, 62.0, 2, 1.0], [-8.6, 59.2, 2, 1.0], [-6.4, 57.4, 2, 1.0]]
+
+
+def bust_proj(pt):
+    x, y = pt
+    return (x * (B_FAR_K if x > 0 else B_NEAR_K), y)
+
+
 def bust_lift(pt, ll, lr):
     lift = {0: ll, 1: lr, 2: 0.8 * max(ll, lr)}.get(pt[2], 0.0)
     return pt[0], pt[1] + pt[3] * lift
@@ -925,12 +936,20 @@ def bust_shapes(p):
     """(kind, part, points) in figure units. part 1 = body/arms, 2 = neck and trapezius, 0 = head."""
     tilt, ll, lr = p[0], p[1], p[2]
     out = []
-    for table in (BUST_ARM_L, BUST_ARM_R, BUST_TORSO):
-        out.append(("poly", 1, [bust_lift(q, ll, lr) for q in table]))
-    out.append(("poly", 2, [bust_rot(*bust_lift(q, ll, lr), tilt) for q in BUST_NECK]))
-    out.append(("trap", 2, [bust_lift(q, ll, lr) for q in BUST_TRAP_L]))
-    out.append(("trap", 2, [bust_lift(q, ll, lr) for q in BUST_TRAP_R]))
-    out.append(("poly", 0, [bust_rot(*bust_lift(q, ll, lr), tilt) for q in BUST_HEAD]))
+
+    def flat(table):
+        return [bust_proj(bust_lift(q, ll, lr)) for q in table]
+
+    def turned(table):
+        return [bust_proj(bust_rot(*bust_lift(q, ll, lr), tilt)) for q in table]
+    out.append(("far", 1, flat(BUST_ARM_R)))          # far arm, behind and darker
+    out.append(("poly", 1, flat(BUST_TORSO)))
+    out.append(("poly", 1, flat(BUST_ARM_L)))
+    out.append(("poly", 2, turned(BUST_NECK)))
+    out.append(("trap", 2, flat(BUST_TRAP_L)))
+    out.append(("trap", 2, flat(BUST_TRAP_R)))
+    out.append(("poly", 0, turned(BUST_HEAD)))
+    out.append(("poly", 0, turned(BUST_NOSE)))
     return out
 
 
@@ -948,7 +967,8 @@ def render_bust(a, t_ms, box, mirror, reduced):
         on = bool(part and (hl & part))
         if kind == "trap" and not on:
             continue
-        o.add("poly", GREEN if on else SOFT, [list(S(q)) for q in data])
+        col = FAR if kind == "far" else (GREEN if on else SOFT)
+        o.add("poly", col, [list(S(q)) for q in data])
     holding = (not a["loop"]) and t_ms >= cycle_ms(a)
     for ar in a.get("arrows", []):
         if not ((ar[-1] == ON_HOLD and holding) or (ar[-1] == seg and not holding)):
@@ -1235,6 +1255,9 @@ def gen_shapes():
              "    const BUST_TRAP_R = %s;" % bust_arr(BUST_TRAP_R),
              "    const BUST_NECK = %s;" % bust_arr(BUST_NECK),
              "    const BUST_HEAD = %s;" % bust_arr(BUST_HEAD),
+             "    const BUST_NOSE = %s;" % bust_arr(BUST_NOSE),
+             "    const BUST_NEAR_K = %s;" % mc_num(B_NEAR_K),
+             "    const BUST_FAR_K = %s;" % mc_num(B_FAR_K),
              "    //! Foot outline in the foot frame (x along ankle -> toe).",
              "    const FOOT_OUTLINE = [%s];" % foot,
              "}"]
