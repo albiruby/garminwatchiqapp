@@ -15,6 +15,11 @@ module ExerciseLibrary {
     var _all = null;
 
     function get(id as String) {
+        if (id.equals("custom")) {
+            // built on each call so Settings changes apply immediately
+            return ["Custom Breathing", Models.TYPE_BREATHING, Models.TAG_BREATH, "Your own rhythm",
+                SettingsRepository.customPattern()];
+        }
         if (_all == null) {
             _all = build();
         }
@@ -43,6 +48,7 @@ module ExerciseLibrary {
             "present" => ["Present Moment", R, Models.TAG_MIND, "Sounds, then the body", null],
             "unwind" => ["Mental Unwind", R, Models.TAG_MIND, "Let thoughts pass by", null],
             "tension" => ["Tension Awareness", R, Models.TAG_MIND, "Notice tension, soften", null],
+            "gratitude" => ["Gratitude Reflection", R, Models.TAG_MIND, "Recall three good things", null],
             "quiet" => ["Quiet Sitting", R, Models.TAG_MIND, "Sit comfortably and rest", null],
             // CIRCULATE
             "supine_elev" => ["Supine Leg Elevation", H, Models.TAG_ELEV, "Legs on pillows, relax", null],

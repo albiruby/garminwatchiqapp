@@ -159,3 +159,42 @@ function testEnginePrevious(logger as Logger) as Boolean {
     Test.assert(e.activeMs >= 131000);
     return true;
 }
+
+(:test)
+function testEngineRestBetweenExercises(logger as Logger) as Boolean {
+    var e = newEngine("leg_relief_10", 0, true);
+    e.restMs = 10000;
+    e.start(0);
+    // first exercise is 120 s; at 125 s we are 5 s into the rest
+    var evt = e.tick(125000);
+    Test.assert((evt & SessionEngine.EVT_STEP_DONE) != 0);
+    Test.assert((evt & SessionEngine.EVT_STEP_START) == 0);   // no buzz until the rest ends
+    Test.assertEqual(e.state, SessionEngine.COUNTDOWN);
+    Test.assert(e.resting);
+    Test.assertEqual(e.stepIndex, 1);
+    Test.assertEqual(e.activeMs, 120000);                     // rest is not active time
+    // rest ends at 130 s; leftover 2 s run in the next exercise
+    evt = e.tick(132000);
+    Test.assert((evt & SessionEngine.EVT_STEP_START) != 0);
+    Test.assertEqual(e.state, SessionEngine.RUNNING);
+    Test.assertEqual(e.stepElapsedMs, 2000);
+    // DOWN during a rest ends it early
+    e.tick(192000);                                           // exercise 2 (60 s) done at 190 s
+    Test.assert(e.resting);
+    Test.assertEqual(e.skip(193000), SessionEngine.EVT_STEP_START);
+    Test.assertEqual(e.state, SessionEngine.RUNNING);
+    Test.assertEqual(e.stepIndex, 2);
+    return true;
+}
+
+(:test)
+function testCustomBreathingSession(logger as Logger) as Boolean {
+    var def = SessionLibrary.get("custom_breath");
+    Test.assert(def != null);
+    var steps = def[SessionLibrary.F_STEPS];
+    Test.assertEqual(steps[0][1], SettingsRepository.customMinutes() * 60);
+    var ex = ExerciseLibrary.get("custom");
+    Test.assertEqual(ex[ExerciseLibrary.F_TYPE], Models.TYPE_BREATHING);
+    Test.assert(BreathingCalculator.cycleLength(ex[ExerciseLibrary.F_PATTERN]) > 0);
+    return true;
+}

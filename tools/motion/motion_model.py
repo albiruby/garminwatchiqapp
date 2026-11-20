@@ -433,6 +433,83 @@ def transition_poses():
     return [lie, prop, sit]
 
 
+def bust_pose(tilt=0.0, ll=0.0, lr=0.0):
+    p = [0.0] * POSE_LEN
+    p[0], p[1], p[2] = float(tilt), float(ll), float(lr)
+    return p
+
+
+def neck_side_poses():
+    # Front view: ear toward the shoulder; the opposite shoulder stays down.
+    return [bust_pose(), bust_pose(tilt=30.0, ll=0.0, lr=-1.0)]
+
+
+def shoulder_roll_poses():
+    # Front view: shoulders lift toward the ears, then roll back and down.
+    return [bust_pose(), bust_pose(ll=7.0, lr=7.0), bust_pose(ll=3.0, lr=3.0)]
+
+
+def ankle_circle_poses():
+    # Lying, lower-leg close-up (as ankle pumps); the foot travels through
+    # flex -> neutral -> point -> neutral, drawn with a circling arrow.
+    base = dict(x=0, y=4.6, torso=180, head=178, thn=0, shn=0, thf=0, shf=0, uan=178, fan=178, uaf=178, faf=178)
+    return [pose(ftn=NEUTRAL_ANKLE + d, ftf=NEUTRAL_ANKLE + d, **base) for d in (20.0, -8.0, -36.0, -8.0)]
+
+
+def ankle_mob_poses():
+    # Half kneeling: the front knee drives forward over the toes with the
+    # front heel down (ankle dorsiflexion), then back.
+    knee = (-14.0, 2.9)
+    front_ankle = (16.0, ANKLE_H)
+
+    def kneel(hip_x):
+        hy = knee[1] + math.sqrt(THIGH ** 2 - (hip_x - knee[0]) ** 2)
+        th = round(math.degrees(math.atan2(knee[1] - hy, knee[0] - hip_x)), 1)
+        p = pose(x=hip_x, y=round(hy, 2), torso=88, head=88, thn=th, shn=180, ftn=192, ftf=FLAT_FOOT)
+        with_leg(p, "f", front_ankle, bend=1)
+        j = fk(p)
+        with_arms(p, (j[J_KNEE_F][0] - 2.0, j[J_KNEE_F][1] + 4.0), (j[J_KNEE_F][0] - 3.0, j[J_KNEE_F][1] + 4.0),
+                  bend=-1)
+        return p
+    return [kneel(x) for x in (-10.0, -6.0, -2.0, 2.0, 5.0)]
+
+
+def thoracic_rot_poses():
+    # All fours: the near arm opens up toward the ceiling (gaze follows),
+    # then threads under the chest.
+    knee = (0.0, 2.9)
+    hip = (knee[0], knee[1] + THIGH)
+    torso = round(math.degrees(math.asin((UARM + FARM + 2.0 - hip[1]) / TORSO)), 1)
+    legs = dict(x=hip[0], y=hip[1], torso=torso, thn=-90, shn=180, ftn=192, thf=-90, shf=180, ftf=192)
+    sh = (hip[0] + TORSO * math.cos(d2r(torso)), hip[1] + TORSO * math.sin(d2r(torso)))
+    wrist = (sh[0], 1.8)
+
+    def quad(head, near):
+        p = pose(head=head, **legs)
+        with_arms(p, wrist, (wrist[0] - 1.0, wrist[1]), bend=1)
+        if near == "up":
+            p[P_UAN], p[P_FAN] = 92.0, 90.0
+        elif near == "under":
+            with_arms(p, (sh[0] - 13.0, 5.0), (wrist[0] - 1.0, wrist[1]), bend=1)
+        return p
+    return [quad(-20, "floor"), quad(55, "up"), quad(-60, "under")]
+
+
+def arm_circle_poses():
+    # Standing; the near arm sweeps a full circle (down, forward, up, back).
+    arms = dict(uaf=-90, faf=-86, torso=90, head=90, spine=0)
+    base = dict(x=0, y=STAND_HIP_Y, thn=-90, shn=-90, thf=-90, shf=-90, ftn=FLAT_FOOT, ftf=FLAT_FOOT, **arms)
+    return [pose(uan=a, fan=a, **base) for a in (-90.0, 0.0, 90.0, 180.0, 270.0)]
+
+
+def toe_curl_poses():
+    # Close-up of the lower leg and foot: the forefoot presses down (toes
+    # curl) then lifts (toes spread). The foot is highlighted.
+    base = dict(x=0, y=4.6, torso=180, head=178, thn=0, shn=0, thf=0, shf=0, uan=178, fan=178, uaf=178, faf=178)
+    return [pose(ftn=NEUTRAL_ANKLE + 4, ftf=NEUTRAL_ANKLE + 4, **base),
+            pose(ftn=NEUTRAL_ANKLE - 30, ftf=NEUTRAL_ANKLE - 30, **base)]
+
+
 def savasana_poses():
     # Lying still on the back, arms long by the sides, feet falling open.
     p = pose(x=0, y=SUPINE["y"], torso=180, head=178, thn=0, shn=0, thf=0, shf=0,
@@ -451,6 +528,7 @@ A_STATIC, A_HOLD, A_REPETITION, A_SEQUENCE, A_BREATH_SYNC = 0, 1, 2, 3, 4
 
 # Props
 PROP_FLOOR, PROP_WALL, PROP_CHAIR = 1, 2, 4
+VIEW_SIDE, VIEW_BUST = 0, 1          # side figure / front-view bust
 
 # Arrow kinds: straight (x0,y0,x1,y1) / arc (cx,cy,r,a0,a1). The last field
 # binds the arrow to a segment index, or ON_HOLD (shown once a HOLD is reached).
@@ -591,6 +669,53 @@ ANIMS = {
         holdLabel="SIT", cam=[-6.0, 18.0, 1.0], props=PROP_FLOOR, floorHalf=46.0,
         highlight=PART_TORSO, cue="Exit the position slowly",
     ),
+    "neck_side": dict(
+        type=A_HOLD, view=VIEW_BUST, poses=neck_side_poses(),
+        seq=[[0, 1, 2200, EASE_IN_OUT_SINE, "TILT"]], loop=False, holdLabel="HOLD",
+        cam=[0.0, 32.0, 1.05], props=0, highlight=2, cue="Ear toward shoulder, soft",
+        arrows=[[ARROW_ARC, 0.0, 44.0, 26.0, 70.0, 104.0, 0]],
+    ),
+    "shoulder_rolls": dict(
+        type=A_REPETITION, view=VIEW_BUST, poses=shoulder_roll_poses(),
+        seq=[[0, 1, 1100, EASE_IN_OUT_SINE, "UP"], [1, 2, 900, EASE_IN_OUT_SINE, "BACK"],
+             [2, 0, 900, EASE_IN_OUT_SINE, "DOWN"]], loop=True,
+        cam=[0.0, 33.0, 0.97], props=0, highlight=2, cue="Roll shoulders back slowly",
+        arrows=[[ARROW_ARC, -21.0, 38.0, 6.0, 270.0, 90.0, 0], [ARROW_ARC, -21.0, 38.0, 6.0, 90.0, 0.0, 1],
+                [ARROW_ARC, -21.0, 38.0, 6.0, 0.0, -90.0, 2]],
+    ),
+    "ankle_circles": dict(
+        type=A_REPETITION, poses=ankle_circle_poses(),
+        seq=[[i, (i + 1) % 4, 700, EASE_IN_OUT_SINE, "CIRCLE"] for i in range(4)], loop=True,
+        cam=[42.0, 6.0, 2.7], parts=PART_SHIN_N | PART_FOOT_N, floorHalf=18.0,
+        props=PROP_FLOOR, highlight=PART_FOOT_N, cue="Circle the ankle slowly",
+        arrows=[[ARROW_ARC, 51.0, 9.0, 8.0, 30.0 + 90.0 * i, 110.0 + 90.0 * i, i] for i in range(4)],
+    ),
+    "ankle_mob": dict(
+        type=A_REPETITION, poses=ankle_mob_poses(), handBend=40.0,
+        seq=[[i, i + 1, 375, EASE_LINEAR, "DRIVE"] for i in range(4)]
+            + [[4 - i, 3 - i, 375, EASE_LINEAR, "BACK"] for i in range(4)], loop=True,
+        cam=[2.0, 35.0, 0.98], props=PROP_FLOOR, floorHalf=36.0,
+        highlight=PART_SHIN_F | PART_FOOT_F, cue="Knee over toes, heel down",
+    ),
+    "thoracic_rot": dict(
+        type=A_REPETITION, poses=thoracic_rot_poses(), handBend=90.0,
+        seq=[[0, 1, 1500, EASE_IN_OUT_SINE, "OPEN"], [1, 0, 1200, EASE_IN_OUT_SINE, "RETURN"],
+             [0, 2, 1500, EASE_IN_OUT_SINE, "THREAD"], [2, 0, 1200, EASE_IN_OUT_SINE, "RETURN"]], loop=True,
+        cam=[6.0, 28.0, 0.95], props=PROP_FLOOR, floorHalf=40.0,
+        highlight=PART_TORSO | PART_ARM_N, cue="Open the chest to the side",
+    ),
+    "shoulder_mob": dict(
+        type=A_REPETITION, poses=arm_circle_poses(), handBend=0.0,
+        seq=[[i, i + 1, 800, EASE_LINEAR, "CIRCLE"] for i in range(4)], loop=True,
+        cam=[3.0, 58.0, 0.66], props=PROP_FLOOR, floorHalf=26.0,
+        highlight=PART_ARM_N, cue="Slow circles, easy range",
+    ),
+    "toe_curls": dict(
+        type=A_REPETITION, poses=toe_curl_poses(),
+        seq=[[0, 1, 900, EASE_IN_OUT_SINE, "CURL"], [1, 0, 900, EASE_IN_OUT_SINE, "SPREAD"]], loop=True,
+        cam=[44.0, 6.0, 3.2], parts=PART_SHIN_N | PART_FOOT_N, floorHalf=16.0,
+        props=PROP_FLOOR, highlight=PART_FOOT_N, cue="Curl, then spread the toes",
+    ),
     "relax": dict(
         type=A_STATIC, poses=savasana_poses(),
         seq=[[0, 0, 1000, EASE_LINEAR, "REST"]], loop=False, holdLabel="REST",
@@ -644,6 +769,11 @@ def rel_angle(a, b):
 def validate():
     problems = []
     for name, a in ANIMS.items():
+        if a.get("view") == VIEW_BUST:
+            for p in a["poses"]:
+                if abs(p[0]) > 40 or not (-2 <= p[1] <= 9) or not (-2 <= p[2] <= 9):
+                    problems.append("%s: bust pose out of range %s" % (name, p[:3]))
+            continue
         frames = [sample(a, t)[0] for t in range(0, cycle_ms(a) + 1, 50)] + a["poses"]
         for p in frames:
             j = fk(p)
@@ -736,8 +866,108 @@ class Ops:
         self.ops.append(list(op))
 
 
+# ---------------------------------------------------------------------------
+# Front view (bust): head, neck, trapezius, shoulders, upper arms, chest.
+# Pose vector reuse: [0] head tilt (deg, + = toward the screen left),
+# [1] left shoulder lift, [2] right shoulder lift (figure units).
+# Same numbers as FigureRenderer.drawBust in Monkey C.
+# ---------------------------------------------------------------------------
+B_SH_Y, B_SH_X, B_NECK_PIVOT, B_HEAD_R = 40.0, 19.0, 44.0, 8.5
+B_ARM_LEN, B_ARM_W, B_CHEST_X = 30.0, 3.4, 14.0
+
+
+def bust_rot(x, y, deg):
+    c, sn = math.cos(d2r(deg)), math.sin(d2r(deg))
+    return (x * c - (y - B_NECK_PIVOT) * sn, B_NECK_PIVOT + x * sn + (y - B_NECK_PIVOT) * c)
+
+
+# Outline tables: [x, y, lift, k]. lift: 0 = left shoulder lift, 1 = right,
+# 2 = shrug (0.8 * max lift), 3 = fixed. y += k * lift. NECK and HEAD also
+# rotate by the head tilt around (0, B_NECK_PIVOT). Shared with Monkey C
+# through FigureShapes.mc (generated).
+def _mirror(side):
+    out = []
+    for x, y, lift, k in reversed(side):
+        out.append([-x, y, {0: 1, 1: 0}.get(lift, lift), k])
+    return out
+
+
+_TORSO_L = [[-4.6, 46.0, 2, 1.0], [-9.5, 44.2, 0, 0.5], [-14.0, 42.6, 0, 1.0], [-17.5, 41.6, 0, 1.0],
+            [-20.5, 39.8, 0, 1.0], [-22.2, 36.5, 0, 1.0], [-22.4, 32.0, 0, 1.0], [-20.6, 28.2, 0, 0.6],
+            [-16.8, 27.0, 0, 0.3], [-16.2, 18.0, 3, 0.0], [-14.4, 9.0, 3, 0.0], [-13.2, 2.0, 3, 0.0],
+            [-13.6, 0.0, 3, 0.0]]
+BUST_TORSO = _TORSO_L + _mirror(_TORSO_L)
+_ARM_L = [[-23.9, 34.0, 0, 1.0], [-25.0, 25.0, 0, 0.7], [-24.6, 15.0, 0, 0.4], [-24.2, 6.0, 0, 0.2],
+          [-23.4, 1.0, 3, 0.0], [-20.4, 1.0, 3, 0.0], [-20.0, 6.0, 0, 0.2], [-19.7, 15.0, 0, 0.4],
+          [-19.4, 24.0, 0, 0.7], [-19.8, 30.5, 0, 1.0]]
+BUST_ARM_L = _ARM_L
+BUST_ARM_R = _mirror(_ARM_L)
+_TRAP_L = [[-4.6, 46.0, 2, 1.0], [-9.5, 44.2, 0, 0.5], [-14.0, 42.6, 0, 1.0], [-17.5, 41.6, 0, 1.0],
+           [-15.0, 39.0, 0, 1.0], [-9.0, 40.6, 2, 0.5], [-4.2, 41.6, 2, 1.0]]
+BUST_TRAP_L = _TRAP_L
+BUST_TRAP_R = _mirror(_TRAP_L)
+BUST_NECK = [[-4.4, 42.0, 2, 1.0], [-3.5, 47.0, 2, 1.0], [-3.3, 53.0, 2, 1.0], [3.3, 53.0, 2, 1.0],
+             [3.5, 47.0, 2, 1.0], [4.4, 42.0, 2, 1.0]]
+BUST_HEAD = []
+for _i in range(20):
+    _a = 2 * math.pi * _i / 20
+    _sx, _sy = math.cos(_a), math.sin(_a)
+    _taper = 1.0 - 0.22 * max(0.0, -_sy)            # narrower jaw and chin
+    BUST_HEAD.append([round(7.0 * _sx * _taper, 2), round(60.5 + 9.0 * _sy, 2), 2, 1.0])
+
+
+def bust_lift(pt, ll, lr):
+    lift = {0: ll, 1: lr, 2: 0.8 * max(ll, lr)}.get(pt[2], 0.0)
+    return pt[0], pt[1] + pt[3] * lift
+
+
+def bust_shapes(p):
+    """(kind, part, points) in figure units. part 1 = body/arms, 2 = neck and trapezius, 0 = head."""
+    tilt, ll, lr = p[0], p[1], p[2]
+    out = []
+    for table in (BUST_ARM_L, BUST_ARM_R, BUST_TORSO):
+        out.append(("poly", 1, [bust_lift(q, ll, lr) for q in table]))
+    out.append(("poly", 2, [bust_rot(*bust_lift(q, ll, lr), tilt) for q in BUST_NECK]))
+    out.append(("trap", 2, [bust_lift(q, ll, lr) for q in BUST_TRAP_L]))
+    out.append(("trap", 2, [bust_lift(q, ll, lr) for q in BUST_TRAP_R]))
+    out.append(("poly", 0, [bust_rot(*bust_lift(q, ll, lr), tilt) for q in BUST_HEAD]))
+    return out
+
+
+def render_bust(a, t_ms, box, mirror, reduced):
+    p, seg, permille, reps = sample(a, t_ms, reduced)
+    camx, camy, scale = a["cam"]
+    m = -1.0 if mirror else 1.0
+    cx, cy = box
+
+    def S(pt):
+        return (cx + m * (pt[0] - camx) * scale, cy - (pt[1] - camy) * scale)
+    o = Ops()
+    hl = a["highlight"]
+    for kind, part, data in bust_shapes(p):
+        on = bool(part and (hl & part))
+        if kind == "trap" and not on:
+            continue
+        o.add("poly", GREEN if on else SOFT, [list(S(q)) for q in data])
+    holding = (not a["loop"]) and t_ms >= cycle_ms(a)
+    for ar in a.get("arrows", []):
+        if not ((ar[-1] == ON_HOLD and holding) or (ar[-1] == seg and not holding)):
+            continue
+        c = S((ar[1], ar[2]))
+        a0, a1 = ar[4], ar[5]
+        if mirror:
+            a0, a1 = 180 - a0, 180 - a1
+        o.add("arrow_arc", GREEN, c[0], c[1], ar[3] * scale, a0, a1)
+    label = a["seq"][seg][4]
+    if a["type"] == A_HOLD and t_ms >= cycle_ms(a):
+        label = a.get("holdLabel", "HOLD")
+    return o.ops, dict(segment=seg, permille=permille, reps=reps, label=label)
+
+
 def render(a, t_ms, box, mirror=False, reduced=False):
     """box = (cx, cy) screen centre of the figure area. Returns (ops, info)."""
+    if a.get("view") == VIEW_BUST:
+        return render_bust(a, t_ms, box, mirror, reduced)
     p, seg, permille, reps = sample(a, t_ms, reduced)
     j = fk(p)
     camx, camy, scale = a["cam"]
@@ -938,6 +1168,8 @@ def gen_monkeyc():
         out.append("            :loop => %s," % ("true" if a["loop"] else "false"))
         out.append("            :cam => %s," % mc_arr(a["cam"]))
         out.append("            :props => %d," % a["props"])
+        if a.get("view"):
+            out.append("            :view => %d," % a["view"])
         if "wallX" in a:
             out.append("            :wallX => %s," % mc_num(a["wallX"]))
         if "wallY" in a:
@@ -969,6 +1201,10 @@ def gen_monkeyc():
     return "\n".join(out) + "\n"
 
 
+def bust_arr(t):
+    return "[" + ", ".join("[%s, %s, %d, %s]" % (mc_num(q[0]), mc_num(q[1]), q[2], mc_num(q[3])) for q in t) + "]"
+
+
 def gen_shapes():
     """Anatomical drawing constants for FigureRenderer.mc (same numbers as render())."""
     def arr(v):
@@ -991,6 +1227,14 @@ def gen_shapes():
              "    const TORSO_N = %d;" % TORSO_N,
              "    const TORSO_BACK = %s;" % arr(TORSO_BACK), "    const TORSO_FRONT = %s;" % arr(TORSO_FRONT),
              "    const HEAD_DRAW_R = %s;" % mc_num(HEAD_DRAW_R), "    const JAW_R = %s;" % mc_num(JAW_R),
+             "    //! Front-view bust outlines [x, y, lift, k] (see bust_shapes()).",
+             "    const BUST_TORSO = %s;" % bust_arr(BUST_TORSO),
+             "    const BUST_ARM_L = %s;" % bust_arr(BUST_ARM_L),
+             "    const BUST_ARM_R = %s;" % bust_arr(BUST_ARM_R),
+             "    const BUST_TRAP_L = %s;" % bust_arr(BUST_TRAP_L),
+             "    const BUST_TRAP_R = %s;" % bust_arr(BUST_TRAP_R),
+             "    const BUST_NECK = %s;" % bust_arr(BUST_NECK),
+             "    const BUST_HEAD = %s;" % bust_arr(BUST_HEAD),
              "    //! Foot outline in the foot frame (x along ankle -> toe).",
              "    const FOOT_OUTLINE = [%s];" % foot,
              "}"]

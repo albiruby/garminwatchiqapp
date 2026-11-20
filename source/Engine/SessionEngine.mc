@@ -37,6 +37,8 @@ class SessionEngine {
     var activeMs as Number = 0;
     var countdownMs as Number = 0;
     var autoAdvance as Boolean = true;
+    var restMs as Number = 0;          // rest between exercises (0 = none)
+    var resting as Boolean = false;    // COUNTDOWN is a rest, not the opening countdown
     var completedCount as Number = 0;
     var skippedCount as Number = 0;
     var cycles as Number = 0;
@@ -157,6 +159,9 @@ class SessionEngine {
 
     //! Skip the current exercise (counts as skipped; partial time is kept).
     function skip(nowMs as Number) as Number {
+        if (state == COUNTDOWN && resting) {
+            return endRest(nowMs);
+        }
         if (state == AWAITING_NEXT) {
             return next(nowMs);
         }
@@ -192,6 +197,21 @@ class SessionEngine {
     //! otherwise restart the current one. Time already done stays counted;
     //! a paused session stays paused.
     function previous(nowMs as Number) as Number {
+        if (state == COUNTDOWN && resting) {
+            resting = false;
+            countdownMs = 0;
+            if (stepIndex > 0) {
+                stepIndex--;
+                if (completedCount > 0) {
+                    completedCount--;
+                }
+            }
+            stepElapsedMs = 0;
+            _stepAccounted = false;
+            state = RUNNING;
+            _lastMs = nowMs;
+            return EVT_STEP_START;
+        }
         if (state != RUNNING && state != PAUSED && state != AWAITING_NEXT) {
             return EVT_NONE;
         }
@@ -230,6 +250,8 @@ class SessionEngine {
     }
 
     //! Advance the clock. Returns a bitmask of EVT_* that happened.
+    //! COUNTDOWN is used both before the first exercise and for the rest
+    //! between exercises (resting == true); leftover time carries over.
     function tick(nowMs as Number) as Number {
         var delta = nowMs - _lastMs;
         _lastMs = nowMs;
@@ -237,16 +259,23 @@ class SessionEngine {
             return EVT_NONE;
         }
         var evt = EVT_NONE;
-        if (state == COUNTDOWN) {
-            if (delta < countdownMs) {
-                countdownMs -= delta;
-                return EVT_NONE;
+        while (delta > 0 && (state == COUNTDOWN || state == RUNNING)) {
+            if (state == COUNTDOWN) {
+                if (delta < countdownMs) {
+                    countdownMs -= delta;
+                    return evt;
+                }
+                delta -= countdownMs;
+                countdownMs = 0;
+                if (resting) {
+                    resting = false;
+                    state = RUNNING;
+                    evt |= EVT_STEP_START;
+                } else {
+                    evt |= beginRunning();
+                }
+                continue;
             }
-            delta -= countdownMs;
-            countdownMs = 0;
-            evt |= beginRunning();
-        }
-        while (state == RUNNING && delta > 0) {
             var remaining = stepDurationMs() - stepElapsedMs;
             var used = (delta < remaining) ? delta : remaining;
             var phaseBefore = breathingPhase();
@@ -266,13 +295,37 @@ class SessionEngine {
                 completedCount++;
                 evt |= EVT_STEP_DONE;
                 if (autoAdvance || stepIndex + 1 >= steps.size()) {
-                    evt |= advance();
+                    var a = advance();
+                    if (a == EVT_STEP_START && restMs > 0) {
+                        // rest before the next exercise; it starts (and buzzes) after
+                        state = COUNTDOWN;
+                        countdownMs = restMs;
+                        resting = true;
+                    } else {
+                        evt |= a;
+                    }
                 } else {
                     state = AWAITING_NEXT;
                 }
             }
         }
         return evt;
+    }
+
+    //! End the rest early (START or DOWN during a rest).
+    function endRest(nowMs as Number) as Number {
+        if (state != COUNTDOWN || !resting) {
+            return EVT_NONE;
+        }
+        tick(nowMs);
+        if (state != COUNTDOWN || !resting) {
+            return EVT_STEP_START;     // the rest ran out in this tick
+        }
+        countdownMs = 0;
+        resting = false;
+        state = RUNNING;
+        _lastMs = nowMs;
+        return EVT_STEP_START;
     }
 
     // ---- Result ----------------------------------------------------------

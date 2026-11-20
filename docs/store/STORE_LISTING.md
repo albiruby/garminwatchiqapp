@@ -15,10 +15,10 @@ Guided breathing, mobility and recovery sessions on your wrist. Offline.
 
 RESTORA is a guided recovery companion for your Forerunner 165. Choose a short session, follow the timer and the animated figure, and let the watch guide you with gentle vibrations. Everything runs offline on the watch.
 
-**Six modules, 27 guided sessions**
+**Six modules, 29 guided sessions**
 
-- **Breathe** — Box breathing, 4-7-8, extended exhale and resonance breathing with a visual pacer.
-- **Mind** — Mindful breathing, body scan, focus reset and mental unwind.
+- **Breathe** — Box breathing, 4-7-8, extended exhale, resonance breathing and your own custom pattern, with a visual pacer.
+- **Mind** — Mindful breathing, body scan, focus reset, mental unwind and gratitude reflection.
 - **Circulate** — Ankle pumps, heel raises, seated marching and leg elevation for long days of sitting or standing.
 - **Mobility** — Calf, hip and spine mobility with step-by-step figures.
 - **Sleep** — Bedtime breathing, gentle night mobility and relaxation before bed.
@@ -29,6 +29,7 @@ RESTORA is a guided recovery companion for your Forerunner 165. Choose a short s
 - Animated exercise figures show each movement; the timer never depends on the animation.
 - Haptic cues for each new exercise, side change and the end of a session.
 - Button-first control: START to pause, DOWN to skip, UP to go back.
+- Optional rest between exercises (10, 15 or 30 s).
 - Optional heart rate and HRV: compare your heart rate and HRV (RMSSD) at the start and end of a session, using your watch's own sensor.
 - History: your week at a glance, plus a detail page for each of your last 20 sessions.
 

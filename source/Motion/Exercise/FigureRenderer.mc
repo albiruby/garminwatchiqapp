@@ -93,6 +93,20 @@ class FigureRenderer {
         _parts = (def[:parts] != null) ? def[:parts] : ALL_PARTS;
         _handBend = (def[:handBend] != null) ? def[:handBend] : 0.0;
         var p = sampler.pose;
+        if (def[:view] != null && def[:view] == VIEW_BUST) {
+            var aaB = (dc has :setAntiAlias);
+            if (aaB) {
+                dc.setAntiAlias(true);
+            }
+            drawBust(dc, p);
+            if (showGuides) {
+                drawArrows(dc, def, sampler);
+            }
+            if (aaB) {
+                dc.setAntiAlias(false);
+            }
+            return;
+        }
         Skeleton.fk(p, _j);
 
         var aa = (dc has :setAntiAlias);
@@ -131,6 +145,58 @@ class FigureRenderer {
         if (aa) {
             dc.setAntiAlias(false);
         }
+    }
+
+    // ---- Front view (bust) --------------------------------------------------
+    // Pose reuse: p[0] head tilt (deg), p[1] / p[2] left / right shoulder lift.
+    // Mirrors bust_shapes() in tools/motion/motion_model.py.
+    static const VIEW_BUST = 1;
+    static const B_PIVOT = 44.0;
+
+    hidden function bustPt(x, y, tilt) as Array {
+        var r = Math.toRadians(tilt);
+        var c = Math.cos(r);
+        var sn = Math.sin(r);
+        var dy = y - B_PIVOT;
+        return [sx(x * c - dy * sn).toNumber(), sy(B_PIVOT + x * sn + dy * c).toNumber()];
+    }
+
+    //! Outline point [x, y, lift, k] -> screen point, with shoulder lift and
+    //! (for neck and head) the head tilt. Mirrors bust_lift / bust_rot.
+    hidden function bustPoly(table as Array, ll, lr, tilt, rotate as Boolean) as Array {
+        var shrug = 0.8 * ((ll > lr) ? ll : lr);
+        var out = new [table.size()];
+        for (var i = 0; i < table.size(); i++) {
+            var q = table[i];
+            var lift = (q[2] == 0) ? ll : ((q[2] == 1) ? lr : ((q[2] == 2) ? shrug : 0.0));
+            var x = q[0];
+            var y = q[1] + q[3] * lift;
+            if (rotate) {
+                out[i] = bustPt(x, y, tilt);
+            } else {
+                out[i] = [sx(x).toNumber(), sy(y).toNumber()];
+            }
+        }
+        return out;
+    }
+
+    hidden function drawBust(dc as Graphics.Dc, p as Array) as Void {
+        var tilt = p[0];
+        var ll = p[1];
+        var lr = p[2];
+        var neckOn = (_highlight & 2) != 0;
+        dc.setColor(color(1, C_NEAR), Graphics.COLOR_TRANSPARENT);
+        dc.fillPolygon(bustPoly(FigureShapes.BUST_ARM_L, ll, lr, tilt, false));
+        dc.fillPolygon(bustPoly(FigureShapes.BUST_ARM_R, ll, lr, tilt, false));
+        dc.fillPolygon(bustPoly(FigureShapes.BUST_TORSO, ll, lr, tilt, false));
+        dc.setColor(color(2, C_NEAR), Graphics.COLOR_TRANSPARENT);
+        dc.fillPolygon(bustPoly(FigureShapes.BUST_NECK, ll, lr, tilt, true));
+        if (neckOn) {
+            dc.fillPolygon(bustPoly(FigureShapes.BUST_TRAP_L, ll, lr, tilt, false));
+            dc.fillPolygon(bustPoly(FigureShapes.BUST_TRAP_R, ll, lr, tilt, false));
+        }
+        dc.setColor(C_NEAR, Graphics.COLOR_TRANSPARENT);
+        dc.fillPolygon(bustPoly(FigureShapes.BUST_HEAD, ll, lr, tilt, true));
     }
 
     hidden function color(part as Number, base as Number) as Number {

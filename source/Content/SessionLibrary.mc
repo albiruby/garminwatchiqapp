@@ -27,14 +27,25 @@ module SessionLibrary {
         if (id == null) {
             return null;
         }
+        if (id.equals("custom_breath")) {
+            return custom();
+        }
         return all().get(id);
+    }
+
+    //! Custom breathing session from the pattern and length in Settings.
+    function custom() as Array {
+        var p = SettingsRepository.customPattern();
+        var name = p[0].toString() + "-" + p[1].toString() + "-" + p[2].toString() + "-" + p[3].toString();
+        return ["Custom " + name, Models.CAT_BREATHE, [["custom", SettingsRepository.customMinutes() * 60]],
+            "Your pattern (edit in Settings)", SAFETY_BREATH];
     }
 
     //! Session ids for a module, in display order.
     function idsFor(cat as Number) as Array {
         var order = [
-            ["box_5", "b478_4", "extexh_5", "resonance_10"],
-            ["mindful_5", "bodyscan_10", "focus_3", "unwind_8"],
+            ["box_5", "b478_4", "extexh_5", "resonance_10", "custom_breath"],
+            ["mindful_5", "bodyscan_10", "focus_3", "unwind_8", "gratitude_5"],
             ["leg_reset_5", "leg_relief_10", "desk_break_5", "circulation_8"],
             ["lower_body_8", "spine_6", "neck_shoulder_5", "joint_mobility_6"],
             ["wind_down_5", "bedtime_breath_6", "sleep_relax_10", "night_mobility_8", "legs_rest_10", "evening_restore_20"],
@@ -66,6 +77,8 @@ module SessionLibrary {
             "extexh_5" => ["Extended Exhale", BR, [["extexh", 300]], "4-6 gentle downshift", SAFETY_BREATH],
             "resonance_10" => ["Resonance", BR, [["resonance", 600]], "Slow 5-5 paced breathing", SAFETY_BREATH],
 
+            "gratitude_5" => ["Gratitude", MI, [["slowbreath", 60], ["gratitude", 240]],
+                "Settle, then three good things", SAFETY_GENERAL],
             "unwind_8" => ["Mental Unwind", MI, [["slowbreath", 60], ["tension", 180], ["unwind", 240]],
                 "Release the day", SAFETY_GENERAL],
             "mindful_5" => ["Mindful Breathing", MI, [["mindful", 300]], "Breath awareness", SAFETY_GENERAL],

@@ -35,4 +35,11 @@ module SettingsRepository {
     function autoAdvance() as Boolean { return getBool("autoAdvance", true); }
     function hrSnapshot() as Boolean { return getBool("hrSnapshot", false); }
     function countdownSec() as Number { return getNum("countdown", 3); }
+    function restSec() as Number { return getNum("restSec", 0); }
+
+    // Custom breathing: [in, hold, out, pause] seconds and session minutes.
+    function customPattern() as Array {
+        return [getNum("cbIn", 4), getNum("cbHold", 2), getNum("cbOut", 6), getNum("cbPause", 0)];
+    }
+    function customMinutes() as Number { return getNum("cbMin", 5); }
 }

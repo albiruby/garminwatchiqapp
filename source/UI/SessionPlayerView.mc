@@ -27,6 +27,7 @@ class SessionPlayerView extends WatchUi.View {
     function initialize(id, def) {
         View.initialize();
         _engine = new SessionEngine(id, def, SettingsRepository.countdownSec(), SettingsRepository.autoAdvance());
+        _engine.restMs = SettingsRepository.restSec() * 1000;
         _hrBefore = SensorManager.snapshotHr();
         _sensors = new SessionSensors();
         _sensors.start();
@@ -131,7 +132,7 @@ class SessionPlayerView extends WatchUi.View {
         _motion.update(_engine);
 
         Theme.centerText(dc, Theme.px(dc, 34), Theme.label(), Theme.SOFT, Theme.clock());
-        var title = counting ? "Get ready" : ((ex != null) ? ex[ExerciseLibrary.F_NAME] : "");
+        var title = counting ? (_engine.resting ? "Rest" : "Get ready") : ((ex != null) ? ex[ExerciseLibrary.F_NAME] : "");
         Theme.fitLine(dc, Theme.px(dc, 54), title, Theme.title(), Theme.body(), safe, Theme.GREEN);
 
         var remainingStep = (_engine.stepRemainingMs() + 999) / 1000;
@@ -141,14 +142,14 @@ class SessionPlayerView extends WatchUi.View {
             // the ring sweeps through each countdown second
             var sweep = MotionConfig.smooth() ? (1000 - _engine.countdownMs % 1000) % 1000 : 0;
             Hud.segmentRing(dc, ringCy, _single, 0, sweep, Hud.RING_R, Hud.RING_PEN, ringColor);
-            Theme.centerText(dc, Theme.px(dc, 128), Theme.label(), Theme.GREY, "STARTS IN");
+            Theme.centerText(dc, Theme.px(dc, 128), Theme.label(), Theme.GREY, _engine.resting ? "NEXT IN" : "STARTS IN");
             Theme.centerText(dc, Theme.px(dc, 150), Theme.hero(), heroColor,
                 ((_engine.countdownMs + 999) / 1000).toString());
             var first = _engine.currentExercise();
             stateLine(dc, paused ? "PAUSED" : ((first != null) ? first[ExerciseLibrary.F_NAME] : ""),
                 paused ? Theme.AMBER : Theme.GREY);
-            infoRow(dc, Icons.CLOCK, Hud.mmss(_engine.plannedSeconds()));
-            Hud.segmentBar(dc, Theme.px(dc, 336), Theme.px(dc, 56), _weights, 0, 0);
+            infoRow(dc, Icons.CLOCK, Hud.mmss(_engine.resting ? sessionLeft : _engine.plannedSeconds()));
+            Hud.segmentBar(dc, Theme.px(dc, 336), Theme.px(dc, 56), _weights, _engine.stepIndex, 0);
             return;
         }
         if (ex == null) {
