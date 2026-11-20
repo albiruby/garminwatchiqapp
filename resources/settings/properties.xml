@@ -3,4 +3,9 @@
     <property id="countdown" type="number">3</property>
     <property id="autoAdvance" type="boolean">true</property>
     <property id="hrSnapshot" type="boolean">false</property>
+    <property id="motion" type="boolean">true</property>
+    <property id="reducedMotion" type="boolean">false</property>
+    <property id="exerciseAnim" type="boolean">true</property>
+    <property id="breathingAnim" type="boolean">true</property>
+    <property id="motionDetail" type="number">1</property>
 </properties>

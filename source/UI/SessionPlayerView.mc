@@ -5,14 +5,20 @@ import Toybox.Time;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
-//! Active session HUD. One 1 s timer drives redraws; elapsed time comes from
-//! System.getTimer() deltas inside SessionEngine.
+//! Active session HUD. A FrameClock drives redraws: 1 s when nothing moves,
+//! 125/250 ms while something animates (MotionConfig). Elapsed time always
+//! comes from System.getTimer() deltas inside SessionEngine, so the frame
+//! rate never changes session timing.
 class SessionPlayerView extends WatchUi.View {
 
     const MIN_SAVE_SECONDS = 10; // don't log accidental starts
 
     hidden var _engine as SessionEngine;
-    hidden var _timer;
+    hidden var _clock as FrameClock;
+    hidden var _motion as MotionController;
+    hidden var _visible as Boolean = true;
+    hidden var _weights as Array;        // step durations for the segmented bar (cached)
+    hidden var _single as Array = [1];   // one-segment ring (cached)
     hidden var _startEpoch as Number = 0;
     hidden var _hrBefore = null;
     hidden var _finished as Boolean = false;
@@ -22,10 +28,34 @@ class SessionPlayerView extends WatchUi.View {
         _engine = new SessionEngine(id, def, SettingsRepository.countdownSec(), SettingsRepository.autoAdvance());
         _hrBefore = SensorManager.snapshotHr();
         _startEpoch = Time.now().value();
+        _weights = new [_engine.steps.size()];
+        for (var i = 0; i < _weights.size(); i++) {
+            _weights[i] = _engine.steps[i][1];
+        }
+        _motion = new MotionController();
+        _clock = new FrameClock(method(:onTick));
         HapticEngine.single();
         handle(_engine.start(System.getTimer()));
-        _timer = new Timer.Timer();
-        _timer.start(method(:onTick), 1000, true);
+    }
+
+    function onShow() as Void {
+        _visible = true;
+        schedule(System.getTimer());
+    }
+
+    //! Hidden (e.g. a notification): keep the session running at 1 s, no animation.
+    function onHide() as Void {
+        _visible = false;
+        if (!_finished) {
+            _clock.setInterval(MotionConfig.FRAME_IDLE_MS);
+        }
+    }
+
+    hidden function schedule(nowMs as Number) as Void {
+        if (_finished) {
+            return;
+        }
+        _clock.setInterval(MotionConfig.frameMs(_visible && _motion.isAnimating(_engine, nowMs)));
     }
 
     function engine() as SessionEngine {
@@ -36,12 +66,14 @@ class SessionPlayerView extends WatchUi.View {
         handle(_engine.tick(System.getTimer()));
     }
 
-    //! Apply engine events: haptics, redraw, and finish when done.
+    //! Apply engine events: motion + haptics, redraw, and finish when done.
     function handle(evt as Number) as Void {
-        HapticEngine.forEvents(evt);
+        var now = System.getTimer();
+        _motion.onEvents(_engine, evt, now);
         if (_engine.isFinished()) {
             finish();
         } else {
+            schedule(now);
             WatchUi.requestUpdate();
         }
     }
@@ -51,10 +83,7 @@ class SessionPlayerView extends WatchUi.View {
             return;
         }
         _finished = true;
-        if (_timer != null) {
-            _timer.stop();
-            _timer = null;
-        }
+        _clock.stop();
         var record = _engine.buildRecord(_startEpoch, _hrBefore, SensorManager.snapshotHr());
         var saved = false;
         if (_engine.state == SessionEngine.COMPLETED || record.get(Models.K_DUR) >= MIN_SAVE_SECONDS) {
@@ -69,6 +98,8 @@ class SessionPlayerView extends WatchUi.View {
     //    34  clock                       54  exercise name (green)
     //   ring r88 around y186: phases (breathing) or step progress
     //   inside: 120 marker / 128-132 phase or type / 150-162 timer / 218 side
+    //   animated exercise: figure centred at y150, timer (40 px) 194, label 236
+    //   breathing: pulse disc r46..r76 behind the phase word and number
     //   286 state line (cue | Next: X | PAUSED | START: next)
     //   308 info row: icon + pattern or session time left, step n/N
     //   336 segmented bar, one segment per exercise
@@ -89,6 +120,8 @@ class SessionPlayerView extends WatchUi.View {
         var pattern = breathing ? ex[ExerciseLibrary.F_PATTERN] : null;
         var stepDur = _engine.stepDurationMs();
         var stepPermille = (stepDur > 0 && !counting) ? _engine.stepElapsedMs * 1000 / stepDur : 0;
+        var now = System.getTimer();
+        _motion.update(_engine);
 
         Theme.centerText(dc, Theme.px(dc, 34), Theme.label(), Theme.SOFT, Theme.clock());
         var title = counting ? "Get ready" : ((ex != null) ? ex[ExerciseLibrary.F_NAME] : "");
@@ -98,7 +131,9 @@ class SessionPlayerView extends WatchUi.View {
         var sessionLeft = _engine.plannedSeconds() - _engine.activeMs / 1000;
 
         if (counting) {
-            Hud.segmentRing(dc, ringCy, [1], 0, 0, Hud.RING_R, Hud.RING_PEN, ringColor);
+            // the ring sweeps through each countdown second
+            var sweep = MotionConfig.smooth() ? (1000 - _engine.countdownMs % 1000) % 1000 : 0;
+            Hud.segmentRing(dc, ringCy, _single, 0, sweep, Hud.RING_R, Hud.RING_PEN, ringColor);
             Theme.centerText(dc, Theme.px(dc, 128), Theme.label(), Theme.GREY, "STARTS IN");
             Theme.centerText(dc, Theme.px(dc, 150), Theme.hero(), heroColor,
                 ((_engine.countdownMs + 999) / 1000).toString());
@@ -106,7 +141,7 @@ class SessionPlayerView extends WatchUi.View {
             stateLine(dc, paused ? "PAUSED" : ((first != null) ? first[ExerciseLibrary.F_NAME] : ""),
                 paused ? Theme.AMBER : Theme.GREY);
             infoRow(dc, Icons.CLOCK, Hud.mmss(_engine.plannedSeconds()));
-            Hud.segmentBar(dc, Theme.px(dc, 336), Theme.px(dc, 56), barWeights(), 0, 0);
+            Hud.segmentBar(dc, Theme.px(dc, 336), Theme.px(dc, 56), _weights, 0, 0);
             return;
         }
         if (ex == null) {
@@ -120,6 +155,11 @@ class SessionPlayerView extends WatchUi.View {
             var phasePermille = (phaseMs > 0 && remainMs != null) ? (phaseMs - remainMs) * 1000 / phaseMs : 0;
             Hud.segmentRing(dc, ringCy, pattern, (phase == null) ? 0 : phase, phasePermille,
                 Hud.RING_R, Hud.RING_PEN, ringColor);
+            if (phase != null && MotionConfig.breathingAnim()) {
+                var k = MotionConfig.smooth() ? phasePermille : 1000;
+                BreathingPulse.draw(dc, Theme.cx(dc), ringCy,
+                    BreathingPulse.radius(phase, k, Theme.px(dc, 46), Theme.px(dc, 76)));
+            }
             if (phase == 0 || phase == 2) {
                 Icons.draw(dc, (phase == 0) ? Icons.UP : Icons.DOWN, Theme.cx(dc), Theme.px(dc, 120), Theme.px(dc, 10),
                     paused ? Theme.GREY : Theme.GREEN);
@@ -130,8 +170,11 @@ class SessionPlayerView extends WatchUi.View {
             Theme.centerText(dc, Theme.px(dc, 162), Theme.hero(), heroColor, phaseSec.toString());
             stateRow(dc, st, remainingStep, ex[ExerciseLibrary.F_CUE]);
             infoRow(dc, Icons.LUNGS, pattern[0].toString() + "-" + pattern[1] + "-" + pattern[2] + "-" + pattern[3]);
+        } else if (_motion.sampler != null) {
+            drawExercise(dc, st, ringCy, ringColor, heroColor, stepPermille, remainingStep, now);
+            infoRow(dc, Icons.CLOCK, Hud.mmss(sessionLeft));
         } else {
-            Hud.segmentRing(dc, ringCy, [1], 0, stepPermille, Hud.RING_R, Hud.RING_PEN, ringColor);
+            Hud.segmentRing(dc, ringCy, _single, 0, stepPermille, Hud.RING_R, Hud.RING_PEN, ringColor);
             Theme.centerText(dc, Theme.px(dc, 128), Theme.label(), Theme.GREEN, typeName(ex[ExerciseLibrary.F_TYPE]));
             Theme.centerText(dc, Theme.px(dc, 150), Theme.hero(), heroColor, Hud.mmss(remainingStep));
             var side = _engine.currentSide();
@@ -142,19 +185,34 @@ class SessionPlayerView extends WatchUi.View {
             stateRow(dc, st, remainingStep, ex[ExerciseLibrary.F_CUE]);
             infoRow(dc, Icons.CLOCK, Hud.mmss(sessionLeft));
         }
-        Hud.segmentBar(dc, Theme.px(dc, 336), Theme.px(dc, 56), barWeights(), _engine.stepIndex, stepPermille);
+        Hud.segmentBar(dc, Theme.px(dc, 336), Theme.px(dc, 56), _weights, _engine.stepIndex, stepPermille);
         if (st == SessionEngine.AWAITING_NEXT) {
             Theme.startHint(dc);
         }
     }
 
-    hidden function barWeights() as Array {
-        var steps = _engine.steps;
-        var w = new [steps.size()];
-        for (var i = 0; i < steps.size(); i++) {
-            w[i] = steps[i][1];
+    //! Animated exercise inside the ring: figure, step timer, phase label.
+    hidden function drawExercise(dc as Graphics.Dc, st as Number, ringCy as Number, ringColor as Number,
+            heroColor as Number, stepPermille as Number, remainingStep as Number, now as Number) as Void {
+        var sampler = _motion.sampler;
+        Hud.segmentRing(dc, ringCy, _single, 0, stepPermille, Hud.RING_R, Hud.RING_PEN, ringColor);
+        var mirror = _motion.isMirrored(_engine);
+        var slide = _motion.slideOffset(now);
+        var pxScale = dc.getHeight() / 390.0;
+        _motion.renderer.draw(dc, sampler, Theme.cx(dc) + (mirror ? -slide : slide), Theme.px(dc, 150), pxScale,
+            mirror, st != SessionEngine.PAUSED);
+        Theme.centerText(dc, Theme.px(dc, 194), Theme.num(), heroColor, Hud.mmss(remainingStep));
+        var label = sampler.label();
+        var type = sampler.type();
+        if (type == PoseSampler.TYPE_REPETITION || type == PoseSampler.TYPE_BREATH_SYNC) {
+            label = label + " · " + (sampler.reps + 1).toString();
         }
-        return w;
+        var side = _engine.currentSide();
+        if (side != null) {
+            label = label + " · " + (side.equals(Models.TAG_LEFT) ? "L" : "R");
+        }
+        Theme.centerText(dc, Theme.px(dc, 236), Theme.label(), Theme.GREEN, label);
+        stateRow(dc, st, remainingStep, sampler.def[:cue]);
     }
 
     //! Info row: green icon + value on the left, step n/N on the right.

@@ -4,4 +4,11 @@
     <string id="SetCountdown">Countdown (sec)</string>
     <string id="SetAutoAdvance">Auto-advance exercises</string>
     <string id="SetHrSnapshot">HR before/after</string>
+    <string id="SetMotion">Motion</string>
+    <string id="SetReducedMotion">Reduced motion</string>
+    <string id="SetExerciseAnim">Exercise animation</string>
+    <string id="SetBreathingAnim">Breathing animation</string>
+    <string id="SetMotionDetail">Animation detail</string>
+    <string id="DetailStandard">Standard</string>
+    <string id="DetailLow">Low</string>
 </strings>

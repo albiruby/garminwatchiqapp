@@ -15,4 +15,22 @@
     <setting propertyKey="@Properties.hrSnapshot" title="@Strings.SetHrSnapshot">
         <settingConfig type="boolean"/>
     </setting>
+    <setting propertyKey="@Properties.motion" title="@Strings.SetMotion">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.reducedMotion" title="@Strings.SetReducedMotion">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.exerciseAnim" title="@Strings.SetExerciseAnim">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.breathingAnim" title="@Strings.SetBreathingAnim">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.motionDetail" title="@Strings.SetMotionDetail">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.DetailStandard</listEntry>
+            <listEntry value="0">@Strings.DetailLow</listEntry>
+        </settingConfig>
+    </setting>
 </settings>

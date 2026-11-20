@@ -1,5 +1,6 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.System;
 import Toybox.WatchUi;
 
 //! Post-session summary, laid out like a run summary: status, name, active
@@ -11,12 +12,31 @@ class SessionSummaryView extends WatchUi.View {
     hidden var _completed as Boolean;
     hidden var _subtitle as String;
     hidden var _rows as Array; // [[iconId, value, label], ...] up to 3
+    hidden var _badge as Tween;
+    hidden var _clock as FrameClock;
 
     function initialize(record as Dictionary, def, saved as Boolean) {
         View.initialize();
         _completed = RecordUtil.isCompleted(record);
         _subtitle = def[SessionLibrary.F_NAME] + " · " + (saved ? "RESTORA calc" : "not saved");
         _rows = buildRows(CalculationEngine.summarizeSession(record), record);
+        _badge = new Tween();
+        _clock = new FrameClock(method(:onFrame));
+    }
+
+    //! Play the completion badge once, then stop the clock (static screen).
+    function onShow() as Void {
+        _badge.start(System.getTimer(), CompletionAnimation.DURATION_MS, Easing.OUT_CUBIC);
+        if (_badge.isRunning(System.getTimer())) {
+            _clock.setInterval(MotionConfig.frameMs(true));
+        }
+    }
+
+    function onFrame() as Void {
+        if (!_badge.isRunning(System.getTimer())) {
+            _clock.stop();
+        }
+        WatchUi.requestUpdate();
     }
 
     //! Duration, then the most relevant practice metric, then HR (Garmin) or
@@ -49,7 +69,8 @@ class SessionSummaryView extends WatchUi.View {
     function onUpdate(dc as Graphics.Dc) as Void {
         dc.setColor(Theme.WHITE, Theme.BG);
         dc.clear();
-        Icons.draw(dc, Icons.CHECK, Theme.cx(dc), Theme.px(dc, 58), Theme.px(dc, 34), _completed ? Theme.GREEN : Theme.AMBER);
+        CompletionAnimation.draw(dc, Theme.cx(dc), Theme.px(dc, 58), Theme.px(dc, 34), _completed ? Theme.GREEN : Theme.AMBER,
+            _badge.value(System.getTimer()));
         Theme.centerText(dc, Theme.px(dc, 82), Theme.title(), Theme.WHITE, _completed ? "Session complete" : "Session ended");
         Theme.fitLine(dc, Theme.px(dc, 111), _subtitle, Theme.small(), null, Theme.SAFE_PAGE, Theme.GREY);
         Theme.divider(dc, Theme.px(dc, 138), Theme.SAFE_PAGE, Theme.px(dc, 20));
@@ -64,6 +85,7 @@ class SessionSummaryView extends WatchUi.View {
     }
 
     function onHide() as Void {
+        _clock.stop();
         Theme.releaseLarge();
     }
 }

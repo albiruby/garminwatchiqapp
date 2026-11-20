@@ -28,6 +28,8 @@ source/
   Data/                Models, HistoryRepository (Storage, 100 records), SettingsRepository (Properties)
   Sensors/             SensorManager, HeartRateProvider, SensorAvailability (all optional)
   Calculation/         Calculation Engine (pure, unit-tested) — see docs/CALCULATION_ENGINE.md
+  Motion/              Motion & Animation Engine: frame clock, easing, tweens, breathing pulse,
+                       procedural exercise figures (Exercise/) — see docs/MOTION_ENGINE.md
   Utils/               TimeFormatter, Theme (palette, Roboto Condensed fonts, layout helpers)
   Tests/               (:test) unit tests
 ```
@@ -70,6 +72,8 @@ Each session shows a safety note. Elevation and inversion sessions carry a speci
 The design is a sport-tech recovery look: Roboto Condensed, AMOLED black, one green accent, a segmented progress ring and bar, and safe-circle layouts. See `docs/DESIGN_SYSTEM.md`.
 
 - Fonts: `python3 tools/make_fonts.py` regenerates `resources/fonts/` from `tools/fonts/RobotoCondensed-VF.ttf` (SIL OFL).
+- Motion model: `python3 tools/motion/motion_model.py` validates exercise poses and regenerates
+  `source/Motion/Exercise/ExercisePoseData.mc`, test golden values and previews.
 - Mockups: `node tools/mockups/render.js` renders `docs/mockups/` from `tools/mockups/restora_mockups.html`. The mockups use the same per-mille layout, palette, font metrics, ring geometry and icons as the Monkey C views. They are not simulator screenshots: CustomMenu scrolling is approximated and the data is illustrative. The renderer also runs a layout check (safe circle, ring clearance, overlaps).
 
 ![RESTORA UI mockups](docs/mockups/restora-ui-mockups.png)
