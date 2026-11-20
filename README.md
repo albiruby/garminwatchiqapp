@@ -1,79 +1,69 @@
-# RESTORA — Recovery, Mind & Movement
+# Garmin Connect IQ Apps
 
-*Breathe. Move. Restore.*
+Monorepo untuk project Garmin Connect IQ pribadi: watch app, data field, dan工具 pendukung. Root repository adalah **RESTORA**; project lain berada di bawah `projects/`.
 
-An offline-first guided recovery companion for Garmin Connect IQ. The first target is the **Forerunner 165 / 165 Music** (API 5.x, 390×390 AMOLED).
+## Daftar project
 
-RESTORA is a wellness app, not a medical device. It does not diagnose, treat or claim detox or lymphatic-drainage effects.
+| Project | Lokasi | Jenis | Ringkasan |
+|---|---|---|---|
+| **RESTORA** | `.` (root) | Watch app | Guided recovery & breathing companion untuk FR165/165 Music. Bukan perangkat medis. |
+| **RacePilot** | `projects/racepilot/` | Data field | Race-pacing data field: lap pace, projected finish, need pace; GPS/track/treadmill engine. |
+| **ReadyRun** | `projects/ready-run/` | Watch app | Readiness, training status, form, dan rekomendasi latihan. |
+| **Nusantara Batik** | `projects/batik-watchface/` | Watch face | Tiga varian watch face: Kawung, Megamendung, Parang. |
 
-## Modules
+Dokumen lanjutan:
+- [RESTORA README](docs/RESTORA.md)
+- [RESTORA handover](HANDOVER.md)
+- [RacePilot architecture](projects/racepilot/ARCHITECTURE.md)
+- [RacePilot roadmap](projects/racepilot/ROADMAP.md)
+- [Batik watchfaces](projects/batik-watchface/README.md)
+- [ReadyRun](projects/ready-run/README.md)
 
-| Module | Content (seed set) |
-|---|---|
-| BREATHE | Box, 4-7-8, Extended Exhale, Resonance |
-| MIND | Mindful Breathing, Body Scan, Focus Reset |
-| CIRCULATE | Leg Reset, Leg Relief, Desk Break (ankle pumps/circles, leg elevation, Legs Up the Wall) |
-| MOBILITY | Lower Body, Spine, Neck & Shoulders |
-| SLEEP | 5-Min Wind Down, Evening Restore |
-| RECOVER | Post-Run Downshift, Workout Cooldown |
+## Prasyarat
 
-## Architecture
+- Garmin Connect IQ SDK (`monkeyc`, `connectiq`, `monkeydo`)
+- Developer key pribadi (`.der`), **tidak disimpan di repo ini**
+- Device target: FR165/165 Music atau perangkat lain yang didukung manifest
 
-```
-source/
-  RestoraApp.mc        app entry
-  UI/                  Custom-drawn menus, session detail, session HUD, summary, history, settings, icons
-  Engine/              SessionEngine (state machine), HapticEngine
-  Content/             ExerciseLibrary, SessionLibrary
-  Data/                Models, HistoryRepository (Storage, 100 records), SettingsRepository (Properties)
-  Sensors/             SensorManager, HeartRateProvider, SensorAvailability (all optional)
-  Calculation/         Calculation Engine (pure, unit-tested) — see docs/CALCULATION_ENGINE.md
-  Motion/              Motion & Animation Engine: frame clock, easing, tweens, breathing pulse,
-                       procedural exercise figures (Exercise/) — see docs/MOTION_ENGINE.md
-  Utils/               TimeFormatter, Theme (palette, Roboto Condensed fonts, layout helpers)
-  Tests/               (:test) unit tests
-```
+## Build umum
 
-- **Session Engine.** One state machine runs every exercise type: breathing phases, holds, repetitions, alternating left/right, rest and transitions. The states are IDLE → COUNTDOWN → RUNNING ⇄ PAUSED → (AWAITING_NEXT) → COMPLETED / CANCELLED. Elapsed time comes from `System.getTimer()` deltas, not from counting ticks.
-- **Calculation Engine.** Derives metrics from session data. Each value is labelled *Garmin* (measured) or *RESTORA calc* (derived). Missing data shows as `--` and is never estimated.
-- **Haptics.** Forerunner devices have a single vibration strength, so cues differ by count and spacing: 1 pulse for a phase, 2 for the next exercise, a long pulse for a side change, 3 for complete.
-
-## Controls (in a session)
-
-START pauses or resumes (in manual mode it moves to the next exercise). DOWN skips the exercise. BACK asks for confirmation, then ends the session.
-
-## Build & test
-
-Requires the Connect IQ SDK and a developer key.
+Dari folder project yang ingin dibangun:
 
 ```sh
-# Unit tests
-monkeyc -f monkey.jungle -d fr165 -o bin/restora-test.prg -y developer_key.der --unit-test
-connectiq &
-monkeydo bin/restora-test.prg fr165 /t
-
-# App in the simulator
-monkeyc -f monkey.jungle -d fr165 -o bin/restora.prg -y developer_key.der
-monkeydo bin/restora.prg fr165
+monkeyc -f monkey.jungle -d fr165 -o bin/<nama>.prg -y developer_key.der
+monkeydo bin/<nama>.prg fr165
 ```
 
-In VS Code you can use **Monkey C: Run Tests** and **Monkey C: Run** instead.
+Untuk unit test (mis. RESTORA / Nusantara Kawung):
 
-## Settings
+```sh
+monkeyc -f monkey.jungle -d fr165 -o bin/<nama>-test.prg -y developer_key.der --unit-test
+monkeydo bin/<nama>-test.prg fr165 /t
+```
 
-Haptics (on), countdown 3/5/10 s, auto-advance (on), HR before/after (off). You can change them on the watch or in Connect IQ app settings.
+`bin/`, `*.prg`, `*.iq`, dan artifact build lainnya sengaja diabaikan oleh git.
 
-## Safety
+## Struktur repo
 
-Each session shows a safety note. Elevation and inversion sessions carry a specific warning: Legs Up the Wall is not suitable for everyone, for example people with glaucoma, heart or kidney failure, or uncontrolled blood pressure. Stop if you feel pain, dizziness, shortness of breath or more swelling.
+```
+.
+├── source/, resources/, manifest.xml, monkey.jungle   # RESTORA (root)
+├── docs/                                             # dokumentasi tambahan
+├── projects/
+│   ├── racepilot/
+│   ├── ready-run/
+│   └── batik-watchface/
+├── HANDOVER.md
+└── .gitignore
+```
 
-## Design
+## Keamanan
 
-The design is a sport-tech recovery look: Roboto Condensed, AMOLED black, one green accent, a segmented progress ring and bar, and safe-circle layouts. See `docs/DESIGN_SYSTEM.md`.
+- Jangan commit `developer_key.der`, `developer_key.pem`, token Garmin, API key, atau file `.env`.
+- Semua pola tersebut sudah ditambahkan ke `.gitignore`.
+- Jika kredensial tidak sengaja ter-commit, cabut/putar kunci tersebut segera dan hapus dari riwayat git.
 
-- Fonts: `python3 tools/make_fonts.py` regenerates `resources/fonts/` from `tools/fonts/RobotoCondensed-VF.ttf` (SIL OFL).
-- Motion model: `python3 tools/motion/motion_model.py` validates exercise poses and regenerates
-  `source/Motion/Exercise/ExercisePoseData.mc`, test golden values and previews.
-- Mockups: `node tools/mockups/render.js` renders `docs/mockups/` from `tools/mockups/restora_mockups.html`. The mockups use the same per-mille layout, palette, font metrics, ring geometry and icons as the Monkey C views. They are not simulator screenshots: CustomMenu scrolling is approximated and the data is illustrative. The renderer also runs a layout check (safe circle, ring clearance, overlaps).
+## Catatan
 
-![RESTORA UI mockups](docs/mockups/restora-ui-mockups.png)
+- Beberapa project masih dalam pengembangan; status tiap project ada di README masing-masing.
+- Project dengan repo sendiri (mis. WatchCraft) tidak digabungkan ke sini.

@@ -1,0 +1,4 @@
+project.manifest = manifest.xml
+
+# Unit tests live in test/ and are only compiled with --unit-test (:test annotation).
+base.sourcePath = source;test

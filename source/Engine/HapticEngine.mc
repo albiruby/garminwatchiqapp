@@ -1,5 +1,6 @@
 import Toybox.Attention;
 import Toybox.Lang;
+import Toybox.System;
 
 //! Haptic cues. Forerunner devices use a single vibration strength, so cues
 //! are distinguished by count and spacing, not intensity.
@@ -7,6 +8,8 @@ module HapticEngine {
 
     const PULSE_MS = 120;
     const GAP_MS = 140;
+    const PHASE_MIN_GAP_MS = 9000;
+    var _lastPhaseMs = null;
 
     function single() as Void {
         pulses(1, PULSE_MS);
@@ -51,7 +54,13 @@ module HapticEngine {
         } else if ((evt & SessionEngine.EVT_SIDE) != 0) {
             side();
         } else if ((evt & SessionEngine.EVT_PHASE) != 0) {
-            single();
+            // Breathing changes phase every few seconds: buzz at most about
+            // once per breath cycle so the wrist is not vibrating constantly.
+            var now = System.getTimer();
+            if (_lastPhaseMs == null || now - _lastPhaseMs >= PHASE_MIN_GAP_MS) {
+                _lastPhaseMs = now;
+                single();
+            }
         }
     }
 }

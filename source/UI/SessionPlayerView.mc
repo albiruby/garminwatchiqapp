@@ -34,7 +34,6 @@ class SessionPlayerView extends WatchUi.View {
         }
         _motion = new MotionController();
         _clock = new FrameClock(method(:onTick));
-        HapticEngine.single();
         handle(_engine.start(System.getTimer()));
     }
 
