@@ -41,7 +41,7 @@ class SessionDetailView extends WatchUi.View {
         Theme.fitLine(dc, Theme.px(dc, 84), _def[SessionLibrary.F_NAME], Theme.title(), Theme.body(), safe, Theme.WHITE);
         Theme.centerText(dc, Theme.px(dc, 113), Theme.small(), Theme.GREY,
             RecordUtil.toMinutes(SessionLibrary.totalSeconds(_def)).toString() + " min · "
-                + steps.size().toString() + " steps");
+                + steps.size().toString() + (steps.size() == 1 ? " step" : " steps"));
         Theme.divider(dc, Theme.px(dc, 140), safe, Theme.px(dc, 16));
 
         // Step table: "1  Name ............ 2:00", each row inside the safe circle.
@@ -69,8 +69,12 @@ class SessionDetailView extends WatchUi.View {
 
         Theme.divider(dc, Theme.px(dc, 260), safe, Theme.px(dc, 16));
         var noteW = Theme.lineWidth(dc, Theme.px(dc, 266), Theme.px(dc, 40), safe) - Theme.px(dc, 8);
-        var note = Graphics.fitTextToArea(_def[SessionLibrary.F_SAFETY], Theme.label(), noteW, Theme.px(dc, 36), true);
-        Theme.centerText(dc, Theme.px(dc, 266), Theme.label(), Theme.GREY, note);
+        // Own wrap: Graphics.fitTextToArea appends U+2026, which the bitmap
+        // fonts do not contain (it rendered as a box).
+        var lines = Theme.wrap(dc, _def[SessionLibrary.F_SAFETY], Theme.label(), noteW, 2);
+        for (var i = 0; i < lines.size(); i++) {
+            Theme.centerText(dc, Theme.px(dc, 266 + 18 * i), Theme.label(), Theme.GREY, lines[i]);
+        }
         Theme.pill(dc, 312, "Start");
         Theme.startHint(dc);
     }

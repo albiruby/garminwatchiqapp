@@ -11,8 +11,8 @@ module SessionLibrary {
     const F_SAFETY = 4;
 
     const SAFETY_GENERAL = "Stop if you feel pain, dizziness or shortness of breath.";
-    const SAFETY_ELEVATION = "Leg elevation is not for everyone (e.g. glaucoma, heart or kidney failure, uncontrolled blood pressure). Ask a clinician if unsure. Not a treatment.";
-    const SAFETY_BREATH = "Breathe comfortably. Return to normal breathing if light-headed.";
+    const SAFETY_ELEVATION = "Skip with heart, kidney or eye (glaucoma) issues. Not a treatment.";
+    const SAFETY_BREATH = "Breathe comfortably. Stop if light-headed.";
 
     var _all = null;
 

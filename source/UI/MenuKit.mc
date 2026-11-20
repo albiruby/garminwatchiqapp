@@ -1,5 +1,6 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.System;
 import Toybox.WatchUi;
 
 //! Custom-drawn menus: Roboto Condensed, icons, chevrons, RESTORA palette.
@@ -11,7 +12,7 @@ import Toybox.WatchUi;
 module MenuKit {
 
     const ITEM_H = 88;
-    const TITLE_H = 140;
+    const TITLE_H = 156;
     const BAND_TOP = 62;
     const BAND_BOTTOM = 316;
 
@@ -53,6 +54,7 @@ class MenuTitle extends WatchUi.Drawable {
     hidden var _title as String;
     hidden var _sub;
     hidden var _logo as Boolean;
+    hidden var _mark = null;
 
     function initialize(title as String, sub, logo as Boolean) {
         Drawable.initialize({});
@@ -64,11 +66,14 @@ class MenuTitle extends WatchUi.Drawable {
     function draw(dc as Graphics.Dc) as Void {
         var cx = dc.getWidth() / 2;
         if (_logo) {
-            Icons.draw(dc, Models.CAT_RECOVER, cx, Theme.px(dc, 82), Theme.px(dc, 24), Theme.GREEN);
+            if (_mark == null) {
+                _mark = WatchUi.loadResource(Rez.Drawables.LogoMark);
+            }
+            dc.drawBitmap(cx - _mark.getWidth() / 2, Theme.px(dc, 64), _mark);
         }
-        Theme.text(dc, cx, Theme.px(dc, _logo ? 96 : 84), Theme.title(), Theme.WHITE, _title, Graphics.TEXT_JUSTIFY_CENTER);
+        Theme.text(dc, cx, Theme.px(dc, _logo ? 104 : 84), Theme.title(), Theme.WHITE, _title, Graphics.TEXT_JUSTIFY_CENTER);
         if (_sub != null) {
-            Theme.text(dc, cx, Theme.px(dc, _logo ? 123 : 113), Theme.label(), Theme.GREY, _sub, Graphics.TEXT_JUSTIFY_CENTER);
+            Theme.text(dc, cx, Theme.px(dc, _logo ? 131 : 113), Theme.label(), Theme.GREY, _sub, Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 }
@@ -99,18 +104,27 @@ class RowItem extends WatchUi.CustomMenuItem {
         var h = dc.getHeight();
         var focused = isFocused();
         var midY = h / 2;
-        var textX = Theme.px(dc, (_icon != ICON_NONE) ? 116 : 84);
-        var rightX = Theme.px(dc, 324);
+        // The item dc starts right of the system scroll-indicator strip and runs
+        // to the screen's right edge. Convert screen x to dc x so the row stays
+        // centred on the watch face instead of shifting right into the bezel.
+        var off = System.getDeviceSettings().screenWidth - w;
+        if (off < 0) {
+            off = 0;
+        }
+        var textX = Theme.px(dc, (_icon != ICON_NONE) ? 116 : 84) - off;
+        var iconX = Theme.px(dc, 84) - off;
+        var x0 = Theme.px(dc, 48) - off;
+        var surfaceR = Theme.px(dc, 342) - off;
+        var rightX = Theme.px(dc, 324) - off;
 
         if (focused) {
-            var x0 = Theme.px(dc, 48);
             dc.setColor(Theme.SURFACE, Graphics.COLOR_TRANSPARENT);
-            dc.fillRoundedRectangle(x0, Theme.px(dc, 6), w - 2 * x0, h - Theme.px(dc, 12), Theme.px(dc, 12));
+            dc.fillRoundedRectangle(x0, Theme.px(dc, 6), surfaceR - x0, h - Theme.px(dc, 12), Theme.px(dc, 12));
             dc.setColor(Theme.GREEN, Graphics.COLOR_TRANSPARENT);
             dc.fillRoundedRectangle(x0, midY - Theme.px(dc, 18), Theme.px(dc, 4), Theme.px(dc, 36), 2);
         }
         if (_icon != ICON_NONE) {
-            Icons.draw(dc, _icon, Theme.px(dc, 84), midY, Theme.px(dc, 26), focused ? Theme.GREEN : Theme.SOFT);
+            Icons.draw(dc, _icon, iconX, midY, Theme.px(dc, 26), focused ? Theme.GREEN : Theme.SOFT);
         }
         var right = rightX - Theme.px(dc, 12);
         if (value != null) {
@@ -127,7 +141,7 @@ class RowItem extends WatchUi.CustomMenuItem {
             Theme.text(dc, rightX, midY - dc.getFontHeight(Theme.body()) / 2, Theme.body(),
                 valueOn ? Theme.GREEN : Theme.GREY, value, Graphics.TEXT_JUSTIFY_RIGHT);
         } else {
-            Icons.draw(dc, Icons.CHEVRON, rightX - Theme.px(dc, 4), midY, Theme.px(dc, 12), Theme.GREY);
+            Icons.draw(dc, Icons.CHEVRON, rightX - Theme.px(dc, 4), midY, Theme.px(dc, 18), focused ? Theme.SOFT : Theme.GREY);
         }
     }
 }

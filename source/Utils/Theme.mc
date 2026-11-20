@@ -129,6 +129,50 @@ module Theme {
         return s.substring(0, n) + ".";
     }
 
+    //! Word-wrap s into at most maxLines lines of maxWidth px; the last line is
+    //! truncated with "." if the text does not fit.
+    function wrap(dc as Graphics.Dc, s as String, font, maxWidth as Number, maxLines as Number) as Array {
+        var lines = [];
+        var rest = s;
+        while (rest.length() > 0 && lines.size() < maxLines) {
+            if (lines.size() == maxLines - 1 || dc.getTextWidthInPixels(rest, font) <= maxWidth) {
+                lines.add(fit(dc, rest, font, maxWidth));
+                break;
+            }
+            var cut = rest.length();
+            var best = -1;
+            while (cut > 0) {
+                var sp = lastSpace(rest, cut);
+                if (sp <= 0) {
+                    break;
+                }
+                if (dc.getTextWidthInPixels(rest.substring(0, sp), font) <= maxWidth) {
+                    best = sp;
+                    break;
+                }
+                cut = sp;
+            }
+            if (best <= 0) {
+                lines.add(fit(dc, rest, font, maxWidth));
+                break;
+            }
+            lines.add(rest.substring(0, best));
+            rest = rest.substring(best + 1, rest.length());
+        }
+        return lines;
+    }
+
+    //! Index of the last space before `before`, or -1.
+    function lastSpace(s as String, before as Number) as Number {
+        var chars = s.toCharArray();
+        for (var i = before - 1; i >= 0; i--) {
+            if (chars[i] == ' ') {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     //! Centred line inside safe circle r: tries `font`, then `smaller`, then truncates.
     function fitLine(dc as Graphics.Dc, yy as Number, s as String, font, smaller, r as Number, color as Number) as Void {
         var w = lineWidth(dc, yy, dc.getFontHeight(font), r) - px(dc, 8);
