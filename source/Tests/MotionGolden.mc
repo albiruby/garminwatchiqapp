@@ -4,10 +4,10 @@ import Toybox.Lang;
 (:debug)
 module MotionGolden {
     // FK of calf_stretch hold pose (figure units)
-    const CALF_HEEL_N = [-23.2, 0.0];
-    const CALF_WRIST_N = [40.5, 77.0];
-    const CALF_KNEE_F = [14.4, 28.0];
-    const CALF_HEAD = [21.2, 84.0];
+    const CALF_HEEL_N = [-23.23, -0.04];
+    const CALF_WRIST_N = [39.59, 75.01];
+    const CALF_KNEE_F = [14.45, 28.0];
+    const CALF_HEAD = [21.16, 83.95];
     // cat_cow sampled at 2000 ms: torso spine value and head angle
     const CC_2000_SPINE = 0.5;
     const CC_2000_HEAD = -17.0;

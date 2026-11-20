@@ -30,7 +30,7 @@ The prompt's ~60-file tree was condensed: many of the proposed files would have 
 | SkeletonModel / BodyPart / JointModel | `source/Motion/Exercise/Skeleton.mc`: lengths, pose layout, part flags, FK, mirroring |
 | PoseDefinition / MovementSequence / Library | `source/Motion/Exercise/ExercisePoseData.mc` (**generated**) |
 | PoseInterpolator / ExerciseAnimationEngine | `source/Motion/Exercise/PoseSampler.mc`: easing per segment, loops, reps, hold, phase label |
-| ExerciseRenderer / MovementDirection / RangeIndicator | `source/Motion/Exercise/FigureRenderer.mc` |
+| ExerciseRenderer / MovementDirection / RangeIndicator | `source/Motion/Exercise/FigureRenderer.mc` + `FigureShapes.mc` (**generated** anatomical profiles) |
 | BreathingPulse / Ring / Phase animation | `source/Motion/BreathingPulse.mc` and the existing phase ring (`source/UI/Hud.mc`) |
 | SuccessAnimation / SessionCompletionAnimation | `source/Motion/CompletionAnimation.mc` |
 | CircularProgress / LinearProgress / SegmentedProgress | `source/UI/Hud.mc` (`segmentRing`, `segmentBar`) |
@@ -56,8 +56,17 @@ The prompt's ~60-file tree was condensed: many of the proposed files would have 
 
 - **Skeleton**: a side view with head, neck, torso (a curved spine for flexion and extension), and near and far arms and legs (upper arm, forearm, thigh, shin, foot with heel and toe). Angles are absolute; the figure faces +x. Mirroring flips x around the figure centre.
 - **Styles**:
-  - *Silhouette* (default): tapered limb polygons with rounded joints. Near limbs are light grey and far limbs dark grey. Highlighted parts are green. Props (floor, wall) are dark.
+  - *Silhouette* (default) is anatomical. Every segment is a smooth polygon built from asymmetric half-width profiles sampled at 5 points (`FigureShapes.mc`):
+    - **Legs**: the calf bulges behind the tibia, and quads differ from hamstrings and glutes.
+    - **Arms**: biceps differ from triceps, the forearm tapers, and palms continue the forearm by a per-exercise `handBend` (flat on the wall or on the floor).
+    - **Torso**: follows the spine curve with glute, waist, chest and shoulder-blade contour.
+    - **Foot**: an 11-point outline (heel, arch, ball, toes).
+    - **Head**: skull plus jaw, so the face direction reads.
+    - **Joints**: rounded by circles spanning both sides of each segment end.
+    - **Edges**: anti-aliased (`Dc.setAntiAlias`, when the device has it).
+    - **Colour**: near limbs light grey, far limbs dark grey, highlighted parts green, props dark.
   - *Skeletal*: 2 px bones with joint dots, used when Motion detail is Low.
+- **Validation of shapes**: the model checks that the **body outline**, not only the joints, never sinks more than 0.9 units into the floor in any frame. Every outline point must also stay inside the HUD ring.
 - **Guides**:
   - Green direction arrows: straight or arc, bound to a movement segment or shown during a hold.
   - A range arc around a joint (ankle-pump range).
@@ -146,7 +155,7 @@ connectiq & monkeydo bin/restora-test.prg fr165 /t
 
 Nothing below is measured: there was no simulator or device here. These are estimates to check on the FR165.
 
-- **Drawing per frame (silhouette)**: about 20 `fillPolygon`/`fillCircle` calls for the figure, plus the HUD. That is about 8 redraws per second while moving, and 1 per second while holding, paused, hidden or idle.
-- **Memory**: one joint buffer (32 floats), the pose buffer (15), polygon arrays (4 + 3 + 14 points), and the generated pose dictionary built lazily on first use.
+- **Drawing per frame (silhouette)**: about 35 `fillPolygon`/`fillCircle` calls for the figure (10-point limb polygons, a 14-point torso, an 11-point foot), plus the HUD, with anti-aliasing on. That is about 8 redraws per second while moving, and 1 per second while holding, paused, hidden or idle.
+- **Memory**: one joint buffer (32 floats), the pose buffer (15), polygon arrays (10 + 14 + 11 + 3 points), and the generated pose dictionary built lazily on first use.
 - **Battery**: if testing shows a high cost, set Motion detail to Low (250 ms frames, skeletal style) or turn on Reduced motion (1 s frames).
 - **Profiling**: use the simulator's profiler (`File > View Profiler`) to measure `onUpdate` time. If it exceeds about 40 ms at 125 ms frames, lower `FRAME_STANDARD_MS`.

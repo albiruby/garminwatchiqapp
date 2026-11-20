@@ -143,7 +143,7 @@ def calf_stretch_poses():
     hip_y = ANKLE_H + (THIGH + SHIN) * -math.sin(d2r(rear))
     hold = pose(x=0, y=round(hip_y, 1), torso=62, head=52, thn=rear, shn=rear, ftn=FLAT_FOOT, ftf=FLAT_FOOT)
     with_leg(hold, "f", (14.0, ANKLE_H))
-    with_arms(hold, (40.5, 77.0), (40.0, 79.0))
+    with_arms(hold, (39.6, 75.0), (39.4, 77.0))      # wrists just off the wall; palms flat on it
     # Start: upright split stance with both feet already planted where the hold
     # keeps them, arms relaxed. The transition only leans in and reaches the wall.
     rear_ankle = (hold[P_X] + (THIGH + SHIN) * math.cos(d2r(rear)), ANKLE_H)
@@ -158,12 +158,12 @@ def calf_stretch_poses():
 
 def cat_cow_poses():
     # Quadruped: knees under hips, wrists under shoulders, shins on the floor.
-    knee = (0.0, 2.0)
+    knee = (0.0, 2.9)                                 # tibia resting on the floor
     hip = (knee[0], knee[1] + THIGH)
     torso = round(math.degrees(math.asin((UARM + FARM + 2.0 - hip[1]) / TORSO)), 1)
     base = dict(x=hip[0], y=hip[1], torso=torso, thn=-90, shn=180, ftn=192, thf=-90, shf=180, ftf=192)
     sh = (hip[0] + TORSO * math.cos(d2r(torso)), hip[1] + TORSO * math.sin(d2r(torso)))
-    wrist = (sh[0], 2.0)
+    wrist = (sh[0], 1.8)                              # palm flat on the floor
     cat = pose(spine=4.5, head=-62, **base)     # rounded back, head down
     cow = pose(spine=-3.5, head=28, **base)     # gentle extension, gaze forward/up
     for p in (cat, cow):
@@ -212,7 +212,7 @@ def ease(kind, t):
 ANIMS = {
     # id: definition. seq = [[fromPose, toPose, durationMs, easing, phaseLabel], ...]
     "calf_stretch": dict(
-        type=A_HOLD, poses=calf_stretch_poses(),
+        type=A_HOLD, poses=calf_stretch_poses(), handBend=45.0,
         seq=[[0, 1, 1200, EASE_OUT_CUBIC, "SET UP"]], loop=False, holdLabel="HOLD",
         cam=[9.0, 46.0, 0.8], props=PROP_FLOOR | PROP_WALL, wallX=41.5,
         highlight=PART_SHIN_N, cue="Keep heel down",
@@ -220,11 +220,11 @@ ANIMS = {
         arrows=[[ARROW_LINE, -22.0, 20.0, -22.0, 9.0, ON_HOLD]],
     ),
     "cat_cow": dict(
-        type=A_BREATH_SYNC, poses=cat_cow_poses(),
+        type=A_BREATH_SYNC, poses=cat_cow_poses(), handBend=90.0,
         seq=[[0, 1, 4000, EASE_IN_OUT_SINE, "COW"], [1, 0, 4000, EASE_IN_OUT_SINE, "CAT"]], loop=True,
         cam=[2.0, 22.0, 1.2], props=PROP_FLOOR, highlight=PART_TORSO, cue="Flow with breath",
         # arc above the mid-back: direction follows the segment (down into cow, up into cat)
-        arrows=[[ARROW_ARC, 14.0, 34.0, 13.0, 70.0, 110.0, 0], [ARROW_ARC, 14.0, 34.0, 13.0, 110.0, 70.0, 1]],
+        arrows=[[ARROW_ARC, 14.0, 30.0, 17.0, 66.0, 114.0, 0], [ARROW_ARC, 14.0, 30.0, 17.0, 114.0, 66.0, 1]],
     ),
     "ankle_pumps": dict(
         type=A_REPETITION, poses=ankle_pump_poses(),
@@ -305,12 +305,25 @@ def validate():
                 dors = rel_angle(p[sh], p[ft]) - NEUTRAL_ANKLE
                 if not (-56 <= dors <= 35):
                     problems.append("%s: ankle %+.1f deg outside -56..+35" % (name, dors))
+        # body outline (not just joints) must not sink into the floor
+        camy, scale = a["cam"][1], a["cam"][2]
+        floor_y = camy * scale                 # screen y of the floor for box (0, 0)
+        for t in range(0, cycle_ms(a) + 1, 100):
+            ops, _ = render(a, t, (0.0, 0.0))
+            deepest = 0.0
+            for op in ops:
+                if op[0] == "poly":
+                    deepest = max(deepest, max(q[1] for q in op[2]) - floor_y)
+                elif op[0] == "circle":
+                    deepest = max(deepest, op[3] + op[4] - floor_y)
+            if deepest > 0.9 * scale:
+                problems.append("%s: body outline %.1f units below the floor at %d ms" % (name, deepest / scale, t))
         if name == "calf_stretch":
             j = fk(a["poses"][1])
             if abs(j[J_HEEL_N][1]) > 0.8:
                 problems.append("calf_stretch: rear heel not on the floor (%.2f)" % j[J_HEEL_N][1])
             for w in (J_WRIST_N, J_WRIST_F):
-                if abs(j[w][0] - a["wallX"]) > 2.5:
+                if abs(j[w][0] - a["wallX"]) > 3.0:
                     problems.append("calf_stretch: hand not at the wall (%.1f)" % j[w][0])
         if name == "cat_cow":
             for p in a["poses"]:
@@ -326,10 +339,33 @@ def validate():
 # Drawing (mirrors FigureRenderer.mc). Output: draw ops in 390-px screen units.
 # ---------------------------------------------------------------------------
 SOFT, FAR, GREEN, TRACK, PROP = "#C9CEC9", "#6E7570", "#4FC97A", "#26302A", "#3A423D"
-W_TORSO_HIP, W_TORSO_CHEST, W_NECK = 10.0, 12.0, 4.4
-W_THIGH, W_KNEE, W_SHIN, W_ANKLE = 8.0, 6.0, 5.6, 3.8
-W_UARM, W_ELBOW, W_WRIST = 4.6, 3.8, 3.0
-W_HEEL, W_TOE = 3.2, 2.2
+
+# ---- Anatomical profiles ---------------------------------------------------
+# Half-widths (figure units) sampled at PROFILE_T along each segment, given
+# separately for the segment's LEFT normal and RIGHT normal (figure space,
+# before mirroring). For limbs pointing down (standing), left = front;
+# for the torso and neck (pointing up), left = back.
+PROFILE_T = [0.0, 0.25, 0.5, 0.75, 1.0]
+THIGH_L, THIGH_R = [4.0, 4.4, 4.1, 3.3, 2.8], [4.8, 4.3, 3.8, 3.1, 2.8]   # quads / hamstrings + glute
+SHIN_L, SHIN_R = [2.8, 2.9, 2.6, 2.1, 1.8], [3.0, 4.0, 3.4, 2.3, 1.8]     # tibia / calf bulge
+UARM_L, UARM_R = [2.3, 2.5, 2.4, 2.0, 1.8], [2.5, 2.7, 2.4, 2.0, 1.8]     # biceps / triceps
+FARM_L, FARM_R = [1.8, 2.1, 1.9, 1.6, 1.3], [1.9, 2.2, 1.8, 1.5, 1.3]
+HAND_L, HAND_R = [1.3, 1.7, 1.7, 1.3, 0.7], [1.3, 1.6, 1.5, 1.2, 0.7]
+NECK_L, NECK_R = [2.3, 2.2, 2.1, 2.1, 2.1], [2.0, 1.9, 1.9, 2.0, 2.0]     # nape / throat
+HAND_LEN = 5.0
+# Torso along the spine curve, 7 samples hip -> shoulder: back (glute, lumbar
+# curve, shoulder blade) and front (belly, chest).
+TORSO_N = 6
+TORSO_BACK = [5.6, 5.0, 4.3, 4.5, 5.1, 5.3, 4.4]
+TORSO_FRONT = [4.4, 5.0, 5.1, 4.9, 5.5, 5.3, 4.0]
+HEAD_DRAW_R, JAW_R = 6.0, 3.8
+# Foot outline in the foot frame (x along ankle -> toe), from a flat standing
+# foot: heel, arch, ball, toes, instep. Built from world points by rotating
+# by -FLAT_FOOT so that rotating by the foot angle reproduces them.
+_FOOT_WORLD = [(-1.4, 1.0), (-2.6, -1.6), (-2.3, -3.5), (-1.0, -4.0), (3.0, -3.6), (6.2, -4.0),
+               (8.6, -3.9), (9.4, -3.2), (8.5, -2.6), (4.6, -1.3), (1.6, 0.9)]
+FOOT_OUTLINE = [(round(x * math.cos(d2r(-FLAT_FOOT)) - y * math.sin(d2r(-FLAT_FOOT)), 2),
+                 round(x * math.sin(d2r(-FLAT_FOOT)) + y * math.cos(d2r(-FLAT_FOOT)), 2)) for x, y in _FOOT_WORLD]
 
 
 class Ops:
@@ -366,82 +402,96 @@ def render(a, t_ms, box, mirror=False, reduced=False):
 
     hl = a["highlight"]
     parts = a.get("parts", ALL_PARTS)
+    hand_bend = a.get("handBend", 0.0)
 
     def col(part, base):
         return GREEN if hl & part else base
 
-    def limb(pa, pb, wa, wb, color):
-        A, B = S(pa), S(pb)
-        dx, dy = B[0] - A[0], B[1] - A[1]
+    def profile(pa, pb, left, right, color, caps=True):
+        """Segment pa -> pb with asymmetric half-width profiles."""
+        dx, dy = pb[0] - pa[0], pb[1] - pa[1]
         ln = math.hypot(dx, dy) or 1.0
-        nx, ny = -dy / ln, dx / ln
-        ha, hb = wa * scale / 2, wb * scale / 2
-        o.add("poly", color, [[A[0] + nx * ha, A[1] + ny * ha], [B[0] + nx * hb, B[1] + ny * hb],
-                              [B[0] - nx * hb, B[1] - ny * hb], [A[0] - nx * ha, A[1] - ny * ha]])
-        o.add("circle", color, A[0], A[1], ha)
-        o.add("circle", color, B[0], B[1], hb)
+        ux, uy = dx / ln, dy / ln
+        nx, ny = -uy, ux
+        ls, rs = [], []
+        for i, t in enumerate(PROFILE_T):
+            bx, by = pa[0] + dx * t, pa[1] + dy * t
+            ls.append(S((bx + nx * left[i], by + ny * left[i])))
+            rs.append(S((bx - nx * right[i], by - ny * right[i])))
+        o.add("poly", color, [list(q) for q in ls + rs[::-1]])
+        if caps:   # rounded joints: circle spanning both sides at each end
+            for i in (0, len(PROFILE_T) - 1):
+                bx, by = pa[0] + dx * PROFILE_T[i], pa[1] + dy * PROFILE_T[i]
+                off = (left[i] - right[i]) / 2
+                C = S((bx + nx * off, by + ny * off))
+                o.add("circle", color, C[0], C[1], (left[i] + right[i]) / 2 * scale)
 
-    def foot(ankle, toe, heel, color):
-        A, T, H = S(ankle), S(toe), S(heel)
-        o.add("poly", color, [[A[0], A[1]], [T[0], T[1]], [H[0], H[1]]])
-        o.add("circle", color, A[0], A[1], W_ANKLE * scale / 2)
-        limb(heel, toe, W_HEEL, W_TOE, color)          # sole: gives the foot body
+    def foot(an, ft_angle, color):
+        ax, ay = j[an]
+        fx, fy = math.cos(d2r(ft_angle)), math.sin(d2r(ft_angle))
+        pts = [S((ax + lx * fx - ly * fy, ay + lx * fy + ly * fx)) for lx, ly in FOOT_OUTLINE]
+        o.add("poly", color, [list(q) for q in pts])
 
-    def leg(kn, an, tn, hn, pth, psh, pft, color_base):
+    def leg(kn, an, pth, psh, pft, ft_angle, color_base):
         if parts & pth:
-            limb(j[J_HIP], j[kn], W_THIGH, W_KNEE, col(pth, color_base))
+            profile(j[J_HIP], j[kn], THIGH_L, THIGH_R, col(pth, color_base))
         if parts & psh:
-            limb(j[kn], j[an], W_SHIN, W_ANKLE, col(psh, color_base))
+            profile(j[kn], j[an], SHIN_L, SHIN_R, col(psh, color_base))
         if parts & pft:
-            foot(j[an], j[tn], j[hn], col(pft, color_base))
+            foot(an, ft_angle, col(pft, color_base))
 
-    def arm(el, wr, part, color_base):
+    def arm(el, wr, fa_angle, part, color_base):
         if not parts & part:
             return
         c = col(part, color_base)
-        limb(j[J_SHOULDER], j[el], W_UARM, W_ELBOW, c)
-        limb(j[el], j[wr], W_ELBOW, W_WRIST, c)
+        profile(j[J_SHOULDER], j[el], UARM_L, UARM_R, c)
+        profile(j[el], j[wr], FARM_L, FARM_R, c)
+        ha = d2r(fa_angle + hand_bend)
+        tip = (j[wr][0] + HAND_LEN * math.cos(ha), j[wr][1] + HAND_LEN * math.sin(ha))
+        profile(j[wr], tip, HAND_L, HAND_R, c, caps=False)
 
-    # far side first
-    arm(J_ELBOW_F, J_WRIST_F, PART_ARM_F, FAR)
-    leg(J_KNEE_F, J_ANKLE_F, J_TOE_F, J_HEEL_F, PART_THIGH_F, PART_SHIN_F, PART_FOOT_F, FAR)
-    # torso: quadratic curve hip -> shoulder through the spine control point
-    draw_body = parts & PART_TORSO
-    tc = col(PART_TORSO, SOFT)
-    hip, sh, ctl = j[J_HIP], j[J_SHOULDER], j[J_SPINE_C]
-    n = 6
-    left, right = [], []
-    for i in range(n + 1):
-        t = i / n
-        u = 1 - t
-        # quadratic Bezier with the control point lifted so the curve passes through ctl at t=0.5
+    # far side first (darker)
+    arm(J_ELBOW_F, J_WRIST_F, p[P_FAF], PART_ARM_F, FAR)
+    leg(J_KNEE_F, J_ANKLE_F, PART_THIGH_F, PART_SHIN_F, PART_FOOT_F, p[P_FTF], FAR)
+
+    # torso along the spine curve (hip -> shoulder through the control point)
+    if parts & PART_TORSO:
+        tc = col(PART_TORSO, SOFT)
+        hip, sh, ctl = j[J_HIP], j[J_SHOULDER], j[J_SPINE_C]
         qx, qy = 2 * ctl[0] - (hip[0] + sh[0]) / 2, 2 * ctl[1] - (hip[1] + sh[1]) / 2
-        px_ = u * u * hip[0] + 2 * u * t * qx + t * t * sh[0]
-        py_ = u * u * hip[1] + 2 * u * t * qy + t * t * sh[1]
-        tx = 2 * u * (qx - hip[0]) + 2 * t * (sh[0] - qx)
-        ty = 2 * u * (qy - hip[1]) + 2 * t * (sh[1] - qy)
-        ln = math.hypot(tx, ty) or 1.0
-        w = (W_TORSO_HIP + (W_TORSO_CHEST - W_TORSO_HIP) * t) / 2
-        P = S((px_, py_))
-        # normal in screen space (mirror flips x)
-        nx, ny = -ty / ln, tx / ln
-        nsx, nsy = m * nx, -ny
-        left.append([P[0] + nsx * w * scale, P[1] + nsy * w * scale])
-        right.append([P[0] - nsx * w * scale, P[1] - nsy * w * scale])
-    if draw_body:
-        o.add("poly", tc, left + right[::-1])
-        H0, S0 = S(hip), S(sh)
-        o.add("circle", tc, H0[0], H0[1], W_TORSO_HIP * scale / 2)
-        o.add("circle", tc, S0[0], S0[1], W_TORSO_CHEST * scale / 2)
-    # neck + head
+        back, front = [], []
+        for i in range(TORSO_N + 1):
+            t = i / TORSO_N
+            u = 1 - t
+            px_ = u * u * hip[0] + 2 * u * t * qx + t * t * sh[0]
+            py_ = u * u * hip[1] + 2 * u * t * qy + t * t * sh[1]
+            tx = 2 * u * (qx - hip[0]) + 2 * t * (sh[0] - qx)
+            ty = 2 * u * (qy - hip[1]) + 2 * t * (sh[1] - qy)
+            ln = math.hypot(tx, ty) or 1.0
+            nx, ny = -ty / ln, tx / ln          # left normal = back
+            back.append(list(S((px_ + nx * TORSO_BACK[i], py_ + ny * TORSO_BACK[i]))))
+            front.append(list(S((px_ - nx * TORSO_FRONT[i], py_ - ny * TORSO_FRONT[i]))))
+        o.add("poly", tc, back + front[::-1])
+        for i, pt in ((0, hip), (TORSO_N, sh)):
+            r = (TORSO_BACK[i] + TORSO_FRONT[i]) / 2
+            o.add("circle", tc, *S(pt), r * scale)
+
+    # neck + head (skull + jaw, so the face direction reads)
     if parts & PART_HEAD:
         hc = col(PART_HEAD, SOFT)
-        limb(sh, j[J_HEAD], W_NECK, W_NECK, hc)
+        hd = dirv(p[P_HEAD])
+        neck_end = (j[J_SHOULDER][0] + (NECK + 2.0) * hd[0], j[J_SHOULDER][1] + (NECK + 2.0) * hd[1])
+        profile(j[J_SHOULDER], neck_end, NECK_L, NECK_R, hc, caps=False)
         Hd = S(j[J_HEAD])
-        o.add("circle", hc, Hd[0], Hd[1], HEAD_R * scale)
+        o.add("circle", hc, Hd[0], Hd[1], HEAD_DRAW_R * scale)
+        face = (hd[1], -hd[0])                   # right normal of the neck = face side
+        jaw = (j[J_HEAD][0] + face[0] * 2.2 - hd[0] * 2.6, j[J_HEAD][1] + face[1] * 2.2 - hd[1] * 2.6)
+        Jw = S(jaw)
+        o.add("circle", hc, Jw[0], Jw[1], JAW_R * scale)
+
     # near side
-    leg(J_KNEE_N, J_ANKLE_N, J_TOE_N, J_HEEL_N, PART_THIGH_N, PART_SHIN_N, PART_FOOT_N, SOFT)
-    arm(J_ELBOW_N, J_WRIST_N, PART_ARM_N, SOFT)
+    leg(J_KNEE_N, J_ANKLE_N, PART_THIGH_N, PART_SHIN_N, PART_FOOT_N, p[P_FTN], SOFT)
+    arm(J_ELBOW_N, J_WRIST_N, p[P_FAN], PART_ARM_N, SOFT)
 
     # range indicator
     if "range" in a and not reduced:
@@ -475,10 +525,12 @@ def render(a, t_ms, box, mirror=False, reduced=False):
 # Monkey C generation
 # ---------------------------------------------------------------------------
 def mc_num(v):
-    v = round(float(v), 1)
+    """Float literal with up to 2 decimals (keeps 0.25 exact, no "-0.0")."""
+    v = round(float(v), 2)
     if v == 0:
-        v = 0.0                      # no "-0.0"
-    return "%.1f" % v
+        v = 0.0
+    txt = ("%.2f" % v).rstrip("0")
+    return txt + "0" if txt.endswith(".") else txt
 
 
 def mc_arr(vals):
@@ -520,6 +572,8 @@ def gen_monkeyc():
         out.append("            :highlight => %d," % a["highlight"])
         if "parts" in a:
             out.append("            :parts => %d," % a["parts"])
+        if "handBend" in a:
+            out.append("            :handBend => %s," % mc_num(a["handBend"]))
         if "floorHalf" in a:
             out.append("            :floorHalf => %s," % mc_num(a["floorHalf"]))
         out.append("            :cue => \"%s\"," % a["cue"])
@@ -538,6 +592,34 @@ def gen_monkeyc():
     out.append("    }")
     out.append("}")
     return "\n".join(out) + "\n"
+
+
+def gen_shapes():
+    """Anatomical drawing constants for FigureRenderer.mc (same numbers as render())."""
+    def arr(v):
+        return mc_arr(v)
+    foot = ", ".join("[%s, %s]" % (mc_num(x), mc_num(y)) for x, y in FOOT_OUTLINE)
+    lines = ["// GENERATED by tools/motion/motion_model.py - do not edit by hand.",
+             "import Toybox.Lang;\n",
+             "//! Anatomical figure shapes. Half-widths (figure units) at PROFILE_T along",
+             "//! each segment for its LEFT and RIGHT normal (limbs pointing down: left =",
+             "//! front; torso/neck pointing up: left = back).",
+             "module FigureShapes {",
+             "    const PROFILE_T = %s;" % arr(PROFILE_T),
+             "    const THIGH_L = %s;" % arr(THIGH_L), "    const THIGH_R = %s;" % arr(THIGH_R),
+             "    const SHIN_L = %s;" % arr(SHIN_L), "    const SHIN_R = %s;" % arr(SHIN_R),
+             "    const UARM_L = %s;" % arr(UARM_L), "    const UARM_R = %s;" % arr(UARM_R),
+             "    const FARM_L = %s;" % arr(FARM_L), "    const FARM_R = %s;" % arr(FARM_R),
+             "    const HAND_L = %s;" % arr(HAND_L), "    const HAND_R = %s;" % arr(HAND_R),
+             "    const NECK_L = %s;" % arr(NECK_L), "    const NECK_R = %s;" % arr(NECK_R),
+             "    const HAND_LEN = %s;" % mc_num(HAND_LEN),
+             "    const TORSO_N = %d;" % TORSO_N,
+             "    const TORSO_BACK = %s;" % arr(TORSO_BACK), "    const TORSO_FRONT = %s;" % arr(TORSO_FRONT),
+             "    const HEAD_DRAW_R = %s;" % mc_num(HEAD_DRAW_R), "    const JAW_R = %s;" % mc_num(JAW_R),
+             "    //! Foot outline in the foot frame (x along ankle -> toe).",
+             "    const FOOT_OUTLINE = [%s];" % foot,
+             "}"]
+    return "\n".join(lines) + "\n"
 
 
 def gen_golden():
@@ -625,7 +707,7 @@ def previews():
         return
     out_dir = os.path.join(ROOT, "docs", "mockups")
     os.makedirs(out_dir, exist_ok=True)
-    k = 2
+    k = 4
     for name, a in ANIMS.items():
         total = cycle_ms(a)
         times = [int(total * i / 7) for i in range(8)] if a["loop"] else [0, 300, 600, 900, 1200, 2000, 4000, 8000]
@@ -644,7 +726,10 @@ def previews():
                                                 (clip[2] + clip[4]) * k], fill=255)
                 tile = Image.composite(tile, Image.new("RGB", tile.size, "#000000"), mask)
             img.paste(tile, (i * cell * k, 0))
-            dr.text((i * cell * k + 10, 8), "%d ms  %s  rep %d" % (t, info["label"], info["reps"]), fill="#8A918C")
+            dr.text((i * cell * k + 16, 10), "%d ms  %s  rep %d" % (t, info["label"], info["reps"]), fill="#8A918C",
+                    font_size=22)
+        # supersampled: drawn at 2x, downsampled -> approximates on-device anti-aliasing
+        img = img.resize((img.width // 2, img.height // 2), Image.LANCZOS)
         img.save(os.path.join(out_dir, "motion-%s.png" % name.replace("_", "-")))
     print("previews -> docs/mockups/motion-*.png")
 
@@ -716,6 +801,8 @@ def main():
     os.makedirs(mc_dir, exist_ok=True)
     with open(os.path.join(mc_dir, "ExercisePoseData.mc"), "w") as f:
         f.write(gen_monkeyc())
+    with open(os.path.join(mc_dir, "FigureShapes.mc"), "w") as f:
+        f.write(gen_shapes())
     with open(os.path.join(ROOT, "source", "Tests", "MotionGolden.mc"), "w") as f:
         f.write(gen_golden())
     with open(os.path.join(ROOT, "tools", "mockups", "figure_frames.js"), "w") as f:
