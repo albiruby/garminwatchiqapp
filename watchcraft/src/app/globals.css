@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+:root {
+  --page: #f5f5f2;
+  --panel: #ffffff;
+  --raised: #fafaf7;
+  --line: #e3e3dd;
+  --line-strong: #c9c9c1;
+  --ink: #15171a;
+  --muted: #5c6167;
+  --faint: #6b7076;
+  --accent: #a83a0c;
+  --accent-hover: #8f310a;
+  --accent-ink: #ffffff;
+  --dot: #e4e4de;
+  --ok: #1f7a52;
+  --warn: #7d5a12;
+  --danger: #b02a34;
+  --focus: #a83a0c;
+}
+
+[data-theme="dark"] {
+  --page: #0e1013;
+  --panel: #15181c;
+  --raised: #1b1f24;
+  --line: #272c33;
+  --line-strong: #3a424b;
+  --ink: #eceef2;
+  --muted: #a0a7b0;
+  --faint: #7e8792;
+  --accent: #f2731c;
+  --accent-hover: #ff8740;
+  --accent-ink: #14100c;
+  --dot: #232830;
+  --ok: #46a37a;
+  --warn: #d6a032;
+  --danger: #e36b74;
+  --focus: #f2731c;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-red-hat-display), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-inter), ui-monospace, monospace;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-red-hat-display), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.015em;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.mono {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.workspace-dots {
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: center;
+}
+
+.hairline {
+  border-color: var(--line);
+}
+
+.scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.scroll-slim::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+  border: 3px solid var(--panel);
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
+
+input[type="color"] {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
