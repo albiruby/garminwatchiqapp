@@ -46,7 +46,7 @@ Build notes: `monkey.jungle` pins `base.sourcePath`/`resourcePath`, because the 
 1. Sideload `bin\restora.prg` to a physical FR165 (copy to `GARMIN\APPS`), then check haptics, readability on AMOLED, buttons and battery during a 20-minute session.
 2. Go through every session in the simulator once (all 17), using the QA checklist in `docs/DESIGN_SYSTEM.md`.
 3. Add a front view to the figure renderer, then animate the upper-body exercises (neck, shoulders, arms, thoracic rotation, ankle circles) and the rest of the 42-movement library.
-4. Regenerate `docs/mockups/screen-*.png` (needs Playwright for `tools/mockups/render.js`); they still show Roboto.
+4. After UI changes, retake the simulator screenshots in `docs/store/screenshots/` and run `python tools/store/make_store_images.py`.
 5. Store listing: screenshots, description, and the permanent signing key.
 
 ```powershell
@@ -85,7 +85,7 @@ Tests/                   CalculationTests, SessionEngineTests, MotionTests, Moti
   - validates the biomechanics (floor contact, joint ranges, hands at the wall, body outline above the floor),
   - checks that every frame stays inside the HUD ring,
   - generates the `.mc` data, the golden test values and the previews.
-- **Mockups must pass the layout check**: `node tools/mockups/render.js` must print `layout check: no issues`.
+- **Screens are checked on simulator screenshots** (`docs/store/screenshots/`); the old HTML mockups are reference only.
 - **Fonts are generated** from `tools/fonts/RobotoCondensed-VF.ttf` (SIL OFL) by `python tools/make_fonts.py`.
 
 ## Tools
@@ -93,7 +93,8 @@ Tests/                   CalculationTests, SessionEngineTests, MotionTests, Moti
 | Command | Needs |
 |---|---|
 | `python tools\motion\motion_model.py` | Python 3 + Pillow |
-| `node tools\mockups\render.js` (renders `docs/mockups/*.png` + layout check) | Node + Playwright with Chromium |
+| `python tools\store\make_store_images.py` (Store / marketing images from the screenshots) | Python 3 + Pillow |
+| `powershell -File tools\release.ps1 -Key <key>` (tests + signed `dist\RESTORA-<ver>.iq`) | Connect IQ SDK, Java |
 | `python tools\make_fonts.py` | Python 3 + Pillow |
 
 ## Documentation

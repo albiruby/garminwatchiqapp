@@ -26,7 +26,7 @@ RESTORA is a guided recovery companion for your Forerunner 165. Choose a short s
 
 **Built for the watch**
 
-- Animated exercise figures show each movement; the timer never depends on the animation.
+- Anatomy X-Ray exercise figures: a dark scan-style body with the working muscle in red, for all 36 movements. The timer never depends on the animation.
 - Haptic cues for each new exercise, side change and the end of a session.
 - Button-first control: START to pause, DOWN to skip, UP to go back.
 - Optional rest between exercises (10, 15 or 30 s).

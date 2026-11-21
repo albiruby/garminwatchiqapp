@@ -74,6 +74,6 @@ The design is a sport-tech recovery look: Roboto Condensed, AMOLED black, one gr
 - Fonts: `python3 tools/make_fonts.py` regenerates `resources/fonts/` from `tools/fonts/RobotoCondensed-VF.ttf` (SIL OFL).
 - Motion model: `python3 tools/motion/motion_model.py` validates exercise poses and regenerates
   `source/Motion/Exercise/ExercisePoseData.mc`, test golden values and previews.
-- Mockups: `node tools/mockups/render.js` renders `docs/mockups/` from `tools/mockups/restora_mockups.html`. The mockups use the same per-mille layout, palette, font metrics, ring geometry and icons as the Monkey C views. They are not simulator screenshots: CustomMenu scrolling is approximated and the data is illustrative. The renderer also runs a layout check (safe circle, ring clearance, overlaps).
+- Screens: real simulator screenshots in `docs/store/screenshots/`; marketing images built from them by `tools/store/make_store_images.py`. The older HTML mockups (`tools/mockups/`, Roboto) are kept for reference only.
 
-![RESTORA UI mockups](docs/mockups/restora-ui-mockups.png)
+![RESTORA hero](docs/store/marketing/hero-1920x1080.png)

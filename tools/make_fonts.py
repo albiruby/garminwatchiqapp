@@ -30,7 +30,7 @@ WEIGHTS = {"Regular": 400, "Medium": 500, "SemiBold": 600, "Bold": 700}
 # centred in the cell) so timers do not jitter. Oswald runs taller than Roboto
 # Condensed at the same pixel size, hence the slightly smaller sizes.
 FONTS = [
-    ("Label", "rc_label", "Medium", 14, TEXT),    # small uppercase labels
+    ("Label", "rc_label", "SemiBold", 15, TEXT),  # small uppercase labels (SemiBold so digits stay distinct)
     ("Small", "rc_small", "Regular", 16, TEXT),   # subtitles, cues, table rows
     ("Body", "rc_body", "Medium", 18, TEXT),      # list names, clock
     ("Title", "rc_title", "SemiBold", 22, TEXT),  # titles, phase word, values

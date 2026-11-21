@@ -25,7 +25,7 @@ Dokumen lanjutan:
 
 ### RESTORA
 
-| ![RESTORA 1](<docs/mockups/restora-ui-mockups.png>) | ![RESTORA 2](<docs/mockups/screen-01.png>) | ![RESTORA 3](<docs/mockups/motion-hud.png>) | ![RESTORA 4](<docs/mockups/motion-calf-stretch.png>) | ![RESTORA 5](<docs/mockups/motion-cat-cow.png>) |
+| ![RESTORA 1](<docs/store/screenshots/01-home.png>) | ![RESTORA 2](<docs/store/screenshots/07-figure.png>) | ![RESTORA 3](<docs/store/screenshots/09-figure-front.png>) | ![RESTORA 4](<docs/store/screenshots/04-breathing.png>) | ![RESTORA 5](<docs/store/screenshots/05-summary.png>) |
 |---|---|---|---|---|
 
 ### RacePilot

@@ -67,7 +67,7 @@ Radial zones: the **core** (r ≤ 120) holds the primary content (timer, figure,
 
 - Line widths come from the safe circle at that height. Text that is too wide drops to a smaller font, and only then is cut (`Theme.fitLine`).
 - Exercise names are at most 22 characters and cues at most 26 (`testContentFitsHud`).
-- `node tools/mockups/render.js` runs the **layout check**. It flags any ink box outside the safe circle, any box touching the HUD ring, and any two boxes that overlap. It must print `layout check: no issues`.
+- Screens are checked on simulator screenshots (`docs/store/screenshots/`, 390 × 390). The old HTML mockup renderer (`tools/mockups/`) still uses Roboto and illustrative data; it is kept for reference only and is no longer the source of truth.
 
 ## Screens
 

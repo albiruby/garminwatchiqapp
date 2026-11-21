@@ -81,7 +81,7 @@ The prompt's ~60-file tree was condensed: many of the proposed files would have 
 | Cat-Cow | BREATH_SYNC loop | cat ⇄ cow, 4 s each (in-out sine); spine highlighted; arc arrow per phase; haptic on each change | wrists under shoulders, knees under hips |
 | Ankle Pumps | REPETITION loop | point (40° plantarflexion) ⇄ flex (22° dorsiflexion), 1 s each; lower leg and foot only; range arc; rep count | ankle within −56…+35°, heel never below the floor |
 
-Previews: `docs/mockups/motion-calf-stretch.png`, `motion-cat-cow.png`, `motion-ankle-pumps.png`, and the HUD screens 14–16 in `restora-ui-mockups.png` and `motion-hud.png`.
+Previews: `docs/mockups/motion-*.png` (one strip per animation, Anatomy X-Ray style); on-watch HUD screenshots in `docs/store/screenshots/` (`07-figure.png`, `08-figure-hip.png`, `09-figure-front.png`).
 
 ## Settings
 
@@ -117,7 +117,7 @@ Previews: `docs/mockups/motion-calf-stretch.png`, `motion-cat-cow.png`, `motion-
 
 ```sh
 python3 tools/motion/motion_model.py      # validate poses + regenerate data/golden/previews
-node tools/mockups/render.js              # mockups + layout check (must say "no issues")
+# legacy: node tools/mockups/render.js (Roboto mockups, reference only)
 monkeyc -f monkey.jungle -d fr165 -o bin/restora-test.prg -y developer_key.der --unit-test
 connectiq & monkeydo bin/restora-test.prg fr165 /t
 ```
