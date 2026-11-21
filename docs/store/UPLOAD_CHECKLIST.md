@@ -26,7 +26,9 @@ Everything the project can provide is ready. The steps marked **You** need your 
 | Description | `docs/store/STORE_LISTING.md` → Description, followed by the Disclaimer paragraph |
 | What's new | `docs/store/RELEASE_NOTES.md` → 1.0.0 |
 | App icon | `docs/store/icons/icon-512.png` (also `icon-1024.png`, `icon-512-transparent.png`); use the size the upload form asks for |
-| Screenshots | `docs/store/screenshots/01-home.png` … `07-figure.png` (390 × 390 from the simulator) |
+| Screenshots | `docs/store/screenshots/*.png` — 10 raw 390 × 390 screens from the simulator (home, module, detail, breathing, summary, end-session, side figure, hip figure, 3/4 front figure, countdown) |
+| Framed screenshots | `docs/store/marketing/screen-01..08-1080x1080.png` — each screen in a round watch frame with a caption |
+| Cover / hero / banner | `docs/store/marketing/hero-1920x1080.png`, `cover-1440x720.png`, `feature-1024x500.png`, `square-1080.png`; use the size the form asks for, or crop from the hero |
 | Privacy | Text of `docs/store/PRIVACY.md` (RESTORA collects nothing; data stays on the watch). If the form asks for a URL, decide where to host the text; the repo is private. |
 | Permissions shown to users | Sensor — heart rate and beat intervals, only when *HR & HRV* is on (off by default) |
 | **You** — Developer contact | The support e-mail you want public |
@@ -37,7 +39,12 @@ Everything the project can provide is ready. The steps marked **You** need your 
 - [ ] **You** — Install RESTORA from the Store on the watch and run one session (final install test).
 - [ ] Keep `dist\RESTORA-1.0.0.iq` and the key backup together with the release notes.
 
-## 4. Next versions
+## 4. Regenerating the images
+
+- Screens change: retake the 390 × 390 screenshots into `docs/store/screenshots/` (same file names).
+- Then `python tools/store/make_store_images.py` rebuilds everything in `docs/store/marketing/`. The watch frame is a generic round bezel drawn by the script (no Garmin device artwork).
+
+## 5. Next versions
 
 1. Change code, raise `version` in `manifest.xml` (e.g. 1.0.1), add a section to `RELEASE_NOTES.md`.
 2. `powershell -File tools\release.ps1 -Key <same permanent key>`

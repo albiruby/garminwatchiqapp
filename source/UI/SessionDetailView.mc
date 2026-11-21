@@ -49,8 +49,11 @@ class SessionDetailView extends WatchUi.View {
         var y = Theme.px(dc, 146);
         var maxRows = 5;
         var shown = (steps.size() > maxRows) ? maxRows - 1 : steps.size();
+        // one column width for every row (from the lowest row) so the numbers,
+        // names and times line up vertically
+        var lastY = y + rowH * (maxRows - 1);
+        var half = Theme.lineWidth(dc, lastY + Theme.px(dc, Theme.SP_S), Theme.px(dc, 14), safe) / 2 - Theme.px(dc, Theme.SP_M);
         for (var i = 0; i < shown; i++) {
-            var half = Theme.lineWidth(dc, y + Theme.px(dc, Theme.SP_S), Theme.px(dc, 14), safe) / 2 - Theme.px(dc, Theme.SP_M);
             var ex = ExerciseLibrary.get(steps[i][0]);
             var name = (ex != null) ? ex[ExerciseLibrary.F_NAME] : steps[i][0];
             var time = Hud.mss(steps[i][1]);
