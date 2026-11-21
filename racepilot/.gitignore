@@ -1,0 +1,7 @@
+build/
+_backup/
+.playwright-mcp/
+*.prg
+*.prg.debug.xml
+*.iq
+*.der

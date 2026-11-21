@@ -1,0 +1,15 @@
+<properties>
+    <property id="RacePrefs" type="number">0</property>
+    <property id="CustomDistM" type="number">5000</property>
+    <property id="CustomTimeMin" type="number">30</property>
+    <property id="RunType" type="number">0</property>
+    <property id="TreadmillCalib" type="number">100</property>
+    <property id="TrackLapLen" type="number">400</property>
+    <property id="PaceSmoothing" type="number">50</property>
+    <property id="DebugMode" type="boolean">false</property>
+    <property id="Units" type="number">0</property>
+    <property id="Alerts" type="boolean">true</property>
+    <property id="Theme" type="number">0</property>
+    <property id="Accent" type="number">0</property>
+    <property id="LayoutMode" type="number">0</property>
+</properties>
