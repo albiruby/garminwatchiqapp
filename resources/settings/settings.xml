@@ -1,0 +1,146 @@
+<settings>
+    <group id="general" title="@Strings.GroupGeneral" description="@Strings.GroupGeneralDesc">
+        <setting propertyKey="@Properties.Layout" title="@Strings.LayoutTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.LayoutBalanced</listEntry>
+                <listEntry value="1">@Strings.LayoutMinimal</listEntry>
+                <listEntry value="2">@Strings.LayoutDense</listEntry>
+                <listEntry value="3">@Strings.LayoutDial</listEntry>
+                <listEntry value="4">@Strings.LayoutHorizon</listEntry>
+                <listEntry value="5">@Strings.LayoutStack</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ClockFormat" title="@Strings.ClockFormatTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.ClockDevice</listEntry>
+                <listEntry value="1">@Strings.Clock12</listEntry>
+                <listEntry value="2">@Strings.Clock24</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ShowSeconds" title="@Strings.ShowSecondsTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.ShowAmPm" title="@Strings.ShowAmPmTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.ShowDate" title="@Strings.ShowDateTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+    </group>
+
+    <group id="goals" title="@Strings.GroupGoals" description="@Strings.GroupGoalsDesc">
+        <setting propertyKey="@Properties.GoalStyle" title="@Strings.GoalStyleTitle" prompt="@Strings.GoalStylePrompt">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.StyleCircular</listEntry>
+                <listEntry value="1">@Strings.StyleLinear</listEntry>
+                <listEntry value="2">@Strings.StyleSegmented</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.StepGoalMode" title="@Strings.StepGoalModeTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.GoalFromGarmin</listEntry>
+                <listEntry value="1">@Strings.GoalCustom</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.StepGoal" title="@Strings.StepGoalTitle">
+            <settingConfig type="numeric" min="500" max="100000" errorMessage="@Strings.StepGoalError"/>
+        </setting>
+        <setting propertyKey="@Properties.DistanceTarget" title="@Strings.DistanceTargetTitle">
+            <settingConfig type="numeric" min="0" max="200" errorMessage="@Strings.DistanceTargetError"/>
+        </setting>
+        <setting propertyKey="@Properties.CalorieTarget" title="@Strings.CalorieTargetTitle">
+            <settingConfig type="numeric" min="0" max="20000" errorMessage="@Strings.CalorieTargetError"/>
+        </setting>
+        <setting propertyKey="@Properties.IntensityGoalMode" title="@Strings.IntensityGoalModeTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.GoalFromGarmin</listEntry>
+                <listEntry value="1">@Strings.GoalCustom</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.IntensityGoal" title="@Strings.IntensityGoalTitle">
+            <settingConfig type="numeric" min="10" max="2000" errorMessage="@Strings.IntensityGoalError"/>
+        </setting>
+    </group>
+
+    <group id="metrics" title="@Strings.GroupMetrics" description="@Strings.GroupMetricsDesc">
+        <setting propertyKey="@Properties.ShowDistance" title="@Strings.ShowDistanceTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.ShowCalories" title="@Strings.ShowCaloriesTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.ShowIntensity" title="@Strings.ShowIntensityTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.ShowMoveBar" title="@Strings.ShowMoveBarTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.ShowHeartRate" title="@Strings.ShowHeartRateTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.ShowFloors" title="@Strings.ShowFloorsTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.ShowBattery" title="@Strings.ShowBatteryTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.MinimalMetric" title="@Strings.MinimalMetricTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.MetricDistance</listEntry>
+                <listEntry value="1">@Strings.MetricCalories</listEntry>
+                <listEntry value="2">@Strings.MetricIntensity</listEntry>
+                <listEntry value="3">@Strings.MetricHeartRate</listEntry>
+                <listEntry value="4">@Strings.MetricNone</listEntry>
+            </settingConfig>
+        </setting>
+    </group>
+
+    <group id="appearance" title="@Strings.GroupAppearance" description="@Strings.GroupAppearanceDesc">
+        <setting propertyKey="@Properties.Look" title="@Strings.LookTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.LookCarbon</listEntry>
+                <listEntry value="1">@Strings.LookReflective</listEntry>
+                <listEntry value="2">@Strings.LookField</listEntry>
+                <listEntry value="3">@Strings.LookSignal</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.Theme" title="@Strings.ThemeTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.AccentLook</listEntry>
+                <listEntry value="1">@Strings.ThemeLime</listEntry>
+                <listEntry value="2">@Strings.ThemeCyan</listEntry>
+                <listEntry value="3">@Strings.ThemeOrange</listEntry>
+                <listEntry value="4">@Strings.ThemeWhite</listEntry>
+                <listEntry value="5">@Strings.ThemeVolt</listEntry>
+                <listEntry value="6">@Strings.ThemeRed</listEntry>
+                <listEntry value="7">@Strings.ThemeTerracotta</listEntry>
+                <listEntry value="8">@Strings.ThemeViolet</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.TrackWeight" title="@Strings.TrackWeightTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.WeightThin</listEntry>
+                <listEntry value="1">@Strings.WeightRegular</listEntry>
+                <listEntry value="2">@Strings.WeightBold</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ShowLabels" title="@Strings.ShowLabelsTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+    </group>
+
+    <group id="power" title="@Strings.GroupPower" description="@Strings.GroupPowerDesc">
+        <setting propertyKey="@Properties.AodStyle" title="@Strings.AodStyleTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.AodProgress</listEntry>
+                <listEntry value="1">@Strings.AodTimeOnly</listEntry>
+            </settingConfig>
+        </setting>
+    </group>
+
+    <group id="reset" title="@Strings.GroupReset" description="@Strings.GroupResetDesc">
+        <setting propertyKey="@Properties.ResetDefaults" title="@Strings.ResetTitle">
+            <settingConfig type="boolean"/>
+        </setting>
+    </group>
+</settings>

@@ -1,0 +1,20 @@
+<fonts>
+    <font id="TimeL" filename="timel.fnt" antialias="true"/>
+    <font id="TimeM" filename="timem.fnt" antialias="true"/>
+    <font id="TimeS" filename="times.fnt" antialias="true"/>
+    <font id="TimeLO" filename="timelo.fnt" antialias="true"/>
+    <font id="TimeMO" filename="timemo.fnt" antialias="true"/>
+    <font id="TimeSO" filename="timeso.fnt" antialias="true"/>
+    <font id="TimeLL" filename="timell.fnt" antialias="true"/>
+    <font id="TimeML" filename="timeml.fnt" antialias="true"/>
+    <font id="TimeSL" filename="timesl.fnt" antialias="true"/>
+    <font id="Hero" filename="hero.fnt" antialias="true"/>
+    <font id="HeroO" filename="heroo.fnt" antialias="true"/>
+    <font id="HeroL" filename="herol.fnt" antialias="true"/>
+    <font id="TimeAod" filename="timeaod.fnt" antialias="true"/>
+    <font id="Steps" filename="steps.fnt" antialias="true"/>
+    <font id="StepsS" filename="stepss.fnt" antialias="true"/>
+    <font id="Value" filename="value.fnt" antialias="true"/>
+    <font id="Text" filename="text.fnt" antialias="true"/>
+    <font id="Label" filename="label.fnt" antialias="true"/>
+</fonts>

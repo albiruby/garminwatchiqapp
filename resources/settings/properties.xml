@@ -1,0 +1,40 @@
+<!-- Stable property ids: never rename or reuse an id, add new ones instead. -->
+<properties>
+    <!-- General -->
+    <property id="Layout" type="number">0</property>
+    <property id="ClockFormat" type="number">0</property>
+    <property id="ShowSeconds" type="boolean">false</property>
+    <property id="ShowAmPm" type="boolean">true</property>
+    <property id="ShowDate" type="boolean">true</property>
+
+    <!-- Activity goals -->
+    <property id="StepGoalMode" type="number">0</property>
+    <property id="StepGoal" type="number">10000</property>
+    <property id="DistanceTarget" type="float">0.0</property>
+    <property id="CalorieTarget" type="number">0</property>
+    <property id="IntensityGoalMode" type="number">0</property>
+    <property id="IntensityGoal" type="number">150</property>
+    <property id="GoalStyle" type="number">0</property>
+
+    <!-- Metric visibility -->
+    <property id="ShowDistance" type="boolean">true</property>
+    <property id="ShowCalories" type="boolean">true</property>
+    <property id="ShowIntensity" type="boolean">true</property>
+    <property id="ShowMoveBar" type="boolean">true</property>
+    <property id="ShowHeartRate" type="boolean">true</property>
+    <property id="ShowFloors" type="boolean">true</property>
+    <property id="ShowBattery" type="boolean">true</property>
+    <property id="MinimalMetric" type="number">0</property>
+
+    <!-- Appearance -->
+    <property id="Look" type="number">0</property>
+    <property id="Theme" type="number">0</property>
+    <property id="TrackWeight" type="number">1</property>
+    <property id="ShowLabels" type="boolean">true</property>
+
+    <!-- Power -->
+    <property id="AodStyle" type="number">0</property>
+
+    <!-- Reset -->
+    <property id="ResetDefaults" type="boolean">false</property>
+</properties>

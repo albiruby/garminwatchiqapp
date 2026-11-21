@@ -1,0 +1,89 @@
+<strings>
+    <string id="AppName">PULSEFORM</string>
+
+    <string id="GroupGeneral">General</string>
+    <string id="GroupGeneralDesc">Layout and clock</string>
+    <string id="LayoutTitle">Layout</string>
+    <string id="LayoutBalanced">Balanced</string>
+    <string id="LayoutMinimal">Minimal</string>
+    <string id="LayoutDense">Data dense</string>
+    <string id="LayoutDial">Dial (analog)</string>
+    <string id="LayoutHorizon">Horizon (rising level)</string>
+    <string id="LayoutStack">Stack (goal columns)</string>
+    <string id="ClockFormatTitle">Clock format</string>
+    <string id="ClockDevice">Follow watch</string>
+    <string id="Clock12">12-hour</string>
+    <string id="Clock24">24-hour</string>
+    <string id="ShowSecondsTitle">Seconds (when awake)</string>
+    <string id="ShowAmPmTitle">AM/PM marker</string>
+    <string id="ShowDateTitle">Date and weekday</string>
+
+    <string id="GroupGoals">Activity goals</string>
+    <string id="GroupGoalsDesc">Targets and the goal track</string>
+    <string id="GoalStyleTitle">Goal track style</string>
+    <string id="GoalStylePrompt">Used by Balanced, Minimal, Data dense and Dial. Horizon and Stack draw their own progress.</string>
+    <string id="StyleCircular">Circular</string>
+    <string id="StyleLinear">Linear</string>
+    <string id="StyleSegmented">Segmented</string>
+    <string id="StepGoalModeTitle">Step goal source</string>
+    <string id="GoalFromGarmin">Garmin goal</string>
+    <string id="GoalCustom">Custom</string>
+    <string id="StepGoalTitle">Custom step goal</string>
+    <string id="StepGoalError">500 to 100000 steps</string>
+    <string id="DistanceTargetTitle">Distance target (km or mi, 0 = off)</string>
+    <string id="DistanceTargetError">0 to 200</string>
+    <string id="CalorieTargetTitle">Total calorie target (kcal, 0 = off)</string>
+    <string id="CalorieTargetError">0 to 20000 kcal</string>
+    <string id="IntensityGoalModeTitle">Weekly intensity goal source</string>
+    <string id="IntensityGoalTitle">Custom weekly intensity minutes</string>
+    <string id="IntensityGoalError">10 to 2000 minutes</string>
+
+    <string id="GroupMetrics">Metrics</string>
+    <string id="GroupMetricsDesc">Choose what is shown</string>
+    <string id="ShowDistanceTitle">Distance</string>
+    <string id="ShowCaloriesTitle">Total calories</string>
+    <string id="ShowIntensityTitle">Intensity minutes (week)</string>
+    <string id="ShowMoveBarTitle">Move bar</string>
+    <string id="ShowHeartRateTitle">Heart rate</string>
+    <string id="ShowFloorsTitle">Floors (when available)</string>
+    <string id="ShowBatteryTitle">Battery</string>
+    <string id="MinimalMetricTitle">Minimal layout metric</string>
+    <string id="MetricDistance">Distance</string>
+    <string id="MetricCalories">Total calories</string>
+    <string id="MetricIntensity">Intensity minutes</string>
+    <string id="MetricHeartRate">Heart rate</string>
+    <string id="MetricNone">None</string>
+
+    <string id="GroupAppearance">Appearance</string>
+    <string id="GroupAppearanceDesc">Look, accent and track</string>
+    <string id="LookTitle">Look</string>
+    <string id="LookCarbon">Carbon (solid, hairlines)</string>
+    <string id="LookReflective">Reflective (outline, dashed)</string>
+    <string id="LookField">Field (light, warm)</string>
+    <string id="LookSignal">Signal (mono, red at goal)</string>
+    <string id="ThemeTitle">Accent color</string>
+    <string id="AccentLook">Look default</string>
+    <string id="ThemeLime">Electric Lime</string>
+    <string id="ThemeCyan">Arctic Cyan</string>
+    <string id="ThemeOrange">Burnt Orange</string>
+    <string id="ThemeWhite">Pure White</string>
+    <string id="ThemeVolt">Volt</string>
+    <string id="ThemeRed">Signal Red</string>
+    <string id="ThemeTerracotta">Terracotta</string>
+    <string id="ThemeViolet">Ice Violet</string>
+    <string id="TrackWeightTitle">Track thickness</string>
+    <string id="WeightThin">Thin</string>
+    <string id="WeightRegular">Regular</string>
+    <string id="WeightBold">Bold</string>
+    <string id="ShowLabelsTitle">Metric labels</string>
+
+    <string id="GroupPower">Always-on</string>
+    <string id="GroupPowerDesc">Look of the always-on screen</string>
+    <string id="AodStyleTitle">Always-on content</string>
+    <string id="AodProgress">Time and step progress</string>
+    <string id="AodTimeOnly">Time only</string>
+
+    <string id="GroupReset">Reset</string>
+    <string id="GroupResetDesc">Restore layout, theme and goals</string>
+    <string id="ResetTitle">Restore all defaults</string>
+</strings>

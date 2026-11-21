@@ -1,0 +1,11 @@
+# Build output (monkeyc)
+bin/
+
+# Signing keys never belong in the repo (this project uses one outside the folder)
+*.der
+*.pem
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/
