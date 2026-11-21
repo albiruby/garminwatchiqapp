@@ -1,0 +1,9 @@
+<properties>
+    <property id="Colorway" type="number">0</property>
+    <property id="Density" type="number">0</property>
+    <property id="TimeStyle" type="number">0</property>
+    <property id="TopSlot" type="number">0</property>
+    <property id="BottomSlot" type="number">0</property>
+    <property id="LeftSlot" type="number">0</property>
+    <property id="RightSlot" type="number">0</property>
+</properties>

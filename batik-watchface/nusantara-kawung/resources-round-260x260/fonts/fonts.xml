@@ -1,0 +1,7 @@
+<fonts>
+    <font id="PridiSmall" filename="pridismall.fnt" antialias="true"/>
+    <font id="PridiTime" filename="priditime.fnt" antialias="true"/>
+    <font id="PridiAod" filename="pridiaod.fnt" antialias="true"/>
+    <font id="PridiRing" filename="pridiring.fnt" antialias="true"/>
+    <font id="PridiLabel" filename="pridilabel.fnt" antialias="true"/>
+</fonts>
