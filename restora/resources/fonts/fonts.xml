@@ -1,0 +1,8 @@
+<fonts>
+    <font id="Label" filename="rc_label.fnt" antialias="true"/>
+    <font id="Small" filename="rc_small.fnt" antialias="true"/>
+    <font id="Body" filename="rc_body.fnt" antialias="true"/>
+    <font id="Title" filename="rc_title.fnt" antialias="true"/>
+    <font id="Num" filename="rc_num.fnt" antialias="true" filter="0123456789:-/%. "/>
+    <font id="Hero" filename="rc_hero.fnt" antialias="true" filter="0123456789:"/>
+</fonts>

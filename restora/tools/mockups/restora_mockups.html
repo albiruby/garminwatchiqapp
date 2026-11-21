@@ -1,0 +1,255 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>RESTORA UI mockups</title>
+<!--
+  RESTORA watch UI at 390 x 390 (Forerunner 165), mirroring the Monkey C views:
+  same 390-px grid, palette (Theme.mc), Roboto Condensed sizes and line metrics
+  (resources/fonts/*.fnt), ring geometry (Hud.mc), icons (Icons.mc), menu rows
+  (MenuKit.mc). Native CustomMenu scrolling is approximated; data is illustrative.
+
+  Layout check: every text/icon ink box is tested against the screen's safe
+  circle, against keep-out rings (the HUD progress ring) and against every other
+  box. Problems go to window.LAYOUT_ISSUES (printed by render.js); ?debug=1 draws
+  the boxes.  Render: node tools/mockups/render.js
+-->
+<style>
+@font-face{font-family:RC;font-weight:100 900;src:url(../fonts/RobotoCondensed-VF.ttf)}
+body{margin:0;background:#0b0d0c;font-family:RC,sans-serif}
+.grid{display:flex;flex-wrap:wrap;gap:30px;padding:30px;width:1310px}
+.cell{color:#9aa69e;text-align:center;font:500 17px RC;letter-spacing:.5px}
+canvas{display:block;border-radius:50%;box-shadow:0 0 0 12px #1c1f1d,0 0 0 14px #3a3f3c;margin:14px auto 16px}
+</style></head><body><div class="grid" id="g"></div>
+<script src="figure_frames.js"></script>
+<script>
+const DEBUG=location.search.includes('debug');
+// ---- Theme.mc ----
+const BG='#000000',SURFACE='#17211B',TRACK='#26302A',LINE='#2A322D',GREEN='#4FC97A',GREEN_DIM='#2C6B45',
+      WHITE='#F2F3EF',SOFT='#C9CEC9',GREY='#8A918C',AMBER='#E2A93B';
+const SAFE_HUD=160,SAFE_PAGE=170,SAFE_MENU=164;
+// [weight, px, lineHeight, base] from resources/fonts/rc_*.fnt
+const FONT={label:[500,15,18,14],small:[400,17,21,16],body:[500,20,24,19],title:[700,24,29,23],num:[700,40,48,38],hero:[700,60,71,56]};
+const W=390,H=390,CX=195,CY=195;
+const L=0,C=1,R=2;
+let BOXES=[],KEEPOUT=[];window.LAYOUT_ISSUES=[];
+function setFont(x,f){x.font=`${FONT[f][0]} ${FONT[f][1]}px RC`;}
+function tw(x,s,f){setFont(x,f);return Math.round(x.measureText(s).width);}
+const safeHalf=(yy,r)=>{const d=yy-CY,sq=r*r-d*d;return sq>0?Math.trunc(Math.sqrt(sq)):0;};
+const lineWidth=(top,h,r)=>2*Math.min(safeHalf(top,r),safeHalf(top+h,r));
+function text(x,X,yy,f,col,s,just){if(!s)return;setFont(x,f);x.fillStyle=col;x.textBaseline='alphabetic';
+  x.textAlign=just==C?'center':just==R?'right':'left';const base=yy+FONT[f][3];x.fillText(s,X,base);
+  const m=x.measureText(s);BOXES.push({k:'text:'+s,x0:X-m.actualBoundingBoxLeft,x1:X+m.actualBoundingBoxRight,
+    y0:base-m.actualBoundingBoxAscent,y1:base+m.actualBoundingBoxDescent});}
+const ctext=(x,yy,f,col,s)=>text(x,CX,yy,f,col,s,C);
+function hline(x,yy,half){x.strokeStyle=LINE;x.lineWidth=1;x.beginPath();x.moveTo(CX-half,yy+.5);x.lineTo(CX+half,yy+.5);x.stroke();}
+function divider(x,yy,r,inset){const h=safeHalf(yy,r)-inset;if(h>0)hline(x,yy,h);}
+function fit(x,s,f,maxW){if(tw(x,s,f)<=maxW)return s;let n=s.length;while(n>1&&tw(x,s.slice(0,n)+'.',f)>maxW)n--;return s.slice(0,n)+'.';}
+function fitLine(x,yy,s,f,small,r,col){const w=lineWidth(yy,FONT[f][2],r)-8;let ff=f;if(small&&tw(x,s,f)>w)ff=small;ctext(x,yy,ff,col,fit(x,s,ff,w));}
+function fitArea(x,s,f,w,h){const lines=[];let cur='';for(const word of s.split(' ')){const t=cur?cur+' '+word:word;
+  if(tw(x,t,f)>w){lines.push(cur);cur=word;}else cur=t;}lines.push(cur);const max=Math.max(1,Math.floor(h/FONT[f][2]));
+  if(lines.length>max){lines.length=max;lines[max-1]=fit(x,lines[max-1]+'...',f,w);}return lines;}
+function arc(x,cx,cy,r,cw,s,e,pen,col,cap){x.strokeStyle=col;x.lineWidth=pen;x.lineCap=cap||'butt';x.beginPath();
+  x.arc(cx,cy,r,-s*Math.PI/180,-e*Math.PI/180,!cw);x.stroke();x.lineCap='butt';}
+function startHint(x){arc(x,CX,CY,W/2-4,false,22,38,6,GREEN);}
+const mmss=s=>String(Math.trunc(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+const ms=s=>Math.trunc(s/60)+':'+String(s%60).padStart(2,'0');
+// ---- Hud.mc ----
+const RING_CY=186,RING_R=88,RING_PEN=8;
+function segmentRing(x,cy,weights,active,permille,radius,pen,activeColor){const total=weights.reduce((a,b)=>a+b,0);let start=90;
+  const n=weights.filter(v=>v>0).length;
+  weights.forEach((w,i)=>{if(w<=0)return;const sweep=360*w/total,gap=n>1?2:0,s=start-gap,e=start-sweep+gap;
+    arc(x,CX,cy,radius,true,s,e,pen,i<active?GREEN:TRACK);
+    if(i==active&&permille>0){const fe=s-(s-e)*permille/1000;arc(x,CX,cy,radius,true,s,fe,pen,activeColor);}
+    start-=sweep;});
+  KEEPOUT.push({cy,r0:radius-pen/2-6,r1:radius+pen/2+6});}
+function segmentBar(x,yy,half,weights,active,permille){const total=weights.reduce((a,b)=>a+b,0);let bx=CX-half;
+  weights.forEach((w,i)=>{const sw=2*half*w/total,gap=2;x.fillStyle=i<active?GREEN:TRACK;x.fillRect(bx,yy,sw-gap,4);
+    if(i==active){x.fillStyle=GREEN;x.fillRect(bx,yy,(sw-gap)*permille/1000,4);}bx+=sw;});
+  BOXES.push({k:'bar',x0:CX-half,x1:CX+half,y0:yy,y1:yy+4});}
+// ---- Icons.mc ----
+function icon(x,cat,cx,cy,s,col){x.strokeStyle=col;x.fillStyle=col;x.lineWidth=2;x.lineCap='round';x.lineJoin='round';const h=s/2;
+  const poly=(pts)=>{x.beginPath();x.moveTo(pts[0][0],pts[0][1]);for(const p of pts.slice(1))x.lineTo(p[0],p[1]);x.stroke();};
+  const dot=(a,b,r)=>{x.beginPath();x.arc(a,b,r,0,7);x.fill();};
+  if(cat==0){for(let i=0;i<3;i++){const ly=cy-h/2+i*h/2,len=i==1?h:h*2/3;poly([[cx-h,ly],[cx-h+len+h/3,ly]]);
+      arc(x,cx-h+len+h/3,ly-h/6,h/6,false,270,180,2,col,'round');}}
+  else if(cat==1){x.beginPath();x.arc(cx,cy,h,0,7);x.stroke();x.beginPath();x.arc(cx,cy,h*3/5,0,7);x.stroke();dot(cx,cy,h/4);}
+  else if(cat==2){for(let k=0;k<3;k++){const oy=cy-h/2+k*h/2;const pts=[];for(let j=0;j<=12;j++)pts.push([cx-h+j*s/12,oy+Math.sin(j*Math.PI/6)*h/5]);poly(pts);}}
+  else if(cat==3){dot(cx+h*.3,cy-h*.72,h*.2);poly([[cx+h*.15,cy-h*.42],[cx-h*.1,cy+h*.1]]);
+      poly([[cx-h*.55,cy-h*.15],[cx,cy-h*.38],[cx+h*.55,cy-h*.1]]);poly([[cx-h*.1,cy+h*.1],[cx+h*.35,cy+h*.42],[cx+h*.3,cy+h*.95]]);
+      poly([[cx-h*.1,cy+h*.1],[cx-h*.35,cy+h*.5],[cx-h*.85,cy+h*.55]]);}
+  else if(cat==4){dot(cx,cy,h*4/5);x.fillStyle=BG;dot(cx+h*2/5,cy-h/4,h*2/3);}
+  else if(cat==5){const a=h*3/4,c=h*2/5,r=Math.sqrt(2*a*a+2*c*c),t=Math.atan2(a+c,a-c)*180/Math.PI;
+      arc(x,cx+c,cy+c,r,false,t,270-t,2,col,'round');arc(x,cx-c,cy-c,r,false,t+180,(450-t)%360,2,col,'round');poly([[cx-a,cy+a],[cx+a,cy-a]]);}
+  else if(cat==10){x.beginPath();x.moveTo(cx-h/2,cy-h*2/3);x.lineTo(cx+h*2/3,cy);x.lineTo(cx-h/2,cy+h*2/3);x.fill();}
+  else if(cat==11){const bw=s/6,hs=[h/2,h,h*3/4,h*3/2];for(let i=0;i<4;i++)x.fillRect(cx-h+i*(bw+2),cy+h*3/4-hs[i],bw,hs[i]);}
+  else if(cat==12){x.beginPath();x.arc(cx,cy,h*2/3,0,7);x.stroke();dot(cx,cy,h/4);
+      poly([[cx-h,cy],[cx-h*2/3,cy]]);poly([[cx+h*2/3,cy],[cx+h,cy]]);poly([[cx,cy-h],[cx,cy-h*2/3]]);poly([[cx,cy+h*2/3],[cx,cy+h]]);}
+  else if(cat==20){poly([[cx,cy-h],[cx,cy-h*.25]]);poly([[cx-h*.35,cy],[cx,cy-h*.3],[cx+h*.35,cy]]);
+      x.beginPath();x.ellipse(cx-h*.55,cy+h*.2,h*.4,h*.72,0,0,7);x.stroke();x.beginPath();x.ellipse(cx+h*.55,cy+h*.2,h*.4,h*.72,0,0,7);x.stroke();}
+  else if(cat==21){x.beginPath();x.arc(cx,cy,h,0,7);x.stroke();poly([[cx,cy-h*.6],[cx,cy],[cx+h*.45,cy+h*.3]]);}
+  else if(cat==22){const pts=[];for(let j=0;j<=24;j++){const t=j*Math.PI*2/24;
+      pts.push([cx+h*Math.pow(Math.sin(t),3),cy-h*0.06*(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))-h*.1]);}poly(pts);}
+  else if(cat==23){x.lineWidth=3;x.beginPath();x.arc(cx,cy,h,0,7);x.stroke();poly([[cx-h*.42,cy+h*.02],[cx-h*.1,cy+h*.34],[cx+h*.45,cy-h*.3]]);}
+  else if(cat==24){poly([[cx-h*.3,cy-h],[cx+h*.3,cy],[cx-h*.3,cy+h]]);}
+  else if(cat==25){x.beginPath();x.moveTo(cx,cy-h);x.lineTo(cx+h,cy+h*.8);x.lineTo(cx-h,cy+h*.8);x.fill();}
+  else if(cat==26){x.beginPath();x.moveTo(cx,cy+h);x.lineTo(cx+h,cy-h*.8);x.lineTo(cx-h,cy-h*.8);x.fill();}
+  x.lineWidth=1;x.lineCap='butt';BOXES.push({k:'icon'+cat,x0:cx-h-1,x1:cx+h+1,y0:cy-h-1,y1:cy+h+1});}
+// ---- MenuKit.mc: title 140, rows 88; mask = outside r164, above y62, below y316 ----
+const ITEM_H=88,TITLE_H=140,BAND_TOP=62,BAND_BOT=316;
+function menuTitle(x,top,title,sub,logo){if(logo)icon(x,5,CX,top+82,24,GREEN);
+  text(x,CX,top+(logo?96:84),'title',WHITE,title,C);if(sub)text(x,CX,top+(logo?123:113),'label',GREY,sub,C);}
+function row(x,top,focused,it){const midY=top+ITEM_H/2;let textX=it.icon!=null?116:84;
+  if(focused){x.fillStyle=SURFACE;x.beginPath();x.roundRect(48,top+6,W-96,ITEM_H-12,12);x.fill();
+    BOXES.push({k:'surface',x0:48,x1:W-48,y0:top+6,y1:top+ITEM_H-6,bg:1});
+    x.fillStyle=GREEN;x.beginPath();x.roundRect(48,midY-18,4,36,2);x.fill();}
+  if(it.icon!=null)icon(x,it.icon,84,midY,26,focused?GREEN:SOFT);
+  const rightX=324;let right=rightX-12;
+  if(it.value!=null)right=rightX-tw(x,it.value,'body')-10;
+  const nf=focused?'title':'body';
+  text(x,textX,midY-FONT[nf][2]+4,nf,focused?WHITE:SOFT,fit(x,it.name,nf,right-textX),L);
+  if(it.sub)text(x,textX,midY+6,'small',GREY,fit(x,it.sub,'small',right-textX),L);
+  if(it.value!=null)text(x,rightX,midY-FONT.body[2]/2,'body',it.on?GREEN:GREY,it.value,R);
+  else icon(x,24,rightX-4,midY,12,GREY);}
+function menu(x,title,sub,logo,items,focus){let top;
+  if(focus==0){menuTitle(x,0,title,sub,logo);top=TITLE_H;}else{top=CY-ITEM_H/2-ITEM_H*focus;menuTitle(x,top-TITLE_H,title,sub,logo);}
+  items.forEach((it,i)=>{row(x,top,i==focus,it);top+=ITEM_H;});
+  x.fillStyle=BG;x.fillRect(0,0,W,BAND_TOP);x.fillRect(0,BAND_BOT,W,H-BAND_BOT);
+  x.strokeStyle=BG;x.lineWidth=40;x.beginPath();x.arc(CX,CY,SAFE_MENU+20,0,7);x.stroke();x.lineWidth=1;
+  BOXES=BOXES.filter(b=>!(b.y1<=BAND_TOP||b.y0>=BAND_BOT||hidden(b,SAFE_MENU)));
+  BOXES.forEach(b=>{if(!b.bg&&(b.y0<BAND_TOP||b.y1>BAND_BOT))window.LAYOUT_ISSUES.push('cut by band: '+b.k);});}
+function corners(b){return [[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]];}
+function hidden(b,r){return corners(b).every(([a,c])=>Math.hypot(a-CX,c-CY)>r);}
+function minDist(b,cx,cy){const dx=Math.max(b.x0-cx,0,cx-b.x1),dy=Math.max(b.y0-cy,0,cy-b.y1);return Math.hypot(dx,dy);}
+
+// ---- screens ----
+const g=document.getElementById('g');
+function screen(title,safe,draw){BOXES=[];KEEPOUT=[];const d=document.createElement('div');d.className='cell';const c=document.createElement('canvas');
+  c.width=W*2;c.height=H*2;c.style.width=W+'px';c.style.height=H+'px';const x=c.getContext('2d');x.scale(2,2);
+  x.fillStyle=BG;x.fillRect(0,0,W,H);draw(x);
+  const bad=[];BOXES.forEach(b=>{if(b.bg&&!b.ring)return;const out=Math.max(...corners(b).map(([a,c])=>Math.hypot(a-CX,c-CY)))-safe;
+    if(out>0.5&&!b.noRing)bad.push(`outside r${safe} by ${out.toFixed(1)}px: ${b.k}`);
+    if(!b.noRing)KEEPOUT.forEach(k=>{const far=Math.max(...corners(b).map(([a,c])=>Math.hypot(a-CX,c-k.cy)));const near=minDist(b,CX,k.cy);
+      if(far>k.r0&&near<k.r1)bad.push(`touches ring: ${b.k} at ${b.x0.toFixed(0)},${b.y0.toFixed(0)}`);});});
+  for(let i=0;i<BOXES.length;i++)for(let j=i+1;j<BOXES.length;j++){const a=BOXES[i],b=BOXES[j];if(a.bg||b.bg)continue;
+    if(a.x0<b.x1-0.5&&b.x0<a.x1-0.5&&a.y0<b.y1-0.5&&b.y0<a.y1-0.5)bad.push(`overlap: ${a.k} / ${b.k}`);}
+  bad.forEach(m=>window.LAYOUT_ISSUES.push(title+': '+m));
+  if(DEBUG){x.strokeStyle='rgba(255,60,60,.6)';x.setLineDash([3,3]);x.beginPath();x.arc(CX,CY,safe,0,7);x.stroke();
+    BOXES.forEach(b=>x.strokeRect(b.x0,b.y0,b.x1-b.x0,b.y1-b.y0));}
+  d.appendChild(c);d.appendChild(document.createTextNode(title));g.appendChild(d);}
+const MOD=['Breathe','Mind','Circulate','Mobility','Sleep','Recover'];
+const SUB=['Calm your breath','Meditate & focus','Legs & circulation','Stretch & move','Wind down','Post-activity'];
+const home=[{name:'Continue',sub:'Leg Relief · 10 min',icon:10},...MOD.map((m,i)=>({name:m,sub:SUB[i],icon:i})),
+  {name:'History',sub:'This week',icon:11},{name:'Settings',sub:'Haptics, countdown',icon:12}];
+const LEG=[['Diaphragm Breathing',120],['Ankle Pumps',60],['Ankle Circles',60],['Legs Up the Wall',300],['Slow Transition',60]];
+const LEGW=LEG.map(s=>s[1]);
+
+// ---- SessionPlayerView.onUpdate ----
+//  34 clock | 54 name (green) | ring r88 @186 | inside: marker 120, phase/type 128-132, hero 150-162, side 218
+//  286 state line | 308 info row (icon + pattern/time, step n/N) | 336 segment bar
+function hud(x,o){const S=SAFE_HUD;
+  ctext(x,34,'label',SOFT,'10:47');
+  fitLine(x,54,o.title,'title','body',S,GREEN);
+  const ringColor=o.paused?AMBER:GREEN;
+  if(o.pattern&&!o.counting)segmentRing(x,RING_CY,o.pattern,o.phase,o.phasePermille,RING_R,RING_PEN,ringColor);
+  else segmentRing(x,RING_CY,[1],0,o.stepPermille,RING_R,RING_PEN,ringColor);
+  const heroC=o.paused?GREY:WHITE;
+  if(o.counting){ctext(x,128,'label',GREY,'STARTS IN');ctext(x,150,'hero',WHITE,String(o.count));}
+  else if(o.pattern){const up=o.phase==0,down=o.phase==2;if(up||down)icon(x,up?25:26,CX,120,10,o.paused?GREY:GREEN);
+    ctext(x,132,'title',WHITE,['Inhale','Hold','Exhale','Hold'][o.phase]);ctext(x,162,'hero',heroC,String(o.phaseSec));}
+  else{ctext(x,128,'label',GREEN,o.type);ctext(x,150,'hero',heroC,mmss(o.remain));
+    if(o.side)ctext(x,218,'label',WHITE,o.side);}
+  const state=o.paused?['PAUSED',AMBER]:o.next&&o.remain<=10?['Next: '+o.next,GREEN]:[o.cue,GREY];
+  fitLine(x,286,state[0],'small',null,S,state[1]);
+  const infoY=308,leftX=CX-70;icon(x,o.pattern&&!o.counting?20:21,leftX,infoY+9,14,GREEN);
+  text(x,leftX+12,infoY,'body',WHITE,o.pattern&&!o.counting?o.pattern.join('-'):mmss(o.left),L);
+  text(x,CX+74,infoY,'body',WHITE,`${o.step+1}/${o.weights.length}`,R);
+  segmentBar(x,336,56,o.weights,o.step,o.stepPermille);}
+
+// ---- FigureRenderer.mc ops (generated by tools/motion/motion_model.py) ----
+function drawFigure(x,frame,dx){const pts=[];let clipped=false;x.save();x.translate(dx||0,0);
+  for(const op of frame.ops){const k=op[0];
+    if(k==='clip'){x.save();x.beginPath();x.rect(op[1],op[2],op[3],op[4]);x.clip();clipped=true;}
+    else if(k==='unclip'){x.restore();clipped=false;}
+    else if(k==='poly'){x.fillStyle=op[1];x.beginPath();op[2].forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.fill();op[2].forEach(p=>pts.push(p));}
+    else if(k==='circle'){x.fillStyle=op[1];x.beginPath();x.arc(op[2],op[3],Math.max(1,op[4]),0,7);x.fill();
+      pts.push([op[2]-op[4],op[3]-op[4]],[op[2]+op[4],op[3]+op[4]]);}
+    else if(k==='line'){x.strokeStyle=op[1];x.lineWidth=op[2];x.beginPath();x.moveTo(op[3],op[4]);x.lineTo(op[5],op[6]);x.stroke();pts.push([op[3],op[4]],[op[5],op[6]]);}
+    else if(k==='arc'){const [_,c,w,cx,cy,r,a0,a1,cw]=op;x.strokeStyle=c;x.lineWidth=w;x.beginPath();
+      const lo=Math.min(a0,a1),hi=Math.max(a0,a1);x.arc(cx,cy,r,-hi*Math.PI/180,-lo*Math.PI/180);x.stroke();}
+    else if(k==='arrow_line'){x.strokeStyle=op[1];x.lineWidth=2;x.beginPath();x.moveTo(op[2],op[3]);x.lineTo(op[4],op[5]);x.stroke();
+      const d=[op[4]-op[2],op[5]-op[3]],l=Math.hypot(...d);head(x,op[4],op[5],d[0]/l,d[1]/l,op[1]);}
+    else if(k==='arrow_arc'){const [_,c,cx,cy,r,a0,a1]=op;x.strokeStyle=c;x.lineWidth=2;x.beginPath();
+      x.arc(cx,cy,r,-a0*Math.PI/180,-a1*Math.PI/180,a1>a0);x.stroke();
+      const rad=a1*Math.PI/180,s=a1>a0?-1:1;head(x,cx+r*Math.cos(rad),cy-r*Math.sin(rad),s*Math.sin(rad),s*Math.cos(rad),c);}}
+  if(clipped)x.restore();x.restore();
+  // ring check on every figure point that is not clipped away; text overlap via the bbox
+  const clip=frame.ops.find(o=>o[0]==='clip');const inClip=p=>!clip||(p[0]>=clip[1]&&p[0]<=clip[1]+clip[3]&&p[1]>=clip[2]&&p[1]<=clip[2]+clip[4]);
+  const vis=pts.filter(inClip).map(p=>clip?[Math.max(clip[1],Math.min(clip[1]+clip[3],p[0])),Math.max(clip[2],Math.min(clip[2]+clip[4],p[1]))]:p);
+  vis.forEach(p=>BOXES.push({k:'fig',x0:p[0]+(dx||0),x1:p[0]+(dx||0),y0:p[1],y1:p[1],bg:1,ring:1}));
+  const xs=vis.map(p=>p[0]+(dx||0)),ys=vis.map(p=>p[1]);
+  BOXES.push({k:'figure',x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys),noRing:1});}
+function head(x,tx,ty,dx,dy,c){const s=5,bx=tx-dx*s,by=ty-dy*s;x.fillStyle=c;x.beginPath();x.moveTo(tx,ty);
+  x.lineTo(bx-dy*s*.6,by+dx*s*.6);x.lineTo(bx+dy*s*.6,by-dx*s*.6);x.fill();}
+// SessionPlayerView.drawExercise
+function exHud(x,o){const S=SAFE_HUD;ctext(x,34,'label',SOFT,'10:47');fitLine(x,54,o.title,'title','body',S,GREEN);
+  segmentRing(x,RING_CY,[1],0,o.stepPermille,RING_R,RING_PEN,o.paused?AMBER:GREEN);
+  drawFigure(x,window.FIGURE_FRAMES[o.anim][o.frame]);
+  ctext(x,194,'num',o.paused?GREY:WHITE,mmss(o.remain));ctext(x,236,'label',GREEN,o.label);
+  fitLine(x,286,o.next&&o.remain<=10?'Next: '+o.next:o.cue,'small',null,S,o.next&&o.remain<=10?GREEN:GREY);
+  const infoY=308,leftX=CX-70;icon(x,21,leftX,infoY+9,14,GREEN);text(x,leftX+12,infoY,'body',WHITE,mmss(o.left),L);
+  text(x,CX+74,infoY,'body',WHITE,`${o.step+1}/${o.weights.length}`,R);segmentBar(x,336,56,o.weights,o.step,o.stepPermille);}
+
+async function boot(){
+await document.fonts.load('700 24px RC');await document.fonts.load('400 17px RC');await document.fonts.load('500 15px RC');
+screen('01  HOME',SAFE_MENU,x=>menu(x,'RESTORA','RECOVERY COMPANION',true,home,0));
+screen('02  HOME - SCROLLED',SAFE_MENU,x=>menu(x,'RESTORA','RECOVERY COMPANION',true,home,3));
+screen('03  MODULE: CIRCULATE',SAFE_MENU,x=>menu(x,'Circulate','3 SESSIONS',false,[{name:'Leg Reset',sub:'3 steps · 5 min'},
+  {name:'Leg Relief',sub:'5 steps · 10 min'},{name:'Desk Break',sub:'5 steps · 5 min'}],1));
+function pill(x,yy,label){x.fillStyle=SURFACE;x.beginPath();x.roundRect(CX-60,yy,120,30,15);x.fill();
+  BOXES.push({k:'pill',x0:CX-60,x1:CX+60,y0:yy,y1:yy+30,bg:1});ctext(x,yy+1,'title',GREEN,label);}
+screen('04  SESSION DETAIL',SAFE_PAGE,x=>{const S=SAFE_PAGE;icon(x,2,CX,52,22,GREEN);ctext(x,68,'label',GREEN,'CIRCULATE');
+  fitLine(x,84,'Leg Relief','title','body',S,WHITE);ctext(x,113,'small',GREY,'10 min · 5 steps');divider(x,140,S,16);
+  let yy=146;LEG.forEach((s,i)=>{const half=lineWidth(yy+4,14,S)/2-8,t=ms(s[1]),x0=CX-half,x1=CX+half;
+    const nx=x0+tw(x,'5  ','small'),nm=x1-nx-tw(x,'  '+t,'small');text(x,x0,yy,'small',GREEN,String(i+1),L);
+    text(x,nx,yy,'small',WHITE,fit(x,s[0],'small',nm),L);text(x,x1,yy,'small',GREY,t,R);yy+=22;});
+  divider(x,260,S,16);const nw=lineWidth(266,40,S)-8;
+  fitArea(x,'Leg elevation is not for everyone (e.g. glaucoma, heart or kidney failure, uncontrolled blood pressure). Ask a clinician if unsure.','label',nw,36)
+    .forEach((l,i)=>ctext(x,266+i*18,'label',GREY,l));
+  pill(x,312,'Start');startHint(x);});
+screen('05  HUD - COUNTDOWN',SAFE_HUD,x=>hud(x,{counting:true,count:3,title:'Get ready',weights:LEGW,step:0,stepPermille:0,cue:'Diaphragm Breathing',left:600,pattern:null}));
+screen('06  HUD - BREATHE (INHALE)',SAFE_HUD,x=>hud(x,{title:'Box Breathing',weights:[300],step:0,stepPermille:220,pattern:[4,4,4,4],phase:0,phasePermille:600,phaseSec:2,cue:'Follow the ring',remain:234}));
+screen('07  HUD - BREATHE (PAUSED)',SAFE_HUD,x=>hud(x,{title:'Diaphragm Breathing',weights:LEGW,step:0,stepPermille:450,pattern:[4,0,6,0],phase:2,phasePermille:450,phaseSec:4,paused:true,remain:66}));
+screen('08  HUD - HOLD',SAFE_HUD,x=>hud(x,{title:'Legs Up the Wall',weights:LEGW,step:3,stepPermille:320,type:'HOLD',remain:204,cue:'Hips near wall, legs up',next:'Slow Transition',left:264}));
+screen('09  HUD - ALTERNATE (LAST 10 S)',SAFE_HUD,x=>hud(x,{title:'Ankle Circles',weights:LEGW,step:2,stepPermille:870,type:'ALTERNATE',side:'RIGHT',remain:8,cue:'Circle the ankle slowly',next:'Legs Up the Wall',left:368}));
+function metricRow(x,yy,ic,value,label){icon(x,ic,112,yy+16,22,WHITE);text(x,140,yy,'title',WHITE,value,L);text(x,140,yy+28,'label',GREY,label,L);}
+screen('10  SUMMARY',SAFE_PAGE,x=>{icon(x,23,CX,58,34,GREEN);ctext(x,82,'title',WHITE,'Session complete');
+  ctext(x,111,'small',GREY,'Leg Relief · RESTORA calc');divider(x,138,SAFE_PAGE,20);
+  metricRow(x,146,21,'9:50','Duration');metricRow(x,196,20,'12','Breathing cycles');metricRow(x,246,22,'↓ 11 bpm','HR change · Garmin');
+  pill(x,306,'Done');startHint(x);});
+function stat(x,X,yy,v,l){text(x,X,yy,'num',GREEN,v,C);text(x,X,yy+46,'label',GREY,l,C);}
+screen('11  HISTORY - THIS WEEK',SAFE_PAGE,x=>{const S=SAFE_PAGE;ctext(x,44,'body',WHITE,'10:47');ctext(x,70,'title',WHITE,'This week');divider(x,108,S,16);
+  stat(x,CX-62,112,'12','SESSIONS');stat(x,CX+62,112,'95','MINUTES');stat(x,CX-62,186,'5','MODULES');stat(x,CX+62,186,'4','DAY STREAK');
+  x.strokeStyle=LINE;x.beginPath();x.moveTo(CX+.5,118);x.lineTo(CX+.5,244);x.stroke();divider(x,180,S,46);
+  const by=262,half=safeHalf(by+4,S)-50;let bx=CX-half;const bw=half*2;
+  const cols=[GREEN,'#3FA866','#7FDCA0',GREEN_DIM,'#A9E7BE','#255A3A'];[22,12,38,14,9,5].forEach((p,i)=>{const sw=bw*p/100;x.fillStyle=cols[i];x.fillRect(bx,by,sw-2,4);bx+=sw;});
+  BOXES.push({k:'sharebar',x0:CX-half,x1:CX+half,y0:by,y1:by+4});
+  ctext(x,276,'small',WHITE,'92% completed');ctext(x,300,'label',GREY,'RESTORA CALC');});
+screen('12  HISTORY - PAGE 2',SAFE_PAGE,x=>{const S=SAFE_PAGE;ctext(x,44,'body',WHITE,'10:47');ctext(x,70,'title',WHITE,'This week');divider(x,108,S,16);let yy=116;
+  const rows=[['Circulation','35 min',1],['Leg elevation','22 min',1],['Wind-down','15 min',1],['Avg session','7:55',1],['Pre-session HR (14 d)','--',0]];
+  rows.forEach((r,i)=>{const half=lineWidth(yy+4,16,S)/2-8;text(x,CX-half,yy+2,'small',GREY,r[0],L);text(x,CX+half,yy,'body',r[2]?WHITE:GREY,r[1],R);
+    if(i<rows.length-1)divider(x,yy+28,S,26);yy+=32;});
+  fitLine(x,282,'Top: Leg Relief','small',null,S,GREEN);ctext(x,304,'label',GREY,'RESTORA CALC');});
+screen('13  SETTINGS',SAFE_MENU,x=>menu(x,'Settings',null,false,[{name:'Haptics',sub:'Vibration cues',value:'On',on:1},{name:'Countdown',sub:'Before start',value:'3 s',on:1},
+  {name:'Auto next',sub:'Advance exercises',value:'On',on:1},{name:'HR check',sub:'Garmin HR before/after',value:'Off'}],0));
+const LB=[['Calf Stretch',120],['Hip Mobility',180],['Gentle Knee Bends',60],["Child's Pose",120]];
+screen('15  MOTION - CALF STRETCH (HOLD, RIGHT)',SAFE_HUD,x=>exHud(x,{anim:'calf_stretch',frame:'5500m',title:'Calf Stretch',weights:LB.map(s=>s[1]),
+  step:0,stepPermille:550,remain:54,label:'HOLD \u00b7 R',cue:'Keep heel down',left:414}));
+screen('16  MOTION - CAT-COW (BREATH SYNC)',SAFE_HUD,x=>exHud(x,{anim:'cat_cow',frame:'2000',title:'Cat-Cow',weights:[120,120,120],
+  step:0,stepPermille:300,remain:84,label:'COW \u00b7 1',cue:'Flow with breath',left:324}));
+screen('17  MOTION - ANKLE PUMPS (REPS)',SAFE_HUD,x=>exHud(x,{anim:'ankle_pumps',frame:'5500',title:'Ankle Pumps',weights:LEGW,
+  step:1,stepPermille:420,remain:35,label:'POINT \u00b7 3',cue:'Keep moving',left:515}));
+screen('14  ICONS',SAFE_PAGE,x=>{ctext(x,70,'label',GREY,'MODULES');
+  MOD.forEach((m,i)=>{const col=i%3,rw=Math.trunc(i/3),ix=CX+(col-1)*86,iy=rw?186:118;icon(x,i,ix,iy,30,GREEN);text(x,ix,iy+22,'label',GREY,m.toUpperCase(),C);});
+  ctext(x,238,'label',GREY,'METRICS');[20,21,22,23].forEach((c,i)=>icon(x,c,CX+(i-1.5)*56,282,24,WHITE));});
+document.body.dataset.ready='1';
+}
+boot().catch(e=>{window.LAYOUT_ISSUES.push('JS ERROR: '+e);document.body.dataset.ready='1';});
+</script></body></html>

@@ -1,0 +1,45 @@
+info face="Pridi Medium" size=21 bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=1 aa=1 padding=0,0,0,0 spacing=1,1
+common lineHeight=21 base=21 scaleW=885 scaleH=21 pages=1 packed=0
+page id=0 file="pridiring.png"
+chars count=41
+char id=48 x=0 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=13 page=0 chnl=15
+char id=49 x=23 y=0 width=17 height=21 xoffset=-4 yoffset=0 xadvance=9 page=0 chnl=15
+char id=50 x=41 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=11 page=0 chnl=15
+char id=51 x=62 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=12 page=0 chnl=15
+char id=52 x=83 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=12 page=0 chnl=15
+char id=53 x=104 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=12 page=0 chnl=15
+char id=54 x=125 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=12 page=0 chnl=15
+char id=55 x=146 y=0 width=19 height=21 xoffset=-4 yoffset=0 xadvance=11 page=0 chnl=15
+char id=56 x=166 y=0 width=21 height=21 xoffset=-4 yoffset=0 xadvance=12 page=0 chnl=15
+char id=57 x=188 y=0 width=21 height=21 xoffset=-4 yoffset=0 xadvance=12 page=0 chnl=15
+char id=46 x=210 y=0 width=12 height=21 xoffset=-4 yoffset=0 xadvance=4 page=0 chnl=15
+char id=45 x=223 y=0 width=16 height=21 xoffset=-4 yoffset=0 xadvance=8 page=0 chnl=15
+char id=58 x=240 y=0 width=12 height=21 xoffset=-4 yoffset=0 xadvance=4 page=0 chnl=15
+char id=37 x=253 y=0 width=25 height=21 xoffset=-4 yoffset=0 xadvance=16 page=0 chnl=15
+char id=176 x=279 y=0 width=16 height=21 xoffset=-4 yoffset=0 xadvance=7 page=0 chnl=15
+char id=65 x=296 y=0 width=24 height=21 xoffset=-4 yoffset=0 xadvance=15 page=0 chnl=15
+char id=66 x=321 y=0 width=21 height=21 xoffset=-4 yoffset=0 xadvance=13 page=0 chnl=15
+char id=67 x=343 y=0 width=21 height=21 xoffset=-4 yoffset=0 xadvance=13 page=0 chnl=15
+char id=68 x=365 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=13 page=0 chnl=15
+char id=69 x=388 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=11 page=0 chnl=15
+char id=70 x=409 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=11 page=0 chnl=15
+char id=71 x=430 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=13 page=0 chnl=15
+char id=72 x=453 y=0 width=23 height=21 xoffset=-4 yoffset=0 xadvance=14 page=0 chnl=15
+char id=73 x=477 y=0 width=15 height=21 xoffset=-4 yoffset=0 xadvance=7 page=0 chnl=15
+char id=74 x=493 y=0 width=19 height=21 xoffset=-4 yoffset=0 xadvance=11 page=0 chnl=15
+char id=75 x=513 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=14 page=0 chnl=15
+char id=76 x=536 y=0 width=19 height=21 xoffset=-4 yoffset=0 xadvance=11 page=0 chnl=15
+char id=77 x=556 y=0 width=25 height=21 xoffset=-4 yoffset=0 xadvance=16 page=0 chnl=15
+char id=78 x=582 y=0 width=23 height=21 xoffset=-4 yoffset=0 xadvance=15 page=0 chnl=15
+char id=79 x=606 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=14 page=0 chnl=15
+char id=80 x=629 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=13 page=0 chnl=15
+char id=81 x=652 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=14 page=0 chnl=15
+char id=82 x=675 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=13 page=0 chnl=15
+char id=83 x=698 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=11 page=0 chnl=15
+char id=84 x=719 y=0 width=21 height=21 xoffset=-4 yoffset=0 xadvance=12 page=0 chnl=15
+char id=85 x=741 y=0 width=22 height=21 xoffset=-4 yoffset=0 xadvance=14 page=0 chnl=15
+char id=86 x=764 y=0 width=23 height=21 xoffset=-4 yoffset=0 xadvance=15 page=0 chnl=15
+char id=87 x=788 y=0 width=27 height=21 xoffset=-4 yoffset=0 xadvance=18 page=0 chnl=15
+char id=88 x=816 y=0 width=23 height=21 xoffset=-4 yoffset=0 xadvance=14 page=0 chnl=15
+char id=89 x=840 y=0 width=23 height=21 xoffset=-4 yoffset=0 xadvance=14 page=0 chnl=15
+char id=90 x=864 y=0 width=20 height=21 xoffset=-4 yoffset=0 xadvance=12 page=0 chnl=15
