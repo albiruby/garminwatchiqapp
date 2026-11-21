@@ -14,4 +14,5 @@
     <property id="cbOut" type="number">6</property>
     <property id="cbPause" type="number">0</property>
     <property id="cbMin" type="number">5</property>
+    <property id="figXray" type="boolean">true</property>
 </properties>

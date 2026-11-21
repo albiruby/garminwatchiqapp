@@ -20,6 +20,8 @@ module SettingsMenu {
             SettingsRepository.getBool("exerciseAnim", true)));
         menu.addItem(toggle(:breathingAnim, "Breath pulse", "Pulse with each breath",
             SettingsRepository.getBool("breathingAnim", true)));
+        menu.addItem(toggle(:figXray, "X-ray figure", "Off: classic grey figure",
+            SettingsRepository.figureXray()));
         var detail = new RowItem(:motionDetail, "Motion detail", "Low saves battery", RowItem.ICON_NONE,
             detailName(MotionConfig.detail()));
         detail.valueOn = true;
@@ -76,6 +78,8 @@ module SettingsMenu {
             return "exerciseAnim";
         } else if (id == :breathingAnim) {
             return "breathingAnim";
+        } else if (id == :figXray) {
+            return "figXray";
         }
         return "hrSnapshot";
     }

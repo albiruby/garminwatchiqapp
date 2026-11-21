@@ -26,6 +26,21 @@ class FigureRenderer {
     static const C_FAR = 0x6E7570;
     static const C_PROP = 0x3A423D;
 
+    // "Anatomy X-Ray" style (default): dark body, light rim, red target muscle.
+    static const X_BODY = 0x1A1F24;
+    static const X_RIM = 0x8FA3B0;
+    static const X_FAR_BODY = 0x111418;
+    static const X_FAR_RIM = 0x4E5A63;
+    static const X_RED = 0xE5484D;
+    static const X_FIBRE = 0xFF8A8E;
+    static const X_HINT = 0x3C4A55;
+    static const X_SCENE = 0x2A3138;
+    // draw passes: classic fill, X-ray rim, X-ray fill, X-ray rim+fill per shape
+    static const PASS_CLASSIC = 0;
+    static const PASS_RIM = 1;
+    static const PASS_FILL = 2;
+    static const PASS_BOTH = 3;
+
     static const ARROW_LINE = 0;
     static const ARROW_ARC = 1;
     static const ON_HOLD = 9;
@@ -50,6 +65,11 @@ class FigureRenderer {
     hidden var _highlight as Number = 0;
     hidden var _parts as Number = ALL_PARTS;
     hidden var _handBend = 0.0;
+    hidden var _xray as Boolean = true;
+    hidden var _pass as Number = PASS_CLASSIC;
+    hidden var _far as Boolean = false;
+    hidden var _ink as Number = C_NEAR;
+    hidden var _bustPhase as Number = 0;   // 0 = body silhouette, 1 = arms in front
 
     function initialize() {
         _j = Skeleton.newJointBuffer();
@@ -69,6 +89,69 @@ class FigureRenderer {
 
     function setStyle(style as Number) as Void {
         _style = style;
+    }
+
+    function setXray(on as Boolean) as Void {
+        _xray = on;
+    }
+
+    // ---- ink: every body shape goes through these, so the X-ray style can
+    // draw a rim pass and a fill pass without touching the pose code ----
+    hidden function ink(dc as Graphics.Dc, c as Number) as Void {
+        _ink = c;
+        if (_pass == PASS_CLASSIC) {
+            dc.setColor(c, Graphics.COLOR_TRANSPARENT);
+        }
+    }
+
+    hidden function xFill() as Number {
+        if (_ink == Theme.GREEN) {
+            return X_RED;
+        }
+        return _far ? X_FAR_BODY : X_BODY;
+    }
+
+    hidden function poly(dc as Graphics.Dc, pts as Array) as Void {
+        if (_pass == PASS_CLASSIC) {
+            dc.fillPolygon(pts);
+            return;
+        }
+        if (_ink == Theme.BG) {
+            return;                       // gap outlines are not needed with a rim
+        }
+        if (_pass != PASS_FILL) {
+            dc.setColor(_far ? X_FAR_RIM : X_RIM, Graphics.COLOR_TRANSPARENT);
+            dc.setPenWidth(2);
+            var n = pts.size();
+            for (var i = 0; i < n; i++) {
+                var a = pts[i];
+                var b = pts[(i + 1) % n];
+                dc.drawLine(a[0], a[1], b[0], b[1]);
+            }
+            dc.setPenWidth(1);
+        }
+        if (_pass != PASS_RIM) {
+            dc.setColor(xFill(), Graphics.COLOR_TRANSPARENT);
+            dc.fillPolygon(pts);
+        }
+    }
+
+    hidden function circ(dc as Graphics.Dc, x as Number, y as Number, r as Number) as Void {
+        if (_pass == PASS_CLASSIC) {
+            dc.fillCircle(x, y, r);
+            return;
+        }
+        if (_ink == Theme.BG) {
+            return;
+        }
+        if (_pass != PASS_FILL) {
+            dc.setColor(_far ? X_FAR_RIM : X_RIM, Graphics.COLOR_TRANSPARENT);
+            dc.fillCircle(x, y, r + 1);
+        }
+        if (_pass != PASS_RIM) {
+            dc.setColor(xFill(), Graphics.COLOR_TRANSPARENT);
+            dc.fillCircle(x, y, r);
+        }
     }
 
     function sx(x) as Float { return Skeleton.screenX(x, _camX, _scale, _cx, _mirror); }
@@ -98,7 +181,15 @@ class FigureRenderer {
             if (aaB) {
                 dc.setAntiAlias(true);
             }
-            drawBust(dc, p);
+            _far = false;
+            for (var phase = 0; phase < 2; phase++) {
+                _bustPhase = phase;
+                for (var pass = (_xray ? PASS_RIM : PASS_CLASSIC); pass <= (_xray ? PASS_FILL : PASS_CLASSIC); pass++) {
+                    _pass = pass;
+                    drawBust(dc, p);
+                }
+            }
+            _pass = PASS_CLASSIC;
             if (showGuides) {
                 drawArrows(dc, def, sampler);
             }
@@ -120,20 +211,36 @@ class FigureRenderer {
         }
         drawProps(dc, def);
 
-        // far side
-        arm(dc, Skeleton.J_ELBOW_F, Skeleton.J_WRIST_F, p[Skeleton.P_FAF], Skeleton.PART_ARM_F, C_FAR);
-        leg(dc, Skeleton.J_KNEE_F, Skeleton.J_ANKLE_F, p[Skeleton.P_FTF],
-            Skeleton.PART_THIGH_F, Skeleton.PART_SHIN_F, Skeleton.PART_FOOT_F, C_FAR);
-        if ((_parts & Skeleton.PART_TORSO) != 0) {
-            torso(dc, color(Skeleton.PART_TORSO, C_NEAR));
+        var xr = _xray && _style != SKELETAL;
+        var p0 = xr ? PASS_RIM : PASS_CLASSIC;
+        var p1 = xr ? PASS_FILL : PASS_CLASSIC;
+        // far side (X-ray: dimmer rim and body)
+        _far = true;
+        for (var pass = p0; pass <= p1; pass++) {
+            _pass = pass;
+            arm(dc, Skeleton.J_ELBOW_F, Skeleton.J_WRIST_F, p[Skeleton.P_FAF], Skeleton.PART_ARM_F, C_FAR);
+            leg(dc, Skeleton.J_KNEE_F, Skeleton.J_ANKLE_F, p[Skeleton.P_FTF],
+                Skeleton.PART_THIGH_F, Skeleton.PART_SHIN_F, Skeleton.PART_FOOT_F, C_FAR);
         }
-        if ((_parts & Skeleton.PART_HEAD) != 0) {
-            head(dc, p[Skeleton.P_HEAD], color(Skeleton.PART_HEAD, C_NEAR));
+        // body: torso, head and near leg read as one rim-lit silhouette
+        _far = false;
+        for (var pass = p0; pass <= p1; pass++) {
+            _pass = pass;
+            if ((_parts & Skeleton.PART_TORSO) != 0) {
+                torso(dc, color(Skeleton.PART_TORSO, C_NEAR));
+            }
+            if ((_parts & Skeleton.PART_HEAD) != 0) {
+                head(dc, p[Skeleton.P_HEAD], color(Skeleton.PART_HEAD, C_NEAR));
+            }
+            leg(dc, Skeleton.J_KNEE_N, Skeleton.J_ANKLE_N, p[Skeleton.P_FTN],
+                Skeleton.PART_THIGH_N, Skeleton.PART_SHIN_N, Skeleton.PART_FOOT_N, C_NEAR);
         }
-        // near side
-        leg(dc, Skeleton.J_KNEE_N, Skeleton.J_ANKLE_N, p[Skeleton.P_FTN],
-            Skeleton.PART_THIGH_N, Skeleton.PART_SHIN_N, Skeleton.PART_FOOT_N, C_NEAR);
-        arm(dc, Skeleton.J_ELBOW_N, Skeleton.J_WRIST_N, p[Skeleton.P_FAN], Skeleton.PART_ARM_N, C_NEAR);
+        // near arm on top with its own rim
+        for (var pass = p0; pass <= p1; pass++) {
+            _pass = pass;
+            arm(dc, Skeleton.J_ELBOW_N, Skeleton.J_WRIST_N, p[Skeleton.P_FAN], Skeleton.PART_ARM_N, C_NEAR);
+        }
+        _pass = PASS_CLASSIC;
 
         if (showGuides) {
             drawRange(dc, def);
@@ -169,7 +276,7 @@ class FigureRenderer {
     hidden function fCircle(dc as Graphics.Dc, x, y, r) as Void {
         var pt = fp(x, y);
         var rr = (x > 0) ? r * (F_FAR_K + 0.2) : r;
-        dc.fillCircle(pt[0], pt[1], (rr * _scale).toNumber());
+        circ(dc, pt[0], pt[1], (rr * _scale).toNumber());
     }
 
     hidden function fCapsule(dc as Graphics.Dc, ax, ay, bx, by, w0, w1) as Void {
@@ -181,7 +288,7 @@ class FigureRenderer {
         }
         var nx = -dy / ln;
         var ny = dx / ln;
-        dc.fillPolygon([fp(ax + nx * w0, ay + ny * w0), fp(bx + nx * w1, by + ny * w1),
+        poly(dc, [fp(ax + nx * w0, ay + ny * w0), fp(bx + nx * w1, by + ny * w1),
             fp(bx - nx * w1, by - ny * w1), fp(ax - nx * w0, ay - ny * w0)]);
         fCircle(dc, ax, ay, w0);
         fCircle(dc, bx, by, w1);
@@ -206,12 +313,12 @@ class FigureRenderer {
         var hx = wx + F_HAND * Math.cos(fr);
         var hy = wy + F_HAND * Math.sin(fr);
         if (outline) {
-            dc.setColor(Theme.BG, Graphics.COLOR_TRANSPARENT);
+            ink(dc, Theme.BG);
             fCapsule(dc, wx, wy, hx, hy, 1.5 + F_GAP, 0.8 + F_GAP);
             fCapsule(dc, ex, ey, wx, wy, 2.0 + F_GAP, 1.4 + F_GAP);
             fCapsule(dc, shx, shy, ex, ey, 2.6 + F_GAP, 1.9 + F_GAP);
         }
-        dc.setColor(col, Graphics.COLOR_TRANSPARENT);
+        ink(dc, col);
         fCapsule(dc, wx, wy, hx, hy, 1.5, 0.8);
         fCapsule(dc, ex, ey, wx, wy, 2.0, 1.4);
         fCapsule(dc, shx, shy, ex, ey, 2.6, 1.9);
@@ -232,7 +339,8 @@ class FigureRenderer {
         var shrug = 0.8 * ((ll > lr) ? ll : lr);
         var neckOn = (_highlight & 2) != 0;
         var rFront = p[7] > 0.5;
-        if (!rFront) {
+        var body = (_bustPhase == 0);
+        if (body && !rFront) {
             fArm(dc, 1, lr, p[5], p[6], C_NEAR, false);   // far arm behind the torso, same tone
         }
         // torso: left edge up, trapezius to the neck, then the right side down
@@ -254,32 +362,37 @@ class FigureRenderer {
             pts[k] = fp(F_TORSO_W[i], F_TORSO_Y[i] + F_TORSO_LIFT[i] * lr);
             k++;
         }
-        dc.setColor(color(1, C_NEAR), Graphics.COLOR_TRANSPARENT);
-        dc.fillPolygon(pts);
-        if (neckOn) {
-            dc.setColor(Theme.GREEN, Graphics.COLOR_TRANSPARENT);
+        if (body) {
+        ink(dc, color(1, C_NEAR));
+        poly(dc, pts);
+        }
+        if (body && neckOn) {
+            ink(dc, Theme.GREEN);
             for (var sd = -1; sd <= 1; sd += 2) {
                 var lift = (sd < 0) ? ll : lr;
-                dc.fillPolygon([fp(sd * 2.5, 33.4 + shrug), fp(sd * 5.6, 32.6 + 0.6 * shrug), fp(sd * 9.0, 31.4 + lift),
+                poly(dc, [fp(sd * 2.5, 33.4 + shrug), fp(sd * 5.6, 32.6 + 0.6 * shrug), fp(sd * 9.0, 31.4 + lift),
                     fp(sd * 9.4, 29.0 + lift), fp(sd * 5.0, 30.0 + 0.6 * shrug), fp(sd * 2.2, 30.6 + shrug)]);
             }
         }
-        fArm(dc, -1, ll, p[3], p[4], color(1, C_NEAR), true);
-        if (rFront) {
-            fArm(dc, 1, lr, p[5], p[6], C_NEAR, true);    // e.g. holding the other arm
+        if (!body) {
+            fArm(dc, -1, ll, p[3], p[4], color(1, C_NEAR), true);
+            if (rFront) {
+                fArm(dc, 1, lr, p[5], p[6], C_NEAR, true);    // e.g. holding the other arm
+            }
+            return;
         }
         // neck, jaw, skull, nose rotate with the head tilt around the neck base
         var py = 31.0 + shrug;
         var n1 = fRot(0.0, py + 6.0, tilt, py);
-        dc.setColor(neckOn ? Theme.GREEN : C_NEAR, Graphics.COLOR_TRANSPARENT);
+        ink(dc, neckOn ? Theme.GREEN : C_NEAR);
         var dx = n1[0];
         var dy = n1[1] - py;
         var ln = Math.sqrt(dx * dx + dy * dy);
         var nx = -dy / ln;
         var ny = dx / ln;
-        dc.fillPolygon([fp(nx * 2.4, py + ny * 2.4), fp(n1[0] + nx * 2.1, n1[1] + ny * 2.1),
+        poly(dc, [fp(nx * 2.4, py + ny * 2.4), fp(n1[0] + nx * 2.1, n1[1] + ny * 2.1),
             fp(n1[0] - nx * 2.1, n1[1] - ny * 2.1), fp(-nx * 2.4, py - ny * 2.4)]);
-        dc.setColor(C_NEAR, Graphics.COLOR_TRANSPARENT);
+        ink(dc, C_NEAR);
         var jaw = fRot(-1.0, py + 8.2, tilt, py);
         var skull = fRot(0.0, py + 11.5, tilt, py);
         var nose = fRot(-5.4, py + 10.6, tilt, py);
@@ -291,7 +404,7 @@ class FigureRenderer {
     //! Head parts keep their radius (not foreshortened), as in the preview.
     hidden function fHead(dc as Graphics.Dc, c as Array, r) as Void {
         var pt = fp(c[0], c[1]);
-        dc.fillCircle(pt[0], pt[1], (r * _scale).toNumber());
+        circ(dc, pt[0], pt[1], (r * _scale).toNumber());
     }
 
     hidden function color(part as Number, base as Number) as Number {
@@ -305,16 +418,45 @@ class FigureRenderer {
 
     hidden function drawProps(dc as Graphics.Dc, def) as Void {
         var props = def[:props];
-        dc.setColor(C_PROP, Graphics.COLOR_TRANSPARENT);
+        var xr = _xray && _style != SKELETAL;
+        dc.setColor(xr ? X_SCENE : C_PROP, Graphics.COLOR_TRANSPARENT);
         if ((props & 1) != 0) {
             var fh = (def[:floorHalf] != null) ? def[:floorHalf] : 40.0;
-            dc.setPenWidth(2);
-            dc.drawLine(sx(_camX - fh).toNumber(), sy(0).toNumber(), sx(_camX + fh).toNumber(), sy(0).toNumber());
+            var x0 = sx(_camX - fh).toNumber();
+            var x1 = sx(_camX + fh).toNumber();
+            var fy = sy(0).toNumber();
+            if (xr) {
+                // dotted floor
+                var lo = (x0 < x1) ? x0 : x1;
+                var hi = (x0 < x1) ? x1 : x0;
+                for (var x = lo; x <= hi; x += 3) {
+                    dc.drawPoint(x, fy);
+                }
+            } else {
+                dc.setPenWidth(2);
+                dc.drawLine(x0, fy, x1, fy);
+            }
         }
         if ((props & 2) != 0 && def[:wallX] != null) {
-            dc.setPenWidth(3);
             var wy = (def[:wallY] != null) ? def[:wallY] : [56.0, 90.0];
-            dc.drawLine(sx(def[:wallX]).toNumber(), sy(wy[0]).toNumber(), sx(def[:wallX]).toNumber(), sy(wy[1]).toNumber());
+            var wx = sx(def[:wallX]).toNumber();
+            var w0 = sy(wy[0]).toNumber();
+            var w1 = sy(wy[1]).toNumber();
+            dc.setPenWidth(xr ? 2 : 3);
+            dc.drawLine(wx, w0, wx, w1);
+            if (xr) {
+                // measuring ticks on the room side of the wall
+                dc.setPenWidth(1);
+                var side = _mirror ? -1 : 1;
+                var top = (w0 < w1) ? w0 : w1;
+                var bot = (w0 < w1) ? w1 : w0;
+                var i = 0;
+                for (var y = bot - 2; y >= top + 1; y -= 4) {
+                    var len = (i % 4 == 0) ? 4 : 2;
+                    dc.drawLine(wx + side, y, wx + side * (1 + len), y);
+                    i++;
+                }
+            }
         }
         // Chair / stool: [seatX0, seatX1, seatY, backX (or seatX0 with backTop 0), backTop]
         if ((props & 4) != 0 && def[:chair] != null) {
@@ -336,7 +478,7 @@ class FigureRenderer {
     //! profiles for its left / right normal; optional rounded caps.
     hidden function profile(dc as Graphics.Dc, ax, ay, bx, by, left as Array, right as Array, c as Number,
             caps as Boolean) as Void {
-        dc.setColor(c, Graphics.COLOR_TRANSPARENT);
+        ink(dc, c);
         if (_style == SKELETAL) {
             dc.setPenWidth(2);
             dc.drawLine(sx(ax).toNumber(), sy(ay).toNumber(), sx(bx).toNumber(), sy(by).toNumber());
@@ -362,10 +504,29 @@ class FigureRenderer {
             setPt(_prof[i], sx(px + nx * left[i]), sy(py + ny * left[i]));
             setPt(_prof[2 * n - 1 - i], sx(px - nx * right[i]), sy(py - ny * right[i]));
         }
-        dc.fillPolygon(_prof);
+        poly(dc, _prof);
         if (caps) {
             cap(dc, ax, ay, nx, ny, left[0], right[0]);
             cap(dc, bx, by, nx, ny, left[n - 1], right[n - 1]);
+        }
+        // X-ray: muscle fibres along the highlighted segment
+        if (_pass == PASS_FILL && c == Theme.GREEN) {
+            dc.setColor(X_FIBRE, Graphics.COLOR_TRANSPARENT);
+            for (var k = 0; k < 3; k++) {
+                var fr = -0.45 + 0.45 * k;    // across the width
+                var x0 = 0;
+                var y0 = 0;
+                for (var i = 1; i < n - 1; i++) {
+                    var w = (fr < 0) ? right[i] * fr : left[i] * fr;
+                    var qx = sx(ax + dx * ts[i] + nx * w).toNumber();
+                    var qy = sy(ay + dy * ts[i] + ny * w).toNumber();
+                    if (i > 1) {
+                        dc.drawLine(x0, y0, qx, qy);
+                    }
+                    x0 = qx;
+                    y0 = qy;
+                }
+            }
         }
     }
 
@@ -373,7 +534,7 @@ class FigureRenderer {
     hidden function cap(dc as Graphics.Dc, x, y, nx, ny, l, r) as Void {
         var off = (l - r) / 2;
         var rad = ((l + r) / 2 * _scale).toNumber();
-        dc.fillCircle(sx(x + nx * off).toNumber(), sy(y + ny * off).toNumber(), (rad < 1) ? 1 : rad);
+        circ(dc, sx(x + nx * off).toNumber(), sy(y + ny * off).toNumber(), (rad < 1) ? 1 : rad);
     }
 
     hidden function leg(dc as Graphics.Dc, kn as Number, an as Number, footAngle,
@@ -397,7 +558,7 @@ class FigureRenderer {
         var ay = _j[2 * an + 1];
         var fx = Math.cos(angle * Skeleton.DEG);
         var fy = Math.sin(angle * Skeleton.DEG);
-        dc.setColor(c, Graphics.COLOR_TRANSPARENT);
+        ink(dc, c);
         if (_style == SKELETAL) {
             dc.setPenWidth(2);
             dc.drawLine(sx(ax).toNumber(), sy(ay).toNumber(), sx(ax + Skeleton.FOOT * fx).toNumber(),
@@ -411,7 +572,7 @@ class FigureRenderer {
             var ly = outline[i][1];
             setPt(_foot[i], sx(ax + lx * fx - ly * fy), sy(ay + lx * fy + ly * fx));
         }
-        dc.fillPolygon(_foot);
+        poly(dc, _foot);
     }
 
     //! Upper arm, forearm and a palm that continues the forearm by handBend
@@ -444,7 +605,7 @@ class FigureRenderer {
         var n = FigureShapes.TORSO_N;
         var back = FigureShapes.TORSO_BACK;
         var front = FigureShapes.TORSO_FRONT;
-        dc.setColor(c, Graphics.COLOR_TRANSPARENT);
+        ink(dc, c);
         if (_style == SKELETAL) {
             dc.setPenWidth(3);
             var px0 = sx(hx);
@@ -477,11 +638,37 @@ class FigureRenderer {
             setPt(_torso[i], sx(fx + nx * back[i]), sy(fy + ny * back[i]));
             setPt(_torso[2 * (n + 1) - 1 - i], sx(fx - nx * front[i]), sy(fy - ny * front[i]));
         }
-        dc.fillPolygon(_torso);
+        poly(dc, _torso);
         var r0 = ((back[0] + front[0]) / 2 * _scale).toNumber();
         var r1 = ((back[n] + front[n]) / 2 * _scale).toNumber();
-        dc.fillCircle(sx(hx).toNumber(), sy(hy).toNumber(), r0);
-        dc.fillCircle(sx(shx).toNumber(), sy(shy).toNumber(), r1);
+        circ(dc, sx(hx).toNumber(), sy(hy).toNumber(), r0);
+        circ(dc, sx(shx).toNumber(), sy(shy).toNumber(), r1);
+        // X-ray anatomy hint: spine line inside the back
+        if (_pass == PASS_FILL) {
+            dc.setColor((c == Theme.GREEN) ? X_FIBRE : X_HINT, Graphics.COLOR_TRANSPARENT);
+            var x0 = 0;
+            var y0 = 0;
+            for (var i = 0; i <= n; i++) {
+                var t = i.toFloat() / n;
+                var u = 1.0 - t;
+                var fx = u * u * hx + 2 * u * t * qx + t * t * shx;
+                var fy = u * u * hy + 2 * u * t * qy + t * t * shy;
+                var tx = 2 * u * (qx - hx) + 2 * t * (shx - qx);
+                var ty = 2 * u * (qy - hy) + 2 * t * (shy - qy);
+                var ln = Math.sqrt(tx * tx + ty * ty);
+                if (ln < 0.001) {
+                    ln = 1.0;
+                }
+                var w = back[i] * 0.55;
+                var px2 = sx(fx - ty / ln * w).toNumber();
+                var py2 = sy(fy + tx / ln * w).toNumber();
+                if (i > 0) {
+                    dc.drawLine(x0, y0, px2, py2);
+                }
+                x0 = px2;
+                y0 = py2;
+            }
+        }
     }
 
     //! Neck, skull and jaw. The jaw sits on the face side (right normal of the
@@ -495,15 +682,15 @@ class FigureRenderer {
         profile(dc, sxp, syp, sxp + reach * hx, syp + reach * hy, FigureShapes.NECK_L, FigureShapes.NECK_R, c, false);
         var cx = _j[2 * Skeleton.J_HEAD];
         var cy = _j[2 * Skeleton.J_HEAD + 1];
-        dc.setColor(c, Graphics.COLOR_TRANSPARENT);
+        ink(dc, c);
         if (_style == SKELETAL) {
             dc.fillCircle(sx(cx).toNumber(), sy(cy).toNumber(), (FigureShapes.HEAD_DRAW_R * _scale * 0.8).toNumber());
             return;
         }
-        dc.fillCircle(sx(cx).toNumber(), sy(cy).toNumber(), (FigureShapes.HEAD_DRAW_R * _scale).toNumber());
+        circ(dc, sx(cx).toNumber(), sy(cy).toNumber(), (FigureShapes.HEAD_DRAW_R * _scale).toNumber());
         var jx0 = cx + hy * 2.2 - hx * 2.6;    // face = (hy, -hx)
         var jy0 = cy - hx * 2.2 - hy * 2.6;
-        dc.fillCircle(sx(jx0).toNumber(), sy(jy0).toNumber(), (FigureShapes.JAW_R * _scale).toNumber());
+        circ(dc, sx(jx0).toNumber(), sy(jy0).toNumber(), (FigureShapes.JAW_R * _scale).toNumber());
     }
 
     //! Movement range: thin arc around a joint between two angles.
@@ -533,7 +720,7 @@ class FigureRenderer {
         if (arrows == null) {
             return;
         }
-        dc.setColor(Theme.GREEN, Graphics.COLOR_TRANSPARENT);
+        dc.setColor((_xray && _style != SKELETAL) ? X_RED : Theme.GREEN, Graphics.COLOR_TRANSPARENT);
         for (var i = 0; i < arrows.size(); i++) {
             var ar = arrows[i];
             var bind = ar[ar.size() - 1];

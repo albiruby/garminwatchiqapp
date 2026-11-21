@@ -17,3 +17,4 @@ _backup/
 .env.*
 node_modules/
 .next/
+design-import/

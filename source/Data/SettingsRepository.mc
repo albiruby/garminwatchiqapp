@@ -36,6 +36,8 @@ module SettingsRepository {
     function hrSnapshot() as Boolean { return getBool("hrSnapshot", false); }
     function countdownSec() as Number { return getNum("countdown", 3); }
     function restSec() as Number { return getNum("restSec", 0); }
+    //! Exercise figure style: X-ray (default) or classic grey.
+    function figureXray() as Boolean { return getBool("figXray", true); }
 
     // Custom breathing: [in, hold, out, pause] seconds and session minutes.
     function customPattern() as Array {

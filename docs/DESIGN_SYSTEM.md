@@ -110,6 +110,23 @@ When paused, the active segment and the state line turn amber and the timer turn
 - Page 2: a label/value table.
 - Both pages are labelled `RESTORA CALC`.
 
+## Exercise figure style: Anatomy X-Ray
+
+Default figure style (Settings → X-ray figure; off = classic grey). Based on the Claude Design study `design-import/Wall Calf Stretch X-Ray.html`.
+
+| Element | Colour | Notes |
+|---|---|---|
+| Body fill | `#1A1F24` | dark, reads as a scan |
+| Rim (outline) | `#8FA3B0` | 1 px outside every silhouette |
+| Far-side body / rim | `#111418` / `#4E5A63` | depth |
+| Target muscle | `#E5484D` | replaces the green highlight on figures only |
+| Muscle fibres | `#FF8A8E` | 3 lines along the highlighted segment |
+| Anatomy hint | `#3C4A55` | spine line inside the back |
+| Floor / wall | `#2A3138` | dotted floor; wall with measuring ticks |
+| Direction arrows | `#E5484D` | |
+
+Silhouettes are drawn in groups — far limbs, then torso + head + near leg, then the near arm — each with a rim pass and then a fill pass, so overlapping parts read as one body and the near arm keeps its own outline. The 3/4 bust uses two groups: body, then arms in front. The app UI keeps the green accent; red is only for the target muscle and movement cues.
+
 ## Components and states
 
 | Component | Default | Focused / active | Paused | Completed | Disabled / no data |

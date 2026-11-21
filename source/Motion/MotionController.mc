@@ -54,6 +54,7 @@ class MotionController {
         sampler = (def != null) ? new PoseSampler(def) : null;
         renderer.setStyle((MotionConfig.detail() == MotionConfig.DETAIL_LOW)
             ? FigureRenderer.SKELETAL : FigureRenderer.SILHOUETTE);
+        renderer.setXray(SettingsRepository.figureXray());
     }
 
     //! Sample the figure for the step's elapsed time. Breath-synced movements

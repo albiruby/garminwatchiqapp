@@ -36,7 +36,7 @@ module ExercisePoseData {
             :handBend => 45.0,
             :cue => "Keep heel down",
             :holdLabel => "HOLD",
-            :arrows => [[0, -22.0, 20.0, -22.0, 9.0, 9]]
+            :arrows => [[0, -29.0, 22.0, -29.0, 8.0, 9]]
         });
         d.put("cat_cow", {
             :type => 4,

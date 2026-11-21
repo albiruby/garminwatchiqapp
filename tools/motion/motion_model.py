@@ -699,7 +699,7 @@ ANIMS = {
         cam=[9.0, 46.0, 0.8], props=PROP_FLOOR | PROP_WALL, wallX=41.5,
         highlight=PART_SHIN_N, cue="Keep heel down",
         # arrow pressing the rear heel down (figure units), shown while holding
-        arrows=[[ARROW_LINE, -22.0, 20.0, -22.0, 9.0, ON_HOLD]],
+        arrows=[[ARROW_LINE, -29.0, 22.0, -29.0, 8.0, ON_HOLD]],
     ),
     "cat_cow": dict(
         type=A_BREATH_SYNC, poses=cat_cow_poses(), handBend=90.0,
@@ -1042,6 +1042,42 @@ def validate():
 # Drawing (mirrors FigureRenderer.mc). Output: draw ops in 390-px screen units.
 # ---------------------------------------------------------------------------
 SOFT, FAR, GREEN, TRACK, PROP = "#C9CEC9", "#6E7570", "#4FC97A", "#26302A", "#3A423D"
+# "Anatomy X-Ray" figure style (default on the watch; FigureRenderer.X_*)
+XRAY = True
+X_BODY, X_RIM, X_FAR_BODY, X_FAR_RIM = "#1A1F24", "#8FA3B0", "#111418", "#4E5A63"
+X_RED, X_SCENE = "#E5484D", "#2A3138"
+
+
+def xray_ops(ops, groups):
+    """Restyle classic ops: per group a rim pass (outline / bigger circle)
+    then a fill pass; green highlight -> red; props and arrows recoloured."""
+    out = []
+    for kind, a, b in groups:
+        part = ops[a:b]
+        if kind == "plain":
+            for op in part:
+                op = list(op)
+                if op[0] == "line":
+                    op[1] = X_SCENE
+                elif op[1] == GREEN:
+                    op[1] = X_RED
+                out.append(op)
+            continue
+        far = kind == "far"
+        rim = X_FAR_RIM if far else X_RIM
+        body = X_FAR_BODY if far else X_BODY
+        for op in part:
+            if op[0] == "poly":
+                out.append(["outline", rim, 2, op[2]])
+            elif op[0] == "circle":
+                out.append(["circle", rim, op[2], op[3], op[4] + 1.0])
+        for op in part:
+            col = X_RED if op[1] == GREEN else body
+            if op[0] == "poly":
+                out.append(["poly", col, op[2]])
+            elif op[0] == "circle":
+                out.append(["circle", col, op[2], op[3], op[4]])
+    return out
 
 # ---- Anatomical profiles ---------------------------------------------------
 # Half-widths (figure units) sampled at PROFILE_T along each segment, given
@@ -1162,9 +1198,12 @@ def front_shapes(p):
         trap = [(side * 2.5, 33.4 + shrug), (side * 5.6, 32.6 + 0.6 * shrug), (side * 9.0, 31.4 + lift),
                 (side * 9.4, 29.0 + lift), (side * 5.0, 30.0 + 0.6 * shrug), (side * 2.2, 30.6 + shrug)]
         out.append(("trap", "poly", [f_proj(*q) for q in trap]))
+    arms_at = len(out)
     arm(-1, ll, p[3], p[4], "body", outline=True)
     if r_front:
         arm(1, lr, p[5], p[6], "far", outline=True)
+    arms = out[arms_at:]
+    del out[arms_at:]
     # neck, skull, jaw, nose - rotate with the head tilt around the neck base
     py = 31.0 + shrug
     n0, n1 = f_rot(0.0, py, tilt, py), f_rot(0.0, py + 6.0, tilt, py)
@@ -1176,7 +1215,8 @@ def front_shapes(p):
     out.append(("head", "circle", f_proj(*jaw) + (3.9,)))
     out.append(("head", "circle", f_proj(*skull) + (6.0,)))
     out.append(("head", "circle", f_proj(*nose) + (1.2,)))
-    return out
+    # arms in front are their own silhouette, drawn last (X-ray: own rim)
+    return out + [("arms", "mark", None)] + arms
 
 
 def render_bust(a, t_ms, box, mirror, reduced):
@@ -1189,7 +1229,34 @@ def render_bust(a, t_ms, box, mirror, reduced):
         return (cx + m * (pt[0] - camx) * scale, cy - (pt[1] - camy) * scale)
     o = Ops()
     hl = a["highlight"]
-    for key, kind, data in front_shapes(p):
+    shapes = front_shapes(p)
+    if XRAY:
+        # two silhouettes (body, then arms in front): rim pass, then fill pass
+        cut = next(i for i, sh in enumerate(shapes) if sh[1] == "mark")
+        groups = [shapes[:cut], shapes[cut + 1:]]
+        for grp in groups:
+            for pass_ in ("rim", "fill"):
+                for key, kind, data in grp:
+                    if key == "gap" or (key == "trap" and not hl & 2):
+                        continue
+                    red = (key == "trap") or (key == "neck" and hl & 2) or (key == "body" and hl & 1)
+                    fill = X_RED if red else X_BODY
+                    if kind == "poly":
+                        pts = [list(S(q)) for q in data]
+                        if pass_ == "rim":
+                            o.add("outline", X_RIM, 2, pts)
+                        else:
+                            o.add("poly", fill, pts)
+                    else:
+                        c = S((data[0], data[1]))
+                        if pass_ == "rim":
+                            o.add("circle", X_RIM, c[0], c[1], data[2] * scale + 1.0)
+                        else:
+                            o.add("circle", fill, c[0], c[1], data[2] * scale)
+        shapes = []
+    for key, kind, data in shapes:
+        if kind == "mark":
+            continue
         if key == "gap":
             col = "#000000"
         elif key == "far":
@@ -1204,6 +1271,18 @@ def render_bust(a, t_ms, box, mirror, reduced):
             col = GREEN if hl & 1 else SOFT
         else:
             col = SOFT
+        if XRAY:
+            if key == "gap":
+                continue
+            fill = X_RED if col == GREEN else X_BODY
+            if kind == "poly":
+                o.add("outline", X_RIM, 2, [list(S(q)) for q in data])
+                o.add("poly", fill, [list(S(q)) for q in data])
+            else:
+                c = S((data[0], data[1]))
+                o.add("circle", X_RIM, c[0], c[1], data[2] * scale + 1.0)
+                o.add("circle", fill, c[0], c[1], data[2] * scale)
+            continue
         if kind == "poly":
             o.add("poly", col, [list(S(q)) for q in data])
         else:
@@ -1217,7 +1296,7 @@ def render_bust(a, t_ms, box, mirror, reduced):
         a0, a1 = ar[4], ar[5]
         if mirror:
             a0, a1 = 180 - a0, 180 - a1
-        o.add("arrow_arc", GREEN, c[0], c[1], ar[3] * scale, a0, a1)
+        o.add("arrow_arc", X_RED if XRAY else GREEN, c[0], c[1], ar[3] * scale, a0, a1)
     label = a["seq"][seg][4]
     if a["type"] == A_HOLD and t_ms >= cycle_ms(a):
         label = a.get("holdLabel", "HOLD")
@@ -1312,8 +1391,10 @@ def render(a, t_ms, box, mirror=False, reduced=False):
         profile(j[wr], tip, HAND_L, HAND_R, c, caps=False)
 
     # far side first (darker)
+    g_far = len(o.ops)
     arm(J_ELBOW_F, J_WRIST_F, p[P_FAF], PART_ARM_F, FAR)
     leg(J_KNEE_F, J_ANKLE_F, PART_THIGH_F, PART_SHIN_F, PART_FOOT_F, p[P_FTF], FAR)
+    g_body = len(o.ops)
 
     # torso along the spine curve (hip -> shoulder through the control point)
     if parts & PART_TORSO:
@@ -1352,7 +1433,9 @@ def render(a, t_ms, box, mirror=False, reduced=False):
 
     # near side
     leg(J_KNEE_N, J_ANKLE_N, PART_THIGH_N, PART_SHIN_N, PART_FOOT_N, p[P_FTN], SOFT)
+    g_arm = len(o.ops)
     arm(J_ELBOW_N, J_WRIST_N, p[P_FAN], PART_ARM_N, SOFT)
+    g_end = len(o.ops)
 
     # range indicator
     if "range" in a and not reduced:
@@ -1376,6 +1459,9 @@ def render(a, t_ms, box, mirror=False, reduced=False):
             o.add("arrow_arc", GREEN, c[0], c[1], ar[3] * scale, a0, a1)
     if "clip" in a:
         o.add("unclip")
+    if XRAY:
+        o.ops = xray_ops(o.ops, [("plain", 0, g_far), ("far", g_far, g_body), ("body", g_body, g_arm),
+                                 ("body", g_arm, g_end), ("plain", g_end, len(o.ops))])
     label = a["seq"][seg][4]
     if a["type"] == A_HOLD and t_ms >= cycle_ms(a):
         label = a.get("holdLabel", "HOLD")
@@ -1531,7 +1617,10 @@ def draw_ops_pil(draw, ops, ox, oy, k):
 
     for op in ops:
         kind = op[0]
-        if kind == "poly":
+        if kind == "outline":
+            pts = [P(x, y) for x, y in op[3]]
+            draw.line(pts + [pts[0]], fill=op[1], width=max(1, int(op[2] * k)), joint="curve")
+        elif kind == "poly":
             draw.polygon([P(x, y) for x, y in op[2]], fill=op[1])
         elif kind == "circle":
             x, y, r = op[2], op[3], op[4] * k
@@ -1659,7 +1748,11 @@ def check_ring():
 
 
 def main():
+    global XRAY
+    style = XRAY
+    XRAY = False                      # geometry checks use the plain body outline
     problems = validate() + check_ring()
+    XRAY = style
     if problems:
         print("POSE VALIDATION FAILED:")
         for p in problems:
