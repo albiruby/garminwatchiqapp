@@ -15,7 +15,21 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "fonts", "src", "PixelifySans.ttf")
 OUT = os.path.join(ROOT, "resources", "fonts")
 BASE = 390
-SCREENS = [360, 416, 454]      # round screens of the supported watches other than 390
+SCREENS = [218, 240, 260, 280, 360, 416, 454]   # round screens of the supported watches other than 390
+# Below these pixel sizes Pixelify Sans stops being readable on a watch, so small (MIP)
+# screens keep text a little larger than a straight scale; the layout measures text in
+# canvas units and wraps or shortens it to fit.
+MIN_PX = {"PixS": 13, "PixM": 16, "PixL": 20}
+# FreeType's 1-bit hinting garbles Pixelify Sans at these sizes ("2" turns into "8");
+# a set that would land on one takes the nearest clean size instead.
+BAD_PX = {12, 17, 18}
+
+
+def clean_size(px):
+    for d in (0, 1, -1, 2, -2):
+        if px + d not in BAD_PX:
+            return px + d
+    return px
 CHARS = "".join(chr(c) for c in range(32, 127))
 
 # id, pixel size, weight (variable axis)
@@ -71,7 +85,7 @@ def bake(fid, px, weight, out):
 def bake_set(out, scale):
     os.makedirs(out, exist_ok=True)
     for fid, px, weight in SETS:
-        bake(fid, round(px * scale), weight, out)
+        bake(fid, clean_size(max(round(px * scale), MIN_PX[fid] if scale < 1 else 0)), weight, out)
     with open(os.path.join(out, "fonts.xml"), "w", newline="\n") as f:
         f.write("<fonts>\n")
         for fid, _, _ in SETS:

@@ -1,6 +1,6 @@
 # FISH TANK: Connect IQ Store listing (v1.1.0)
 
-Upload: `bin/FishTank-v1.1.0.iq` (15 round AMOLED watches: Forerunner 165 / 165 Music / 265 / 265S / 965, fenix 8 43/47 mm, fenix E, epix Gen 2, epix Pro 42/47/51 mm, Venu 3 / 3S, vivoactive 5).
+Upload: `bin/FishTank-v1.1.0.iq` (30 round watches, see `manifest.xml`: Forerunner 165/165M/255/255M/255S/255SM/265/265S/955/965, fenix 7/7S/7X and Pro, fenix 8 43/47 mm, fenix E, epix Gen 2, epix Pro 42/47/51 mm, Enduro 2, Venu 2/2S/2 Plus, Venu 3/3S, vivoactive 5).
 Images: `docs/store/` (HERO, COVER, SCREEN_1 to SCREEN_5), all within portal limits.
 Masters: `docs/store/master/`. Regenerate: `tools\capture.ps1 ...`, then `python -I tools\compose-store.py`.
 
@@ -98,7 +98,7 @@ v1.1.0
 - Activity Journal shows this week's and today's distance
 - Smoother animation: the frame rate adapts to your watch, no more hitch every minute
 - Stability: a long backlog of runs, a wrong watch date or a damaged save no longer cause problems
-- Now on 15 round AMOLED watches: Forerunner 265/265S/965, fenix 8, fenix E, epix, Venu 3, vivoactive 5
+- Now on 30 round watches: Forerunner 255/265/955/965, fenix 7, fenix 8, fenix E, epix, Enduro 2, Venu 2/3, vivoactive 5
 ```
 ID:
 ```
@@ -108,7 +108,7 @@ v1.1.0
 - Activity Journal menampilkan jarak minggu ini dan hari ini
 - Animasi lebih mulus: frame rate menyesuaikan jam, tidak ada lagi tersendat tiap menit
 - Stabilitas: banyak lari yang tertunda, tanggal jam yang salah atau data save rusak tidak lagi bermasalah
-- Kini di 15 jam bulat AMOLED: Forerunner 265/265S/965, fenix 8, fenix E, epix, Venu 3, vivoactive 5
+- Kini di 30 jam bulat: Forerunner 255/265/955/965, fenix 7, fenix 8, fenix E, epix, Enduro 2, Venu 2/3, vivoactive 5
 ```
 
 ## What's New (v1.0.0)
@@ -156,8 +156,11 @@ v1.0.0 - Rilis pertama
 - [ ] v1.1.0: start a mini-game, press BACK mid-round: Games shows one play fewer.
 - [ ] v1.1.0 multi-device: in SDK Manager download the new devices, run `tools\build.ps1`
   (remove any product the SDK rejects), then check one watch per screen size in the simulator:
-  fr265s (360), fr165 (390), fr265 (416), fr965 (454). Tank, menu, a card, Build mode, each
-  mini-game and the date picker; on venu3 / vivoactive5 (2 buttons) do it all by touch.
+  fr255s (218), fenix7s (240), fr955 (260), fenix7x (280), fr265s (360), fr165 (390),
+  fr265 (416), fr965 (454). Tank, menu, a card, Build mode, each mini-game and the date
+  picker; on venu3 / vivoactive5 (2 buttons) do it all by touch.
+- [ ] Memory on the older MIP watches (fr255s, fenix7s, venu2s): simulator File > View Memory
+  after opening the Fishdex, a mini-game and the shop. Peak must stay under the limit.
 - [ ] v1.1.0: Settings > Ramadan / Eid dates, cycle the shift during an event: no second gift.
 - [ ] Developer portal > Upload an App > `bin\FishTank-v1.1.0.iq`.
 - [ ] Title, descriptions (EN + ID), What's New, category, images from the table above.

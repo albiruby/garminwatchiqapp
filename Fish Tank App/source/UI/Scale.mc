@@ -15,12 +15,14 @@ module Scale {
     const BASE = 390;
     var s = 1.0;           // real pixels per canvas pixel
     var on = false;
+    var mip = false;       // 64-color memory-in-pixel screen (every supported watch under 300 px)
 
     function init() {
         var w = System.getDeviceSettings().screenWidth;
         if (w == null || w <= 0) { w = BASE; }
         s = w / (BASE * 1.0);
         on = w != BASE;
+        mip = w < 300;
     }
 
     // Canvas -> screen

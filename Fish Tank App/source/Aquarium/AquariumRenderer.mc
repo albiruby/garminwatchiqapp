@@ -55,6 +55,19 @@ module PixelKit {
         return ((rr * 255).toNumber() << 16) | ((gg * 255).toNumber() << 8) | (bb * 255).toNumber();
     }
 
+    // A 64-color MIP screen shows each channel as 0, 55, AA or FF, so the dark water and
+    // wall tones (all channels under 0x2B) would all turn black. They are lifted just enough
+    // to land on the darkest blue / green / teal instead, keeping the water readable.
+    function water(c) {
+        if (!Scale.mip) { return c; }
+        var r = (c >> 16) & 0xFF;
+        var g = (c >> 8) & 0xFF;
+        var b = c & 0xFF;
+        var m = r > g ? (r > b ? r : b) : (g > b ? g : b);
+        if (m == 0 || m >= 0x30) { return c; }
+        return ((r * 0x30 / m) << 16) | ((g * 0x30 / m) << 8) | (b * 0x30 / m);
+    }
+
     function shade(c, f) {
         return lerpColor(c, 0x000000, f);
     }
@@ -151,12 +164,12 @@ module PixelKit {
             var yy = y0 + i * bh;
             if (yy >= y1) { break; }
             var hh = (i == bands - 1) ? (y1 - yy) : bh;
-            rect(dc, lerpColor(top, bot, i / (bands - 1.0)), x0, yy, w, hh);
+            rect(dc, water(lerpColor(top, bot, i / (bands - 1.0))), x0, yy, w, hh);
         }
         for (var i = 1; i < bands; i++) {
             var yy = y0 + i * bh;
             if (yy >= y1) { break; }
-            dc.setColor(lerpColor(top, bot, (i - 1) / (bands - 1.0)), Graphics.COLOR_TRANSPARENT);
+            dc.setColor(water(lerpColor(top, bot, (i - 1) / (bands - 1.0))), Graphics.COLOR_TRANSPARENT);
             for (var x = x0; x < x1; x += 2 * b) { dc.fillRectangle(x, yy, b, b); }
             for (var x = x0 + b; x < x1; x += 4 * b) { dc.fillRectangle(x, yy + b, b, b); }
         }
@@ -166,7 +179,7 @@ module PixelKit {
     function gradientSmooth(dc, top, bot, y0, y1, w) {
         var n = (y1 - y0) / 2;
         for (var i = 0; i < n; i++) {
-            rect(dc, lerpColor(top, bot, i / (n - 1.0)), 0, y0 + i * 2, w, 2);
+            rect(dc, water(lerpColor(top, bot, i / (n - 1.0))), 0, y0 + i * 2, w, 2);
         }
     }
 

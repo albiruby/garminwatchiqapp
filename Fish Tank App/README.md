@@ -1,6 +1,6 @@
 # FISH TANK: Pocket Aquarium
 
-Connect IQ device app untuk jam Garmin bulat AMOLED (360–454 px): Forerunner 165/165 Music, 265/265S, 965, fēnix 8 AMOLED, fēnix E, epix Gen 2 / Pro, Venu 3/3S, vívoactive 5. Akuarium pixel-art yang dirawat, dikoleksi dan didekorasi. Koin utamanya datang dari lari: lari dengan app Run bawaan Garmin, lalu buka FISH TANK dan setiap lari baru dibayar satu kali (100 m = 1 koin, maks 300/hari).
+Connect IQ device app untuk 30 jam Garmin berlayar bulat, AMOLED (360–454 px) maupun MIP (218–280 px): Forerunner 165/165 Music, 255/255S, 265/265S, 955, 965, fēnix 7/7S/7X (+ Pro), fēnix 8 AMOLED, fēnix E, epix Gen 2 / Pro, Enduro 2, Venu 2/2S/2 Plus, Venu 3/3S, vívoactive 5. Akuarium pixel-art yang dirawat, dikoleksi dan didekorasi. Koin utamanya datang dari lari: lari dengan app Run bawaan Garmin, lalu buka FISH TANK dan setiap lari baru dibayar satu kali (100 m = 1 koin, maks 300/hari).
 
 ![FISH TANK](../docs/previews/fish-tank.jpg)
 
@@ -43,9 +43,9 @@ Connect IQ device app untuk jam Garmin bulat AMOLED (360–454 px): Forerunner 1
 Semua screenshot ada di [`docs/screens/`](docs/screens/).
 
 ## Multi-device
-Semua layout ditulis untuk kanvas 390×390 (FR165). Di layar lain `source/UI/Scale.mc` memetakan kanvas itu ke layar asli (koordinat gambar dan titik sentuh); di layar 390 tidak ada lapisan tambahan. Font Pixelify Sans dibuat per resolusi (`resources-round-360x360`, `-416x416`, `-454x454`, dari `tools/make-fonts.py`) supaya teks tetap tajam.
+Semua layout ditulis untuk kanvas 390×390 (FR165). Di layar lain `source/UI/Scale.mc` memetakan kanvas itu ke layar asli (koordinat gambar dan titik sentuh); di layar 390 tidak ada lapisan tambahan. Font Pixelify Sans dibuat per resolusi (`resources-round-WxH/fonts` untuk 218, 240, 260, 280, 360, 416 dan 454, dari `tools/make-fonts.py`) supaya teks tetap tajam; layar kecil memakai ukuran minimum yang masih terbaca dan ukuran yang rusak oleh hinting (12, 17, 18 px) dilewati. Di layar MIP 64 warna, gradien air yang terlalu gelap diangkat sedikit (`PixelKit.water`) supaya tidak jadi hitam.
 
-Menambah jam bulat lain: tambahkan `<iq:product>` di `manifest.xml`. Kalau resolusinya baru, tambahkan ke `SCREENS` di `tools/make-fonts.py` lalu jalankan `python -I tools/make-fonts.py --scaled`.
+Menambah jam bulat lain: tambahkan `<iq:product>` di `manifest.xml` (beberapa kandidat yang ID-nya belum diverifikasi ada di komentar di sana). Kalau resolusinya baru, tambahkan ke `SCREENS` di `tools/make-fonts.py` lalu jalankan `python -I tools/make-fonts.py --scaled`.
 
 ## Build & test
 
