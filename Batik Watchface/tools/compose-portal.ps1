@@ -37,25 +37,34 @@ function SaveJpg($bm, $path, $maxBytes) {
 
 # Hero 1440x720: three Living Pattern stages fanned out, title on the right
 $c = Canvas 1440 720; $g = $c[1]
-$shots = "02-living-1-dormant.png", "02-living-3-blooming.png", "02-living-4-complete.png"
+$shots = "01-main-fr165.png", "01-main-parang-fr165.png", "01-main-megamendung-fr165.png"
 $xs = 40, 290, 540
 for ($i = 0; $i -lt 3; $i++) {
     $img = [System.Drawing.Image]::FromFile((Join-Path $root "mockups\$($shots[$i])"))
     $h = 640; $w = [int]($img.Width * $h / $img.Height)
     $g.DrawImage($img, $xs[$i], 40, $w, $h); $img.Dispose()
 }
-Txt $g "NUSANTARA  ·  SERIES 01 BATIK" (F "Pridi Medium" 22) $muted 960 200
-Txt $g "Kawung" (F "Pridi SemiBold" 92) $gold 950 228
-Txt $g "Living Batik that blooms" (F "Pridi Light" 34) $cream 960 352
-Txt $g "with your daily steps" (F "Pridi Light" 34) $cream 960 394
-Txt $g "34 metrics  ·  4 colorways  ·  64 watches" (F "Pridi Medium" 22) $gold 962 470
+Txt $g "LIVING BATIK WATCH FACE" (F "Pridi Medium" 22) $muted 960 200
+Txt $g "NUSANTARA" (F "Pridi SemiBold" 78) $gold 950 236
+Txt $g "Three batik motifs that" (F "Pridi Light" 34) $cream 960 352
+Txt $g "bloom with your daily steps" (F "Pridi Light" 34) $cream 960 394
+Txt $g "Kawung  ·  Parang  ·  Mega Mendung" (F "Pridi Medium" 22) $gold 962 466
+Txt $g "34 metrics  ·  6 colorways  ·  64 watches" (F "Pridi Medium" 22) $muted 962 502
 SaveJpg $c[0] (Join-Path $out "HERO_1440x720.jpg") 1900000; $g.Dispose(); $c[0].Dispose()
 
-# Cover 500x500: the watch face itself, centred
+# Cover 500x500: the three motifs, Kawung in front, name underneath
 $c = Canvas 500 500; $g = $c[1]
-$img = [System.Drawing.Image]::FromFile((Join-Path $root "mockups\01-main-fr165.png"))
-$h = 470; $w = [int]($img.Width * $h / $img.Height)
-$g.DrawImage($img, [int]((500 - $w) / 2), 15, $w, $h); $img.Dispose()
+function Watch($g, $file, $cx, $top, $h) {
+    $img = [System.Drawing.Image]::FromFile((Join-Path $root "mockups\$file"))
+    $w = [int]($img.Width * $h / $img.Height)
+    $g.DrawImage($img, [int]($cx - $w / 2), $top, $w, $h); $img.Dispose()
+}
+Watch $g "01-main-parang-fr165.png" 128 62 320
+Watch $g "01-main-megamendung-fr165.png" 372 62 320
+Watch $g "01-main-fr165.png" 250 18 380
+$fmt = New-Object System.Drawing.StringFormat; $fmt.Alignment = "Center"
+$g.DrawString("NUSANTARA", (F "Pridi SemiBold" 46), (New-Object System.Drawing.SolidBrush $gold), [single]250, [single]392, $fmt)
+$g.DrawString("LIVING BATIK  ·  KAWUNG  ·  PARANG  ·  MEGA MENDUNG", (F "Pridi Medium" 14), (New-Object System.Drawing.SolidBrush $cream), [single]250, [single]452, $fmt)
 SaveJpg $c[0] (Join-Path $out "COVER_500x500.jpg") 250000; $g.Dispose(); $c[0].Dispose()
 
 # Screen images: store PNGs re-encoded as JPG under 150 KB

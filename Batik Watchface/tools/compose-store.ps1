@@ -66,24 +66,17 @@ function Save($bm, $g, $name) {
 
 # 1 Main Watch Face
 $c = New-Canvas; $g = $c[1]
-$img = [System.Drawing.Image]::FromFile((Join-Path $Shots "01-main-fr165.png"))
-$s = 900 / $img.Height; $g.DrawImage($img, 140, 60, [int]($img.Width * $s), 900); $img.Dispose()
-Text $g "NUSANTARA  ·  SERIES 01  BATIK" (F $med 24) $muted 880 250 "Near"
-Text $g "Kawung" (F $semi 96) $gold 872 286 "Near"
-Text $g "Living Heritage on Your Wrist" (F $light 36) $cream 880 410 "Near"
-$y = 500
-foreach ($l in "Classical Javanese Kawung, drawn live",
-               "Petals bloom as you reach your step goal",
-               "4 colorways  ·  analog or digital",
-               "34 metrics  ·  AMOLED, MIP & Instinct") {
-    $g.FillEllipse((New-Object System.Drawing.SolidBrush $gold), 884, $y + 14, 10, 10)
-    Text $g $l (F $light 26) $cream 910 $y "Near"; $y += 62
-}
+Header $g "NUSANTARA  ·  LIVING BATIK" "Three motifs, one watch face" "Pick Kawung, Parang or Mega Mendung in Garmin Connect"
+Row $g @(
+    @("01-main-fr165.png", "Kawung", "four-petal lattice"),
+    @("01-main-parang-fr165.png", "Parang", "S-blades in diagonal bands"),
+    @("01-main-megamendung-fr165.png", "Mega Mendung", "layered Cirebon clouds")
+) 230 640 460
 Save $c[0] $g "1-main-watch-face.png"
 
 # 2 Living Pattern
 $c = New-Canvas; $g = $c[1]
-Header $g "LIVING PATTERN" "The motif grows with your day" "Daily steps light the Kawung units clockwise from 12 o'clock"
+Header $g "LIVING PATTERN" "The motif grows with your day" "Every motif fills in with your daily steps  ·  shown here: Kawung"
 Row $g @(
     @("02-living-1-dormant.png", "Dormant", "0%  ·  fine line work"),
     @("02-living-2-awakening.png", "Awakening", "25%  ·  gilded outlines"),
@@ -94,11 +87,11 @@ Save $c[0] $g "2-living-pattern.png"
 
 # 3 Metric Customization
 $c = New-Canvas; $g = $c[1]
-Header $g "METRIC CUSTOMIZATION" "Your data, your slots" "34 metrics across 4 slots  ·  4 colorways  ·  set in Garmin Connect"
+Header $g "METRIC CUSTOMIZATION" "Your motif, your colours, your data" "3 motifs  ·  6 colorways  ·  34 metrics across 4 slots"
 Row $g @(
-    @("01-main-fr165.png", "Keraton Gold", "Date  ·  VO2 Max  ·  Weekly Run  ·  Steps"),
-    @("03-custom-b-indigo.png", "Silver Indigo", "Weather  ·  Body Battery  ·  Intensity  ·  HR"),
-    @("03-custom-c-bronze-digital.png", "Bronze, digital", "Date  ·  Stress  ·  Calories  ·  Pulse Ox")
+    @("03-custom-a-kawung-indigo.png", "Kawung  ·  Silver Indigo", "Weather  ·  Body Battery  ·  Intensity  ·  HR"),
+    @("03-custom-b-parang-red-digital.png", "Parang  ·  Cirebon Red", "Date  ·  Stress  ·  Calories  ·  Pulse Ox"),
+    @("03-custom-c-megamendung-sogan.png", "Mega Mendung  ·  Sogan", "Sunrise  ·  5K  ·  Weekly Run  ·  Distance")
 ) 230 640 460
 Save $c[0] $g "3-metric-customization.png"
 
@@ -106,10 +99,10 @@ Save $c[0] $g "3-metric-customization.png"
 $c = New-Canvas; $g = $c[1]
 Header $g "DISPLAY MODES" "Made for every Garmin screen" "Rendering adapts to the panel, not just the size"
 Row $g @(
-    @("04-mode-amoled-digital-venu3.png", "AMOLED", "Venu 3  ·  Sogan"),
+    @("04-mode-amoled-digital-venu3.png", "AMOLED", "Venu 3  ·  Kawung"),
     @("04-mode-aod-venu3.png", "Always-On", "low-pixel, shifts each minute"),
-    @("04-mode-mip-fenix7.png", "MIP", "fenix 7  ·  64-colour palette"),
-    @("04-mode-mono-instinct3.png", "Monochrome", "Instinct 3  ·  goal subscreen"),
-    @("04-mode-rect-venux1.png", "Rectangle", "Venu X1  ·  full-bleed motif")
+    @("04-mode-mip-fenix7.png", "MIP", "fenix 7  ·  Parang"),
+    @("04-mode-mono-instinct3.png", "Monochrome", "Instinct 3  ·  Mega Mendung"),
+    @("04-mode-rect-venux1.png", "Rectangle", "Venu X1  ·  Mega Mendung")
 ) 240 600 270
 Save $c[0] $g "4-display-modes.png"
