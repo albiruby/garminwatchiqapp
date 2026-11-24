@@ -158,10 +158,11 @@ module ActivitySystem {
         markActive(eng, day);
 
         var lines = [fmtKm(meters) + " km  -  " + fmtTime(dur), fmtPace(pace) + " /km"];
+        // bonus groups separated by two spaces so the card wraps between them
         var extra = "";
-        if (p[1] > 1.001) { extra = "x" + p[1].format("%.2f") + " bonus"; }
-        if (firstOfWeek) { extra = extra + (extra.length() > 0 ? ", " : "") + "1st run of week +20"; }
-        if (isPr) { extra = extra + (extra.length() > 0 ? ", " : "") + "pace PR +10"; }
+        if (p[1] > 1.001) { extra = "Bonus x" + p[1].format("%.2f"); }
+        if (firstOfWeek) { extra = extra + (extra.length() > 0 ? "  " : "") + "+20 first run"; }
+        if (isPr) { extra = extra + (extra.length() > 0 ? "  " : "") + "+10 pace PR"; }
         if (coins < (meters / 100)) { extra = "Daily run cap reached"; }
         if (extra.length() > 0) { lines.add(extra); }
         RewardSystem.card(eng, "RUN REWARD", "+" + coins.toString() + " coins", lines, RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);

@@ -298,7 +298,13 @@ module AquariumHUD {
             var w = UIKit.wrap(dc, src[i], f0, CARD_TEXT_W, 2);
             for (var j = 0; j < w.size(); j++) { details.add(w[j]); }
         }
-        var fixed = 14 + lh0 + 4 + 56 + 6 + bigH + 6 + 8 + lh0 + 12;
+        // a smaller icon area makes room before any detail line is dropped
+        var iconH = 56;
+        var fixed = 14 + lh0 + 4 + iconH + 6 + bigH + 6 + 8 + lh0 + 12;
+        if (fixed + details.size() * lh0 > CARD_MAX_H) {
+            iconH = 38;
+            fixed -= 18;
+        }
         while (details.size() > 0 && fixed + details.size() * lh0 > CARD_MAX_H) {
             details = details.slice(0, details.size() - 1);
         }
@@ -318,17 +324,18 @@ module AquariumHUD {
 
         var bob = (Math.sin(eng.t * 3) * 3).toNumber();
         var kind = c[:i];
-        var iy = y + 28 + bob;
+        var iy = y + iconH / 2 + bob;
+        var big2 = iconH >= 56;
         if (kind == RewardSystem.IC_FISH) {
-            IconKit.draw(dc, IconKit.FISH, c[:a], cx, iy, 3);
+            IconKit.draw(dc, IconKit.FISH, c[:a], cx, iy, big2 ? 3 : 2);
         } else if (kind == RewardSystem.IC_EGG) {
-            IconKit.draw(dc, IconKit.EGG, c[:a], cx, iy, 5);
+            IconKit.draw(dc, IconKit.EGG, c[:a], cx, iy, big2 ? 5 : 4);
         } else if (kind == RewardSystem.IC_DECOR) {
-            IconKit.draw(dc, IconKit.DECOR, c[:a], cx, iy, 4);
+            IconKit.draw(dc, IconKit.DECOR, c[:a], cx, iy, big2 ? 4 : 3);
         } else {
-            IconKit.draw(dc, IconKit.GRID, c[:a], cx, iy, 5);
+            IconKit.draw(dc, IconKit.GRID, c[:a], cx, iy, big2 ? 5 : 4);
         }
-        y += 56 + 6;
+        y += iconH + 6;
 
         y = UIKit.lines(dc, cx, y, big[0], big[1], 0xFFFFFF) + 6;
         y = UIKit.lines(dc, cx, y, f0, details, DIM) + 8;

@@ -416,7 +416,7 @@ class AquariumEngine {
                 [RewardSystem.summary(EventSystem.QUEST_COINS, EventSystem.QUEST_PEARLS, 0), "+ Glowfish edition egg"],
                 RewardSystem.IC_EGG, 5, EventSystem.UI[10]);
         } else if (Preview.MODE == 4) {
-            RewardSystem.card(self, "RUN REWARD", "+63 coins", ["5.2 km  -  28:14", "5:25 /km", "x1.2 bonus, 1st run of week +20"],
+            RewardSystem.card(self, "RUN REWARD", "+63 coins", ["5.2 km  -  28:14", "5:25 /km", "Bonus x1.20  +20 first run"],
                 RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);
         }
     }
