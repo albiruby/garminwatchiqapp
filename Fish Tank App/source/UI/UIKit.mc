@@ -228,6 +228,7 @@ module UIKit {
     // Centred title pill near the top edge, sized to its text.
     function titlePill(dc, title, col) {
         var f = font(0);
+        title = fit(dc, title, f, 172);
         var w = dc.getTextWidthInPixels(title, f) + 28;
         var top = (dc.getHeight() * 0.075).toNumber();
         var x0 = dc.getWidth() / 2 - w / 2;

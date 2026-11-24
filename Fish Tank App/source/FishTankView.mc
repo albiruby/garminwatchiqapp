@@ -83,6 +83,10 @@ class FishTankView extends WatchUi.View {
             _fast = false;          // idle: slow the animation to save battery
             applyTimer();
         }
+        if (mode == Modes.PLAY && eng.tutorialActive()) {
+            var tb = AquariumHUD.COACH_BTN[eng.tutorial];
+            if (tb >= 0) { focus = tb; }
+        }
         if (mode == Modes.PLAY && eng.cards.size() > 0 && !eng.tutorialActive()) {
             mode = Modes.CARD;
         }

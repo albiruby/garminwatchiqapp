@@ -5,6 +5,6 @@ module Preview {
     const ON = false;
     const STYLE = 0;   // 0 Modern Pixel, 1 Minimalist, 2 Pseudo-3D
     const THEME = 3;   // 0 Tropical, 1 Freshwater, 2 Fantasy, 3 Mixed, 4 Frozen, 5 Deep
-    const MODE = 0;    // 0 play, 1 style picker, 2 theme picker, 3 gift card, 4 run card, 5 build, 6 event card, 7 long-text cards
+    const MODE = 0;    // 0 play, 1 style picker, 2 theme picker, 3 gift card, 4 run card, 5 build, 6 event card, 7-8 long-text cards, 9-11 tutorial coach
     const SCREEN = 0;  // 0 tank, else a screen opened on top (PreviewScreens.open)
 }

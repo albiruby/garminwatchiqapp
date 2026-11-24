@@ -260,8 +260,9 @@ module AquariumHUD {
         var step = isStyle ? "ART STYLE" : "AQUARIUM THEME";
         if (onboarding) { step = (isStyle ? "1/2  " : "2/2  ") + step; }
         text(dc, 195, 272, font(0), step, accent);
-        text(dc, 195, 302, font(2), name, 0xFFFFFF);
-        text(dc, 195, 330, font(0), desc, DIM);
+        var nf = UIKit.bestFit(dc, name, [font(2), font(1), font(0)], 236, 1);
+        text(dc, 195, 302, nf[0], nf[1][0], 0xFFFFFF);
+        text(dc, 195, 330, font(0), UIKit.fit(dc, desc, font(0), 280), DIM);
         text(dc, 46, 302, font(2), "<", accent);
         text(dc, 344, 302, font(2), ">", accent);
         var dx = 195 - (n - 1) * 8;
@@ -366,34 +367,53 @@ module AquariumHUD {
         dc.fillRoundedRectangle(105, 84, 180, 46, 12);
         dc.setColor(BORDER, Graphics.COLOR_TRANSPARENT);
         dc.drawRoundedRectangle(105, 84, 180, 46, 12);
-        text(dc, 195, 98, font(0), "Slot " + (slot + 1).toString() + ": " + name, 0xFFFFFF);
+        text(dc, 195, 98, font(0), UIKit.fit(dc, "Slot " + (slot + 1).toString() + ": " + name, font(0), 166), 0xFFFFFF);
         text(dc, 195, 118, font(0), "TAP TO CHANGE", DIM);
     }
 
     // ---- tutorial coach ---------------------------------------------------------------
-    const COACH = ["Tap FEED to drop food", "Tap CLEAN to scrub the glass", "Run with your Run app",
-                   "Open MENU: shop, quests, games"];
-    const COACH2 = ["Hungry fish swim to it", "Clean tanks keep fish happy", "100 m = 1 coin - tap",
-                    "Your tank grows from here"];
+    // Short headline + a sentence that wraps. The bubble is sized to its text and sits just
+    // above the dock, with the arrow on the button it talks about.
+    const COACH = ["Tap FEED", "Tap CLEAN", "Go for a run", "Open the MENU"];
+    const COACH2 = ["Drop food - hungry fish swim to it", "Scrub the glass - clean tanks keep fish happy",
+                    "Use your watch's Run app: 100 m = 1 coin", "Shop, quests, events and games"];
+    const COACH_BTN = [0, 1, -1, 2];
+    const COACH_MAX_W = 250;
 
     function drawCoach(dc, eng) {
         var step = eng.tutorial;
-        var y0 = 214;
+        var f = font(0);
+        var lh = dc.getFontHeight(f);
+        var body = UIKit.wrap(dc, COACH2[step], f, COACH_MAX_W - 28, 2);
+        var tw = dc.getTextWidthInPixels(COACH[step], f);
+        for (var i = 0; i < body.size(); i++) {
+            var lw = dc.getTextWidthInPixels(body[i], f);
+            if (lw > tw) { tw = lw; }
+        }
+        var w = tw + 28;
+        // the info-only step continues with a tap, so it says so
+        if (COACH_BTN[step] < 0) { body.add("TAP TO CONTINUE"); }
+        var h = 8 + lh + body.size() * (lh - 3) + 8;
+        var bottom = BTN_Y - BTN_R - 6 - 18;     // leave room for the arrow above the dock
+        var y0 = bottom - h;
+        var x0 = 195 - w / 2;
         dc.setColor(PANEL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(75, y0, 240, 52, 14);
+        dc.fillRoundedRectangle(x0, y0, w, h, 14);
         dc.setPenWidth(2);
         dc.setColor(0x7FE7FF, Graphics.COLOR_TRANSPARENT);
-        dc.drawRoundedRectangle(75, y0, 240, 52, 14);
+        dc.drawRoundedRectangle(x0, y0, w, h, 14);
         dc.setPenWidth(1);
-        text(dc, 195, y0 + 16, font(0), COACH[step], 0x7FE7FF);
-        text(dc, 195, y0 + 36, font(0), COACH2[step], DIM);
-        if (step != 2) {
-            // arrow down to the button
-            var bx = BTN_X[step == 3 ? 2 : step];
-            var ay = y0 + 56;
+        var y = UIKit.lines(dc, 195, y0 + 8, f, [COACH[step]], 0x7FE7FF);
+        for (var i = 0; i < body.size(); i++) {
+            var bc = (COACH_BTN[step] < 0 && i == body.size() - 1) ? 0x7FE7FF : DIM;
+            text(dc, 195, y + (lh - 3) / 2 + i * (lh - 3), f, body[i], bc);
+        }
+        var b = COACH_BTN[step];
+        if (b >= 0) {
+            var bx = Util.clamp(BTN_X[b], x0 + 16, x0 + w - 16);
             var bob = (Math.sin(eng.t * 6) * 3).toNumber();
             dc.setColor(0x7FE7FF, Graphics.COLOR_TRANSPARENT);
-            dc.fillPolygon([[bx - 8, ay + bob], [bx + 8, ay + bob], [bx, ay + 10 + bob]]);
+            dc.fillPolygon([[bx - 8, bottom + 4 + bob], [bx + 8, bottom + 4 + bob], [bx, bottom + 14 + bob]]);
         }
     }
 }

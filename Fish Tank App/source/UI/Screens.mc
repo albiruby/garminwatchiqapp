@@ -633,7 +633,7 @@ class LeagueScreen extends Screen {
         var tgt = LeagueSystem.target(e);
         var s = lg["s"];
         var out = [
-            [LeagueSystem.TIER_NAME[t] + " League", "Rival: your recent weeks", IconKit.GRID, SpriteData.ICON_SHIELD, LeagueSystem.TIER_COLOR[t]],
+            [LeagueSystem.TIER_NAME[t] + " League", "Rival: your past weeks", IconKit.GRID, SpriteData.ICON_SHIELD, LeagueSystem.TIER_COLOR[t]],
             ["This week", s.toString() + " / " + tgt.toString() + " pts" + (s >= tgt ? " - promotion!" : ""), IconKit.GRID, SpriteData.ICON_STAR, s >= tgt ? 0x5EE36A : null],
             ["Week reward", RewardSystem.summary(LeagueSystem.REWARD_C[t], LeagueSystem.REWARD_P[t], 0), IconKit.GRID, SpriteData.ICON_CHEST, null],
             ["Points", "10/km, 15/active day, 20 per quest", IconKit.NONE, null, 0x8EA3C0]

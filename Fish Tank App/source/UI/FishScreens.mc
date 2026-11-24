@@ -331,7 +331,7 @@ class DecorPickScreen extends Screen {
 class ExpeditionView extends WatchUi.View {
     // node positions down the round screen (zig-zag trail)
     const NX = [195, 120, 270, 130, 250];
-    const NY = [300, 248, 196, 144, 96];
+    const NY = [272, 226, 180, 134, 90];
     var sel;
 
     function initialize() {
@@ -373,13 +373,14 @@ class ExpeditionView extends WatchUi.View {
         var km = e.stats["km"] / 1000.0;
         var need = ExpeditionSystem.KM[sel];
         var line2 = sel <= u ? ExpeditionSystem.DESC[sel] : km.format("%.1f") + " / " + need.toString() + " km";
-        var by = (dc.getHeight() * 0.86).toNumber();
+        // info box where the glass is still wide enough for a full line (228 px)
+        var by = (dc.getHeight() * 0.82).toNumber();
         dc.setColor(UIKit.PANEL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(95, by - 26, 200, 50, 12);
+        dc.fillRoundedRectangle(81, by - 26, 228, 52, 12);
         dc.setColor(ExpeditionSystem.COLOR[sel], Graphics.COLOR_TRANSPARENT);
-        dc.drawRoundedRectangle(95, by - 26, 200, 50, 12);
-        UIKit.text(dc, 195, by - 10, UIKit.font(0), ExpeditionSystem.NAME[sel], ExpeditionSystem.COLOR[sel], UIKit.CENTER);
-        UIKit.text(dc, 195, by + 11, UIKit.font(0), UIKit.fit(dc, line2, UIKit.font(0), 184), UIKit.DIM, UIKit.CENTER);
+        dc.drawRoundedRectangle(81, by - 26, 228, 52, 12);
+        UIKit.text(dc, 195, by - 10, UIKit.font(0), UIKit.fit(dc, ExpeditionSystem.NAME[sel], UIKit.font(0), 212), ExpeditionSystem.COLOR[sel], UIKit.CENTER);
+        UIKit.text(dc, 195, by + 11, UIKit.font(0), UIKit.fit(dc, line2, UIKit.font(0), 212), UIKit.DIM, UIKit.CENTER);
     }
 }
 

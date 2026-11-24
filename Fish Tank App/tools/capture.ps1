@@ -50,7 +50,7 @@ module Preview {
     const ON = $on;
     const STYLE = $($p[1]);   // 0 Modern Pixel, 1 Minimalist, 2 Pseudo-3D
     const THEME = $($p[2]);   // 0 Tropical, 1 Freshwater, 2 Fantasy, 3 Mixed, 4 Frozen, 5 Deep
-    const MODE = $($p[3]);    // 0 play, 1 style picker, 2 theme picker, 3 gift card, 4 run card, 5 build, 6 event card, 7 long-text cards
+    const MODE = $($p[3]);    // 0 play, 1 style picker, 2 theme picker, 3 gift card, 4 run card, 5 build, 6 event card, 7-8 long-text cards, 9-11 tutorial coach
     const SCREEN = $screen;  // 0 tank, else a screen opened on top (PreviewScreens.open)
 }
 "@ | Set-Content -Encoding ascii (Join-Path $proj "source\Preview.mc")

@@ -116,7 +116,8 @@ class MiniGameView extends WatchUi.View {
         dc.setPenWidth(1);
         if (phase == P_INTRO) {
             var r = rules();
-            UIKit.text(dc, cx, 150, UIKit.font(1), name(), 0xFFFFFF, UIKit.CENTER);
+            var nf = UIKit.bestFit(dc, name(), [UIKit.font(1), UIKit.font(0)], 240, 1);
+            UIKit.text(dc, cx, 150, nf[0], nf[1][0], 0xFFFFFF, UIKit.CENTER);
             UIKit.text(dc, cx, 192, UIKit.font(0), UIKit.fit(dc, r[0], UIKit.font(0), 250), UIKit.DIM, UIKit.CENTER);
             UIKit.text(dc, cx, 216, UIKit.font(0), UIKit.fit(dc, r[1], UIKit.font(0), 250), UIKit.DIM, UIKit.CENTER);
             var left = Globals.engine.gamesLeft(gameId);
@@ -137,8 +138,8 @@ class MiniGameView extends WatchUi.View {
         dc.fillRoundedRectangle(110, 28, 170, 28, 10);
         dc.setColor(UIKit.BORDER, Graphics.COLOR_TRANSPARENT);
         dc.drawRoundedRectangle(110, 28, 170, 28, 10);
-        UIKit.text(dc, 160, 41, UIKit.font(0), left, 0xFFFFFF, UIKit.CENTER);
-        UIKit.text(dc, 236, 41, UIKit.font(0), right, UIKit.ACCENT, UIKit.CENTER);
+        UIKit.text(dc, 160, 41, UIKit.font(0), UIKit.fit(dc, left, UIKit.font(0), 92), 0xFFFFFF, UIKit.CENTER);
+        UIKit.text(dc, 236, 41, UIKit.font(0), UIKit.fit(dc, right, UIKit.font(0), 70), UIKit.ACCENT, UIKit.CENTER);
     }
 }
 

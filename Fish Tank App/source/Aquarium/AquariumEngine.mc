@@ -404,6 +404,8 @@ class AquariumEngine {
         } else if (Preview.MODE == 6) {
             RewardSystem.card(self, "EVENT", EventSystem.NAME[6], [EventSystem.DESC[6], "Quest: " + QuestSystem.label(0, 17000)],
                 RewardSystem.IC_FISH, [EventSystem.SPECIES[6], false, EventSystem.edition(6)], EventSystem.UI[6]);
+        } else if (Preview.MODE >= 9 && Preview.MODE <= 11) {
+            tutorial = [1, 3, 2][Preview.MODE - 9];
         } else if (Preview.MODE == 7 || Preview.MODE == 8) {
             // long text on cards (readability check): 7 = weekly quest first, 8 = event quest
             if (Preview.MODE == 7) {
@@ -557,7 +559,7 @@ class AquariumEngine {
     // ---- tutorial ---------------------------------------------------------------
     // 0 feed, 1 clean, 2 running info (tap), 3 open menu, 4 done
     function tutorialActive() {
-        return onboarded && preview == null && !Preview.ON && tutorial < 4;
+        return onboarded && preview == null && (!Preview.ON || Preview.MODE >= 9) && tutorial < 4;
     }
 
     function tutorialEvent(step) {
