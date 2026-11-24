@@ -1,0 +1,5 @@
+<fonts>
+    <font id="PixS" filename="pixs.fnt" antialias="false"/>
+    <font id="PixM" filename="pixm.fnt" antialias="false"/>
+    <font id="PixL" filename="pixl.fnt" antialias="false"/>
+</fonts>
