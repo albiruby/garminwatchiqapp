@@ -21,6 +21,16 @@ Contents:
 - `docs/DESIGN-NOTES.md`: design read, dials, identity motif and the reason for each decision.
 - `docs/contact-sheet.png`: every QA state rendered in the simulator.
 
+## Screenshots
+
+| Carbon · Balanced | Reflective · Dial | Field · Horizon | Signal · Stack |
+|---|---|---|---|
+| ![](docs/screens/carbon-balanced.png) | ![](docs/screens/reflective-dial.png) | ![](docs/screens/field-horizon.png) | ![](docs/screens/signal-stack.png) |
+| **Minimal** | **Data Dense** | **Goal 150 %** | **Always-On** |
+| ![](docs/screens/carbon-minimal.png) | ![](docs/screens/carbon-dense.png) | ![](docs/screens/state-150-stack.png) | ![](docs/screens/aod-dial.png) |
+
+All states: [`docs/screens/`](docs/screens/) and [`docs/contact-sheet.png`](docs/contact-sheet.png).
+
 ## Features (v0.1.0)
 | Area | What is there |
 |---|---|
