@@ -1,3 +1,7 @@
+# ============ Local-only folders (tooling, not part of this repo) ============
+/API-Key-Data-Fetch/
+/WorkoutMCP/
+
 # ============ Secrets — never commit ============
 garmin-api-key.txt
 *.der

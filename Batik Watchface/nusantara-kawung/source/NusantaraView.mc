@@ -144,6 +144,7 @@ class NusantaraView extends WatchUi.WatchFace {
 
     function onUpdate(dc as Dc) as Void {
         if (Preview.ON) { setMotif(Preview.MOTIF); } // store screenshots
+        if (Preview.ON) { var ms = System.getSystemStats(); System.println("MEM motif=" + _motif + " used=" + ms.usedMemory + " total=" + ms.totalMemory); } // TEMP-MEM
         if (Preview.ON) { _timeStyle = Preview.STYLE; _sleeping = Preview.SLEEP; _colorway = Preview.COLORWAY; _topSlot = Preview.TOP; _bottomSlot = Preview.BOTTOM; _leftSlot = Preview.LEFT; _rightSlot = Preview.RIGHT; } // store screenshots (tools/capture.ps1); Preview.ON is false in releases
         var clock = System.getClockTime();
         var pal = Palette.forDisplay(_colorway, _mip, _mono);

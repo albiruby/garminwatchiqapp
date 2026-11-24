@@ -9,8 +9,8 @@ Koleksi project Garmin Connect IQ + tooling data aktivitas. Satu folder per proj
 | [`Restora/`](Restora/) | **RESTORA** | Guided recovery sessions di jam |
 | [`WatchCraft/`](WatchCraft/) | **WatchCraft** | Studio watch face + data field (web + Connect IQ) |
 | [`Batik Watchface/`](Batik%20Watchface/) | **NUSANTARA** | Batik watch faces: Kawung, Megamendung, Parang |
-| [`API-Key-Data-Fetch/`](API-Key-Data-Fetch/) | Tooling | Fetch aktivitas via Garmin Personal API + laporan sesi `.md` |
-| [`WorkoutMCP/`](WorkoutMCP/) | Tooling | Workout MCP server (Python) |
+
+> `API-Key-Data-Fetch/` dan `WorkoutMCP/` tetap ada di lokal tapi tidak ikut repo ini.
 
 ## Aturan
 
