@@ -1,19 +1,28 @@
 # Bakes fonts/src/PixelifySans.ttf into Connect IQ BMFont resources (.fnt + .png),
 # rendered without antialiasing so glyph edges stay pixel-sharp like the sprites.
-# Usage: python -I tools/make-fonts.py
+# The layout is drawn on a 390 px canvas and scaled to the screen (source/UI/Scale.mc);
+# fonts are baked per screen size instead, so text stays sharp on every watch:
+#   resources/fonts                    390 x 390 (Forerunner 165 and the base set)
+#   resources-round-WxH/fonts          the same sizes scaled by W / 390
+# Usage: python -I tools/make-fonts.py            all sets
+#        python -I tools/make-fonts.py --scaled   only the per-resolution sets
 import os
 from PIL import Image, ImageDraw, ImageFont
+
+import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "fonts", "src", "PixelifySans.ttf")
 OUT = os.path.join(ROOT, "resources", "fonts")
+BASE = 390
+SCREENS = [360, 416, 454]      # round screens of the supported watches other than 390
 CHARS = "".join(chr(c) for c in range(32, 127))
 
 # id, pixel size, weight (variable axis)
 SETS = [("PixS", 20, 500), ("PixM", 26, 500), ("PixL", 34, 600)]
 
 
-def bake(fid, px, weight):
+def bake(fid, px, weight, out):
     font = ImageFont.truetype(SRC, px)
     try:
         font.set_variation_by_axes([weight])
@@ -47,23 +56,30 @@ def bake(fid, px, weight):
                      f"xoffset={xo} yoffset={yo if img else 0} xadvance={adv} page=0 chnl=15")
         x += w + 1
     name = fid.lower()
-    atlas.save(os.path.join(OUT, name + ".png"))
+    atlas.save(os.path.join(out, name + ".png"))
     head = [
         f'info face="Pixelify Sans" size={px} bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=0 aa=0 padding=0,0,0,0 spacing=1,1',
         f"common lineHeight={line_h} base={ascent} scaleW={atlas_w} scaleH={line_h} pages=1 packed=0",
         f'page id=0 file="{name}.png"',
         f"chars count={len(glyphs)}",
     ]
-    with open(os.path.join(OUT, name + ".fnt"), "w", newline="\n") as f:
+    with open(os.path.join(out, name + ".fnt"), "w", newline="\n") as f:
         f.write("\n".join(head + lines) + "\n")
-    print(f"{fid}: {px}px, line height {line_h}")
+    print(f"{os.path.relpath(out, ROOT)} {fid}: {px}px, line height {line_h}")
 
 
-os.makedirs(OUT, exist_ok=True)
-for s in SETS:
-    bake(*s)
-with open(os.path.join(OUT, "fonts.xml"), "w", newline="\n") as f:
-    f.write("<fonts>\n")
-    for fid, _, _ in SETS:
-        f.write(f'    <font id="{fid}" filename="{fid.lower()}.fnt" antialias="false"/>\n')
-    f.write("</fonts>\n")
+def bake_set(out, scale):
+    os.makedirs(out, exist_ok=True)
+    for fid, px, weight in SETS:
+        bake(fid, round(px * scale), weight, out)
+    with open(os.path.join(out, "fonts.xml"), "w", newline="\n") as f:
+        f.write("<fonts>\n")
+        for fid, _, _ in SETS:
+            f.write(f'    <font id="{fid}" filename="{fid.lower()}.fnt" antialias="false"/>\n')
+        f.write("</fonts>\n")
+
+
+if "--scaled" not in sys.argv:
+    bake_set(OUT, 1.0)
+for w in SCREENS:
+    bake_set(os.path.join(ROOT, f"resources-round-{w}x{w}", "fonts"), w / BASE)

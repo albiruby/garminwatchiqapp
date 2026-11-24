@@ -1,11 +1,12 @@
-# Builds Fish Tank for FR165 / FR165 Music.
-#   build.ps1                 build both devices into bin\
+# Builds Fish Tank for every watch in manifest.xml.
+#   build.ps1                 build every device into bin\
 #   build.ps1 -Run            build fr165 and load it in the simulator
 #   build.ps1 -Test           build with unit tests and run them in the simulator
 param(
     [switch]$Run,
     [switch]$Test,
     [string]$Device = "fr165",
+    [string[]]$Only = @(),
     [string]$Key = "$env:USERPROFILE\.Garmin\ConnectIQ\developer_key.der"
 )
 # monkeyc prints type-check warnings on stderr; "Stop" would turn those into failures.
@@ -41,7 +42,11 @@ if ($Run) {
     exit $LASTEXITCODE
 }
 
-foreach ($d in @("fr165", "fr165m")) {
+# every watch in manifest.xml (or: build.ps1 -Only fr965,fr265s)
+$devices = Select-String -Path (Join-Path $proj "manifest.xml") -Pattern 'iq:product id="([^"]+)"' -AllMatches |
+    ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value }
+if ($Only) { $devices = $Only }
+foreach ($d in $devices) {
     Invoke-Build $d (Join-Path $bin "FishTank-$d.prg") @()
     Write-Host "OK $d"
 }

@@ -112,7 +112,8 @@ class MiniGameView extends WatchUi.View {
     function playStep(d) {
     }
 
-    function onUpdate(dc as Graphics.Dc) as Void {
+    function onUpdate(screenDc as Graphics.Dc) as Void {
+        var dc = Scale.wrap(screenDc);
         UIKit.background(dc);
         if (phase == P_PLAY) {
             drawPlay(dc);
@@ -164,7 +165,7 @@ class MiniGameDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onTap(evt as WatchUi.ClickEvent) as Boolean {
-        var c = evt.getCoordinates();
+        var c = Scale.canvas(evt.getCoordinates());
         _v.tap(c[0], c[1]);
         return true;
     }

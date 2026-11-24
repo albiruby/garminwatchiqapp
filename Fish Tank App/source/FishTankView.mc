@@ -170,6 +170,7 @@ class FishTankView extends WatchUi.View {
 
     // Returns the scene bitmap to show. Rebuilds advance one stage per frame; with a back
     // buffer the old scene stays on screen until the new one is complete.
+    // `dc` is the real screen Dc (the buffers are screen-sized).
     function sceneBitmap(dc) {
         if (!(Graphics has :createBufferedBitmap)) { return null; }
         var front = _frontRef != null ? _frontRef.get() : null;
@@ -194,7 +195,7 @@ class FishTankView extends WatchUi.View {
         if (_building) {
             var useBack = back != null && _haveScene;
             var target = useBack ? back : front;
-            eng.renderer.drawStage(target.getDc(), eng, _stage);
+            eng.renderer.drawStage(Scale.wrap(target.getDc()), eng, _stage);
             _stage += 1;
             if (_stage >= eng.renderer.stageCount(eng)) {
                 _building = false;
@@ -210,10 +211,11 @@ class FishTankView extends WatchUi.View {
         return front;
     }
 
-    function onUpdate(dc as Graphics.Dc) as Void {
+    function onUpdate(screenDc as Graphics.Dc) as Void {
         var t0 = System.getTimer();
+        var dc = Scale.wrap(screenDc);
         var r = eng.renderer;
-        var bmp = sceneBitmap(dc);
+        var bmp = sceneBitmap(screenDc);
         if (bmp != null) {
             dc.drawBitmap(0, 0, bmp);
         } else {

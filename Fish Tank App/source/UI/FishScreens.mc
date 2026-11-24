@@ -344,7 +344,8 @@ class ExpeditionView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
-    function onUpdate(dc as Graphics.Dc) as Void {
+    function onUpdate(screenDc as Graphics.Dc) as Void {
+        var dc = Scale.wrap(screenDc);
         var e = Globals.engine;
         UIKit.background(dc);
         UIKit.titlePill(dc, "EXPEDITION", UIKit.ACCENT);
@@ -393,7 +394,7 @@ class ExpeditionDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onTap(evt as WatchUi.ClickEvent) as Boolean {
-        var c = evt.getCoordinates();
+        var c = Scale.canvas(evt.getCoordinates());
         for (var i = 0; i < 5; i++) {
             var dx = c[0] - _v.NX[i];
             var dy = c[1] - _v.NY[i];

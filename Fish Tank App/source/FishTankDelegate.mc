@@ -13,7 +13,7 @@ class FishTankDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onTap(evt as WatchUi.ClickEvent) as Boolean {
-        var c = evt.getCoordinates();
+        var c = Scale.canvas(evt.getCoordinates());
         _v.handleTap(c[0], c[1]);
         return true;
     }

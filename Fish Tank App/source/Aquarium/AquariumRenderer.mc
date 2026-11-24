@@ -92,6 +92,14 @@ module PixelKit {
 
     // Generated fish sprite centred on (cx, cy) at integer scale s.
     function drawSprite(dc, spr, pal, cx, cy, s, flip, wig) {
+        // on a scaled screen draw straight to the real Dc (see Scale): fish are the
+        // bulk of every frame's blocks
+        var k = 1.0;
+        var scaled = dc instanceof ScaledDc;
+        if (scaled) {
+            k = dc.k;
+            dc = dc.dc;
+        }
         var runs = spr[:runs];
         var tail = spr[:tail];
         var jelly = spr[:jelly];
@@ -120,7 +128,15 @@ module PixelKit {
                 dc.setColor(pal[c], Graphics.COLOR_TRANSPARENT);
                 last = c;
             }
-            dc.fillRectangle(ox + (px + dx) * s, oy + (y + dy) * s, w * s, s);
+            var bx = ox + (px + dx) * s;
+            var by = oy + (y + dy) * s;
+            if (scaled) {
+                var x0 = (bx * k + 0.5).toNumber();
+                var y0 = (by * k + 0.5).toNumber();
+                dc.fillRectangle(x0, y0, ((bx + w * s) * k + 0.5).toNumber() - x0, ((by + s) * k + 0.5).toNumber() - y0);
+            } else {
+                dc.fillRectangle(bx, by, w * s, s);
+            }
         }
     }
 

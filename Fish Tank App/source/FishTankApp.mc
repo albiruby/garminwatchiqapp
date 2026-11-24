@@ -12,6 +12,7 @@ class FishTankApp extends Application.AppBase {
     }
 
     function onStart(state as Dictionary?) as Void {
+        Scale.init();
         Math.srand(Time.now().value());
         _eng = new AquariumEngine();
         _eng.load();

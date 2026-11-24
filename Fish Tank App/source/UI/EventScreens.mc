@@ -187,7 +187,8 @@ class DatePickerView extends WatchUi.View {
         return false;
     }
 
-    function onUpdate(dc as Graphics.Dc) as Void {
+    function onUpdate(screenDc as Graphics.Dc) as Void {
+        var dc = Scale.wrap(screenDc);
         UIKit.background(dc);
         UIKit.titlePill(dc, kind == DatePick.RACE ? "RACE DAY" : "BIRTHDAY", UIKit.ACCENT);
         var labels = ["DAY", "MONTH", "YEAR"];
@@ -236,7 +237,7 @@ class DatePickerDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onTap(evt as WatchUi.ClickEvent) as Boolean {
-        var c = evt.getCoordinates();
+        var c = Scale.canvas(evt.getCoordinates());
         var n = _v.fieldCount();
         // tapping a box selects it; above/below a box changes it
         var bw = 82;

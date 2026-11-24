@@ -99,7 +99,8 @@ class PixelListView extends WatchUi.View {
         if (sel < rows.size()) { screen.pick(sel, self); }
     }
 
-    function onUpdate(dc as Graphics.Dc) as Void {
+    function onUpdate(screenDc as Graphics.Dc) as Void {
+        var dc = Scale.wrap(screenDc);
         UIKit.background(dc);
         var w = dc.getWidth();
         var h = dc.getHeight();
@@ -211,7 +212,7 @@ class PixelListDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onTap(evt as WatchUi.ClickEvent) as Boolean {
-        var y = evt.getCoordinates()[1];
+        var y = Scale.canvas(evt.getCoordinates())[1];
         var cy = 195;
         if (y < cy - 42) { _v.move(-1); }
         else if (y > cy + 42) { _v.move(1); }
@@ -368,7 +369,8 @@ class GridView extends WatchUi.View {
         return -1;
     }
 
-    function onUpdate(dc as Graphics.Dc) as Void {
+    function onUpdate(screenDc as Graphics.Dc) as Void {
+        var dc = Scale.wrap(screenDc);
         UIKit.background(dc);
         var w = dc.getWidth();
         UIKit.titlePill(dc, screen.title(), UIKit.ACCENT);
@@ -415,7 +417,7 @@ class GridDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onTap(evt as WatchUi.ClickEvent) as Boolean {
-        var c = evt.getCoordinates();
+        var c = Scale.canvas(evt.getCoordinates());
         var i = _v.cellAt(c[0], c[1]);
         if (i >= 0) {
             if (i == _v.sel) { _v.screen.pick(i, _v); }

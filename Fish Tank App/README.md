@@ -1,6 +1,6 @@
 # FISH TANK: Pocket Aquarium
 
-Connect IQ device app untuk Forerunner 165 / 165 Music (390×390 AMOLED). Akuarium pixel-art yang dirawat, dikoleksi dan didekorasi. Koin utamanya datang dari lari: lari dengan app Run bawaan Garmin, lalu buka FISH TANK dan setiap lari baru dibayar satu kali (100 m = 1 koin, maks 300/hari).
+Connect IQ device app untuk jam Garmin bulat AMOLED (360–454 px): Forerunner 165/165 Music, 265/265S, 965, fēnix 8 AMOLED, fēnix E, epix Gen 2 / Pro, Venu 3/3S, vívoactive 5. Akuarium pixel-art yang dirawat, dikoleksi dan didekorasi. Koin utamanya datang dari lari: lari dengan app Run bawaan Garmin, lalu buka FISH TANK dan setiap lari baru dibayar satu kali (100 m = 1 koin, maks 300/hari).
 
 ![FISH TANK](../docs/previews/fish-tank.jpg)
 
@@ -42,13 +42,20 @@ Connect IQ device app untuk Forerunner 165 / 165 Music (390×390 AMOLED). Akuari
 
 Semua screenshot ada di [`docs/screens/`](docs/screens/).
 
+## Multi-device
+Semua layout ditulis untuk kanvas 390×390 (FR165). Di layar lain `source/UI/Scale.mc` memetakan kanvas itu ke layar asli (koordinat gambar dan titik sentuh); di layar 390 tidak ada lapisan tambahan. Font Pixelify Sans dibuat per resolusi (`resources-round-360x360`, `-416x416`, `-454x454`, dari `tools/make-fonts.py`) supaya teks tetap tajam.
+
+Menambah jam bulat lain: tambahkan `<iq:product>` di `manifest.xml`. Kalau resolusinya baru, tambahkan ke `SCREENS` di `tools/make-fonts.py` lalu jalankan `python -I tools/make-fonts.py --scaled`.
+
 ## Build & test
 
 ```powershell
-.\tools\build.ps1            # build fr165 + fr165m ke bin\
+.\tools\build.ps1            # build semua jam di manifest ke bin\
+.\tools\build.ps1 -Only fr965 # satu jam saja
 .\tools\build.ps1 -Run       # build dan jalankan di simulator
 .\tools\build.ps1 -Test      # unit test di simulator
 .\tools\capture.ps1 -Matrix  # screenshot semua style x tema
+.\tools\capture.ps1 -Screens -Device fr965   # cek tampilan di jam lain
 .\tools\capture.ps1 -Screens # screenshot semua menu dan mini-game
 ```
 
