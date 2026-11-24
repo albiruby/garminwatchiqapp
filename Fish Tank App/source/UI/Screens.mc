@@ -29,6 +29,7 @@ class MainScreen extends Screen {
             ["Inventory", ready > 0 ? ready.toString() + " egg ready to hatch!" : "Eggs, keys, food", IconKit.GRID, SpriteData.ICON_BAG, ready > 0 ? 0xFFE9A0 : null],
             ["My Fish", e.fish.size().toString() + "/" + HabitatSystem.capacity(e).toString() + " in tank", IconKit.GRID, SpriteData.ICON_FISH, null],
             ["Quests", q > 0 ? q.toString() + " open" : "All done!", IconKit.GRID, SpriteData.ICON_QUEST, q > 0 ? 0x9BF08A : null],
+            ["Events", eventLine(e), IconKit.GRID, SpriteData.ICON_STAR, e.events.size() > 0 ? EventSystem.UI[e.events[0][0]] : null],
             ["Activity", ActivitySystem.fmtKm(e.stats["km"]) + " km run", IconKit.GRID, SpriteData.ICON_SHOE, null],
             ["Expedition", ExpeditionSystem.NAME[ExpeditionSystem.unlocked(e)], IconKit.GRID, SpriteData.ICON_MAP, null],
             ["Games", "Bubble Pop, Dive, Racing", IconKit.GRID, SpriteData.ICON_GAME, null],
@@ -41,6 +42,11 @@ class MainScreen extends Screen {
         ];
     }
 
+    function eventLine(e) {
+        if (e.events.size() > 0) { return EventSystem.NAME[e.events[0][0]] + " is on!"; }
+        return WeeklySystem.NAME[WeeklySystem.current(TimeUtil.weekOf(TimeUtil.today()))];
+    }
+
     function leagueTier(e) {
         var t = e.league.get("t");
         return t == null ? 0 : t;
@@ -51,14 +57,15 @@ class MainScreen extends Screen {
         else if (i == 1) { Nav.push(new InventoryScreen()); }
         else if (i == 2) { Nav.push(new MyFishScreen()); }
         else if (i == 3) { Nav.push(new QuestScreen()); }
-        else if (i == 4) { Nav.push(new ActivityScreen()); }
-        else if (i == 5) { var v = new ExpeditionView(); Nav.pushView(v, new ExpeditionDelegate(v)); }
-        else if (i == 6) { Nav.push(new GamesScreen()); }
-        else if (i == 7) { Nav.pushGrid(new DexGrid()); }
-        else if (i == 8) { Nav.pushGrid(new TrophyGrid()); }
-        else if (i == 9) { Nav.push(new LeagueScreen()); }
-        else if (i == 10) { Nav.toTank(); Globals.view.enterBuild(); }
-        else if (i == 11) { Nav.push(new ProfileScreen()); }
+        else if (i == 4) { Nav.push(new EventsScreen()); }
+        else if (i == 5) { Nav.push(new ActivityScreen()); }
+        else if (i == 6) { var v = new ExpeditionView(); Nav.pushView(v, new ExpeditionDelegate(v)); }
+        else if (i == 7) { Nav.push(new GamesScreen()); }
+        else if (i == 8) { Nav.pushGrid(new DexGrid()); }
+        else if (i == 9) { Nav.pushGrid(new TrophyGrid()); }
+        else if (i == 10) { Nav.push(new LeagueScreen()); }
+        else if (i == 11) { Nav.toTank(); Globals.view.enterBuild(); }
+        else if (i == 12) { Nav.push(new ProfileScreen()); }
         else { Nav.push(new SettingsScreen()); }
     }
 }
@@ -132,7 +139,8 @@ class ShopFishScreen extends Screen {
             if (!CollectionSystem.available(e, sp)) { sub = CollectionSystem.gateText(e, sp); }
             else if (e.lv < FishDatabase.unlockLevel(sp)) { sub = "Unlocks at LV " + FishDatabase.unlockLevel(sp).toString(); }
             else {
-                sub = FishDatabase.RARITY_NAME[rar] + " - " + FishDatabase.price(sp).toString() + "c";
+                var pr = e.fishPrice(sp);
+                sub = FishDatabase.RARITY_NAME[rar] + " - " + pr.toString() + "c" + (pr < FishDatabase.price(sp) ? " SALE" : "");
                 if (FishDatabase.pearlPrice(sp) > 0) { sub = sub + " + " + FishDatabase.pearlPrice(sp).toString() + "p"; }
             }
             var known = e.dex[sp] != 0;
@@ -194,7 +202,7 @@ class ShopFoodScreen extends Screen {
         var out = [];
         for (var i = 1; i < ItemDatabase.FOOD_NAME.size(); i++) {
             out.add([ItemDatabase.FOOD_NAME[i] + " x" + ItemDatabase.FOOD_PACK_QTY[i].toString(),
-                     ItemDatabase.FOOD_PACK_PRICE[i].toString() + "c - have " + e.food[i].toString(),
+                     e.foodPrice(i).toString() + "c - have " + e.food[i].toString(),
                      IconKit.GRID, SpriteData.ICON_FEED, ItemDatabase.FOOD_COLOR[i]]);
         }
         return out;
@@ -376,6 +384,9 @@ class SettingsScreen extends Screen {
             ["Vibration", onOff(e.haptics), IconKit.NONE, null, null],
             ["Low Animation", onOff(e.lowAnim) + " - saves battery", IconKit.NONE, null, null],
             ["Tap Water to Feed", onOff(e.tapFeed), IconKit.NONE, null, null],
+            ["Race Day", e.race > 0 ? CalendarUtil.fmtYear(e.race) : "Not set", IconKit.GRID, SpriteData.ICON_SHOE, null],
+            ["Birthday", e.bday.size() == 2 ? e.bday[1].toString() + " " + CalendarUtil.MONTHS[e.bday[0] - 1] : "Not set", IconKit.GRID, SpriteData.ICON_STAR, null],
+            ["Ramadan / Eid dates", "Shift " + (e.hijriShift > 0 ? "+" : "") + e.hijriShift.toString() + " days", IconKit.NONE, null, null],
             ["Replay Tutorial", "Show the basics again", IconKit.NONE, null, null],
             ["Reset Progress", "Start a new tank", IconKit.NONE, null, 0xFF5A5A]
         ];
@@ -388,7 +399,13 @@ class SettingsScreen extends Screen {
         else if (i == 2) { e.haptics = !e.haptics; }
         else if (i == 3) { e.lowAnim = !e.lowAnim; Globals.view.applyTimer(); }
         else if (i == 4) { e.tapFeed = !e.tapFeed; }
-        else if (i == 5) { e.tutorial = 0; Nav.toTank(); }
+        else if (i == 5) { var v = new DatePickerView(DatePick.RACE); Nav.pushView(v, new DatePickerDelegate(v)); return; }
+        else if (i == 6) {
+            if (e.bday.size() == 2) { view.flash("Birthday is set"); return; }
+            var v = new DatePickerView(DatePick.BIRTHDAY); Nav.pushView(v, new DatePickerDelegate(v)); return;
+        }
+        else if (i == 7) { e.hijriShift = e.hijriShift >= 2 ? -2 : e.hijriShift + 1; EventSystem.refresh(e); }
+        else if (i == 8) { e.tutorial = 0; Nav.toTank(); }
         else { Nav.push(new ConfirmScreen("Erase fish, coins and level?", method(:doReset))); return; }
         e.save();
         view.refresh();

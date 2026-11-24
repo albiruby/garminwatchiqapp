@@ -530,7 +530,7 @@ class FishRaceView extends MiniGameView {
 
     function end() {
         var e = Globals.engine;
-        var coins = [30, 15, 8, 3][place - 1];
+        var coins = [30, 15, 8, 3][place - 1] * Mods.raceMul;
         var xp = [15, 8, 4, 2][place - 1];
         racer.fxp += 5;
         if (place == 1) {
@@ -576,8 +576,8 @@ class FishRaceView extends MiniGameView {
             var spr = SpriteData.peek(sp[i], evo);
             if (spr == null) { continue; }
             var pal = spr[:pal];
-            if (i == 0 && racer.colorVariant() != 0) {
-                var p = SpriteData.palette(sp[i], evo, racer.colorVariant(), 0);
+            if (i == 0 && (racer.variant & 123) != 0) {
+                var p = SpriteData.palette(sp[i], evo, racer.variant, 0);
                 if (p != null) { pal = p; }
             }
             PixelKit.drawSprite(dc, spr, pal, x, LANE_Y[i], 2, false, ((t * 8).toNumber() % 2) == 0);

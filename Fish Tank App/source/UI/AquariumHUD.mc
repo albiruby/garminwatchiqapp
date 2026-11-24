@@ -178,8 +178,12 @@ module AquariumHUD {
         var mid = top + pillH / 2 - 1;
         dc.setColor(PANEL, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(x0, top, pillW, pillH, 10);
-        dc.setColor(BORDER, Graphics.COLOR_TRANSPARENT);
+        // an active event tints the pill border in its color
+        var evOn = eng.events != null && eng.events.size() > 0;
+        dc.setColor(evOn ? EventSystem.UI[eng.events[0][0]] : BORDER, Graphics.COLOR_TRANSPARENT);
+        dc.setPenWidth(evOn ? 2 : 1);
         dc.drawRoundedRectangle(x0, top, pillW, pillH, 10);
+        dc.setPenWidth(1);
 
         var x = x0 + 12;
         icon(dc, SpriteData.ICON_COIN, x, mid - 7, 2);   // 16px icon (8x8 at 2x)

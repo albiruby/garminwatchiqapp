@@ -20,5 +20,7 @@ module PreviewScreens {
         else if (n == 15) { var v = new FishRaceView(Globals.engine.fish[0]); Nav.pushView(v, new MiniGameDelegate(v)); v.start(); }
         else if (n == 16) { Nav.push(new SettingsScreen()); }
         else if (n == 17) { Nav.push(new ShopDecorScreen()); }
+        else if (n == 18) { Nav.push(new EventsScreen()); }
+        else if (n == 19) { var v = new DatePickerView(DatePick.RACE); Nav.pushView(v, new DatePickerDelegate(v)); }
     }
 }

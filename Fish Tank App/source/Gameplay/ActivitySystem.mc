@@ -31,9 +31,10 @@ module ActivitySystem {
     // Coins for one run: 100 m = 1 coin, x1.1 per consistency week (max x1.5), x1.5 for
     // 10 km+, +20 first run of the week, +10 pace PR, capped by what is left of RUN_CAP today.
     // Returns [coins, multiplier, flatBonus].
-    function payout(meters, streakWeeks, firstOfWeek, isPr, paidToday) {
+    // eventMul: run-coin multiplier from active events (Mods.runMul).
+    function payout(meters, streakWeeks, firstOfWeek, isPr, paidToday, eventMul) {
         var sw = streakWeeks > 5 ? 5 : streakWeeks;
-        var mul = 1.0 + 0.1 * sw;
+        var mul = (1.0 + 0.1 * sw) * eventMul;
         if (meters >= 10000) { mul = mul * 1.5; }
         var c = ((meters / 100) * mul).toNumber();
         var bonus = 0;
@@ -120,7 +121,7 @@ module ActivitySystem {
         var st = eng.stats;
         var pace = dur * 1000 / meters;                // seconds per km
         var isPr = st["pace"] > 0 && pace < st["pace"];
-        var p = payout(meters, eng.streakWeeks(), firstOfWeek, isPr, paidToday);
+        var p = payout(meters, eng.streakWeeks(), firstOfWeek, isPr, paidToday, Mods.runMul);
         var coins = p[0];
 
         RewardSystem.grant(eng, tx, coins, 0, 0, meters / 100);
@@ -136,6 +137,13 @@ module ActivitySystem {
         if (meters >= 5000 && (st["b5"] == 0 || pace * 5 < st["b5"])) { st["b5"] = pace * 5; }
         if (meters >= 10000 && (st["b10"] == 0 || pace * 10 < st["b10"])) { st["b10"] = pace * 10; }
 
+        var yr = st["yr"];
+        var y = CalendarUtil.year(day);
+        var ye = yr.get(y);
+        yr.put(y, ye == null ? [meters, 1] : [ye[0] + meters, ye[1] + 1]);
+        WeeklySystem.onRun(eng, day, meters);
+        EventSystem.onRun(eng, day, meters);
+
         var km = meters / 1000.0;
         eng.tp += meters / 1000;
         for (var i = 0; i < eng.fish.size(); i++) { eng.fish[i].fxp += km * 3; }
@@ -148,7 +156,7 @@ module ActivitySystem {
 
         var lines = [fmtKm(meters) + " km  -  " + fmtTime(dur), fmtPace(pace) + " /km"];
         var extra = "";
-        if (p[1] > 1.001) { extra = "x" + p[1].format("%.1f") + " bonus"; }
+        if (p[1] > 1.001) { extra = "x" + p[1].format("%.2f") + " bonus"; }
         if (firstOfWeek) { extra = extra + (extra.length() > 0 ? ", " : "") + "1st run of week +20"; }
         if (isPr) { extra = extra + (extra.length() > 0 ? ", " : "") + "pace PR +10"; }
         if (coins < (meters / 100)) { extra = "Daily run cap reached"; }
@@ -156,7 +164,7 @@ module ActivitySystem {
         RewardSystem.card(eng, "RUN REWARD", "+" + coins.toString() + " coins", lines, RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);
 
         // a small chance of a mystery find on every run
-        if (Util.rnd(100) < 8) { CollectionSystem.mystery(eng, "m" + start.toString()); }
+        if (Util.rnd(100) < Mods.mystery) { CollectionSystem.mystery(eng, "m" + start.toString()); }
     }
 
     // ---- steps ------------------------------------------------------------------

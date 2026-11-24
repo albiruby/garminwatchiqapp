@@ -22,7 +22,7 @@ module HealthSystem {
         var n = list.size();
         var dirtRate = 2.5;
         if (n > 2) { dirtRate += (n - 2) * 0.6; }
-        clean = Util.clamp(clean - dirtRate * hours, 0.0, 100.0);
+        clean = Util.clamp(clean - dirtRate * Mods.dirt * hours, 0.0, 100.0);
 
         for (var i = 0; i < n; i++) {
             var f = list[i];
@@ -42,7 +42,7 @@ module HealthSystem {
             }
 
             if (f.sat > 40 && f.hp > 60) {
-                f.gr = Util.clamp(f.gr + 1.5 * hours, 0.0, 100.0);
+                f.gr = Util.clamp(f.gr + 1.5 * Mods.growth * hours, 0.0, 100.0);
             }
         }
         return clean;

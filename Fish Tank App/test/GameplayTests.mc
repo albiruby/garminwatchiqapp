@@ -78,16 +78,16 @@ function incomeIsCapped(logger as Logger) as Boolean {
 (:test)
 function runPayoutRates(logger as Logger) as Boolean {
     // 5 km, no bonuses: 50 coins
-    Test.assertEqual(ActivitySystem.payout(5000, 0, false, false, 0)[0], 50);
+    Test.assertEqual(ActivitySystem.payout(5000, 0, false, false, 0, 1.0)[0], 50);
     // first run of the week +20, pace PR +10
-    Test.assertEqual(ActivitySystem.payout(5000, 0, true, true, 0)[0], 80);
+    Test.assertEqual(ActivitySystem.payout(5000, 0, true, true, 0, 1.0)[0], 80);
     // 10 km gets x1.5
-    Test.assertEqual(ActivitySystem.payout(10000, 0, false, false, 0)[0], 150);
+    Test.assertEqual(ActivitySystem.payout(10000, 0, false, false, 0, 1.0)[0], 150);
     // consistency streak 2 weeks x1.2
-    Test.assertEqual(ActivitySystem.payout(5000, 2, false, false, 0)[0], 60);
+    Test.assertEqual(ActivitySystem.payout(5000, 2, false, false, 0, 1.0)[0], 60);
     // daily cap
-    Test.assertEqual(ActivitySystem.payout(30000, 5, true, true, 0)[0], ActivitySystem.RUN_CAP);
-    Test.assertEqual(ActivitySystem.payout(5000, 0, false, false, ActivitySystem.RUN_CAP - 10)[0], 10);
+    Test.assertEqual(ActivitySystem.payout(30000, 5, true, true, 0, 1.0)[0], ActivitySystem.RUN_CAP);
+    Test.assertEqual(ActivitySystem.payout(5000, 0, false, false, ActivitySystem.RUN_CAP - 10, 1.0)[0], 10);
     return true;
 }
 

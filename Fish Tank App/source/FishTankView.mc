@@ -171,6 +171,7 @@ class FishTankView extends WatchUi.View {
             for (var i = 0; i < list.size(); i++) { r.drawFish(dc, list[i], eng); }
         }
 
+        if (eng.visitor != null && eng.preview == null) { r.drawFish(dc, eng.visitor, eng); }
         for (var i = 0; i < eng.bubbles.size(); i++) { r.drawBubble(dc, eng.bubbles[i]); }
         r.drawFront(dc, eng);
         AquariumHUD.drawEffects(dc, eng);

@@ -48,6 +48,11 @@ class AquariumEngine {
     var tapFeed = true;
     var tutorial = 0;
     var expSeen = 0;
+    var evp;            // event quest progress
+    var bday;           // [month, day] or []
+    var race = 0;       // race day (day number), 0 = none
+    var lastRace = -999;
+    var hijriShift = 0; // correction for Ramadan / Eid dates
 
     // ---- runtime ----
     var renderer;
@@ -68,6 +73,8 @@ class AquariumEngine {
     var achDirty = false;
     var scanIt = null;
     var pendingRuns;
+    var events;                  // [[eventId, startDay], ...] active today
+    var visitor = null;          // the week's visiting fish (not part of the tank)
     var t = 0.0;
     var _minuteAcc = 0.0;
     var _bubbleAcc = 0.0;
@@ -99,6 +106,9 @@ class AquariumEngine {
         eggBag = [];
         breed = [];
         mg = {};
+        evp = {};
+        bday = [];
+        events = [];
         renderer = CustomizationManager.renderer(0);
     }
 
@@ -126,8 +136,10 @@ class AquariumEngine {
         lastSeen = now;
         _cleanBucket = (clean / 10).toNumber();
         HabitatSystem.refresh(self);
+        EventSystem.refresh(self);
         if (onboarded && !Preview.ON) {
             RewardSystem.prune(self);
+            EventSystem.prune(self, TimeUtil.today());
             periodic();
             ExpeditionSystem.check(self);
             if (rewardAvailable()) { claimReward(); }
@@ -177,6 +189,11 @@ class AquariumEngine {
         tapFeed = d["tf"];
         tutorial = d["tu"];
         expSeen = d["exp"];
+        evp = d["evp"];
+        bday = d["bd"];
+        race = d["race"];
+        lastRace = d["lrc"];
+        hijriShift = d["hs"];
         fish = [];
         var fa = d["f"];
         for (var i = 0; i < fa.size(); i++) {
@@ -201,7 +218,8 @@ class AquariumEngine {
             "nid" => nid, "tx" => tx, "stt" => stats, "stp" => stp, "ds" => ds, "q" => quests,
             "ach" => ach, "lg" => league, "wk" => wk, "rc" => rc, "dd" => dd, "egg" => eggs,
             "eb" => eggBag, "brd" => breed, "mg" => mg, "la" => lowAnim, "tf" => tapFeed,
-            "tu" => tutorial, "exp" => expSeen
+            "tu" => tutorial, "exp" => expSeen, "evp" => evp, "bd" => bday, "race" => race,
+            "lrc" => lastRace, "hs" => hijriShift
         };
     }
 
@@ -373,6 +391,9 @@ class AquariumEngine {
         HabitatSystem.refresh(self);
         if (Preview.MODE == 3) {
             claimReward();
+        } else if (Preview.MODE == 6) {
+            RewardSystem.card(self, "EVENT", EventSystem.NAME[6], [EventSystem.DESC[6], "Quest: " + QuestSystem.label(0, 17000)],
+                RewardSystem.IC_FISH, [EventSystem.SPECIES[6], false, EventSystem.edition(6)], EventSystem.UI[6]);
         } else if (Preview.MODE == 4) {
             RewardSystem.card(self, "RUN REWARD", "+63 coins", ["5.2 km  -  28:14", "5:25 /km", "x1.2 bonus, 1st run of week +20"],
                 RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);
@@ -408,6 +429,7 @@ class AquariumEngine {
 
     // Everything that needs checking about once a minute.
     function periodic() {
+        EventSystem.refresh(self);
         if (!onboarded || preview != null) { return; }
         ActivitySystem.checkWeek(self);
         QuestSystem.check(self);
@@ -450,6 +472,10 @@ class AquariumEngine {
         var list = fishList();
         if (renderer != CustomizationManager.renderer(1)) { SpriteData.warm(list); }
         for (var i = 0; i < list.size(); i++) { FishMovement.update(list[i], self, dt); }
+        if (visitor != null && preview == null) {
+            if (SpriteData.peek(visitor.sp, false) == null) { SpriteData.get(visitor.sp, false); }
+            FishMovement.update(visitor, self, dt);
+        }
         FeedingSystem.update(self, dt);
 
         if (!lowAnim) {
@@ -573,10 +599,19 @@ class AquariumEngine {
             var h = renderer.hitHalf(f);
             if ((x - f.x).abs() < h[0] + 8 && (y - f.y).abs() < h[1] + 8) { return f; }
         }
+        if (visitor != null) {
+            var hv = renderer.hitHalf(visitor);
+            if ((x - visitor.x).abs() < hv[0] + 8 && (y - visitor.y).abs() < hv[1] + 8) { return visitor; }
+        }
         return null;
     }
 
     function showInfo(f) {
+        if (f == visitor) {
+            var m = WeeklySystem.weekMeters(self);
+            toast("Visitor: run " + ActivitySystem.fmtKm(m) + "/" + ActivitySystem.fmtKm(WeeklySystem.VISIT_KM) + " km to keep it", 0x7FE7FF);
+            return;
+        }
         infoFish = f;
         infoT = 3.5;
         if (f.petCd <= 0) {
@@ -592,7 +627,7 @@ class AquariumEngine {
         if (!CollectionSystem.available(self, sp)) { return CollectionSystem.gateText(self, sp); }
         if (lv < FishDatabase.unlockLevel(sp)) { return "Unlocks at LV " + FishDatabase.unlockLevel(sp).toString(); }
         if (fish.size() >= HabitatSystem.capacity(self)) { return "Tank full - expand it"; }
-        if (coins < FishDatabase.price(sp)) { return "Need " + (FishDatabase.price(sp) - coins).toString() + " more coins"; }
+        if (coins < fishPrice(sp)) { return "Need " + (fishPrice(sp) - coins).toString() + " more coins"; }
         if (pearls < FishDatabase.pearlPrice(sp)) { return "Need " + FishDatabase.pearlPrice(sp).toString() + " pearls"; }
         return null;
     }
@@ -600,7 +635,7 @@ class AquariumEngine {
     function buyFish(sp) {
         var why = buyReason(sp);
         if (why != null) { return why; }
-        coins -= FishDatabase.price(sp);
+        coins -= fishPrice(sp);
         pearls -= FishDatabase.pearlPrice(sp);
         var f = newFish(sp, CollectionSystem.rollVariant(2));
         f.y = 100.0;
@@ -614,6 +649,15 @@ class AquariumEngine {
         addXp(10);
         save();
         return null;
+    }
+
+    // Shop price after the week's featured-fish discount.
+    function fishPrice(sp) {
+        return WeeklySystem.price(self, sp);
+    }
+
+    function foodPrice(type) {
+        return (ItemDatabase.FOOD_PACK_PRICE[type] * Mods.foodPrice).toNumber();
     }
 
     function releaseFish(id) {
@@ -633,7 +677,7 @@ class AquariumEngine {
     }
 
     function buyFood(type) {
-        var price = ItemDatabase.FOOD_PACK_PRICE[type];
+        var price = foodPrice(type);
         if (coins < price) { return "Need " + (price - coins).toString() + " more coins"; }
         coins -= price;
         food[type] += ItemDatabase.FOOD_PACK_QTY[type];
@@ -736,6 +780,7 @@ class AquariumEngine {
         mg.put(game, (used == null ? 0 : used) + 1);
         QuestSystem.event(self, QuestSystem.Q_GAME, 1);
         if (left > 0) {
+            if (game.equals(Mods.spotlight)) { coinsWon = coinsWon * 2; }
             coins += coinsWon;
             addXp(xpWon);
         }

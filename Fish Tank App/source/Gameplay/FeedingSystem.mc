@@ -69,7 +69,7 @@ module FeedingSystem {
         var happy = ItemDatabase.FOOD_HAPPY[type] * (fav ? 2.0 : 1.0);
         f.sat = Util.clamp(f.sat + ItemDatabase.FOOD_SAT[type], 0.0, 100.0);
         f.hap = Util.clamp(f.hap + happy, 0.0, 100.0);
-        f.gr = Util.clamp(f.gr + ItemDatabase.FOOD_GROW[type], 0.0, 100.0);
+        f.gr = Util.clamp(f.gr + ItemDatabase.FOOD_GROW[type] * Mods.growth, 0.0, 100.0);
         for (var k = 0; k < 3; k++) {
             eng.particle(f.x + f.face * 12, f.y, Util.rf(-20.0, 20.0), Util.rf(-25.0, 5.0), 0.5, ItemDatabase.FOOD_COLOR[type], 0);
         }

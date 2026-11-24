@@ -2,7 +2,7 @@ import Toybox.Lang;
 
 // Trophy Room: 31 badges checked against stats after relevant events.
 module AchievementSystem {
-    const COUNT = 31;
+    const COUNT = 33;
 
     const A_RUNS = 0;
     const A_KM = 1;          // meters
@@ -22,13 +22,15 @@ module AchievementSystem {
     const A_LEAGUE = 15;
     const A_LONG = 16;       // meters
     const A_QUESTS = 17;
+    const A_RACEDAY = 18;
+    const A_EVENTS = 19;
 
     const NAME = ["First Splash", "Warm Up", "Pace Setter", "Half Way", "Centurion", "Ultra Tank",
                   "Ocean Crosser", "Regular", "Dedicated", "Step Hunter", "Step Master", "Consistent",
                   "Unstoppable", "Collector", "Curator", "Fishdex Master", "First Hatch", "Hatchery",
                   "Metamorph", "Matchmaker", "Rare Find", "Five Stars", "Interior Designer",
                   "Grand Aquarium", "Bubble Ace", "Deep Diver", "Champion", "Gold League",
-                  "Abyss League", "Half Marathon", "Quest Hunter"];
+                  "Abyss League", "Half Marathon", "Quest Hunter", "Race Day Hero", "Festival Fan"];
     const DESC = ["Finish your first run", "Run 5 km in total", "Run 25 km in total", "Run 50 km in total",
                   "Run 100 km in total", "Run 250 km in total", "Run 500 km in total", "Complete 10 runs",
                   "Complete 50 runs", "10,000 steps in a day", "20,000 steps in a day", "2 consistent weeks",
@@ -36,11 +38,12 @@ module AchievementSystem {
                   "Hatch an egg", "Hatch 10 eggs", "Evolve a fish", "Breed a pair", "Find a color variant",
                   "Reach a 5-star tank", "Own 8 decorations", "Max aquarium level", "Score 30 in Bubble Pop",
                   "Reach depth 5 in Treasure Dive", "Win 5 fish races", "Reach Gold league",
-                  "Reach Abyss league", "Run 21.1 km in one go", "Complete 25 quests"];
-    const TYPE = [0, 1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 3, 3, 4, 4, 4, 5, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17];
+                  "Reach Abyss league", "Run 21.1 km in one go", "Complete 25 quests",
+                  "Run 5 km+ on your race day", "Finish 5 event quests"];
+    const TYPE = [0, 1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 3, 3, 4, 4, 4, 5, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18, 19];
     const TARGET = [1, 5000, 25000, 50000, 100000, 250000, 500000, 10, 50, 10000, 20000, 2, 8, 10, 20, 36,
-                    1, 10, 1, 1, 1, 5, 8, 5, 30, 5, 5, 2, 4, 21100, 25];
-    const PEARLS = [1, 1, 2, 2, 3, 5, 8, 1, 3, 1, 2, 2, 5, 2, 3, 8, 1, 3, 2, 2, 2, 3, 2, 5, 2, 2, 3, 3, 6, 5, 3];
+                    1, 10, 1, 1, 1, 5, 8, 5, 30, 5, 5, 2, 4, 21100, 25, 1, 5];
+    const PEARLS = [1, 1, 2, 2, 3, 5, 8, 1, 3, 1, 2, 2, 5, 2, 3, 8, 1, 3, 2, 2, 2, 3, 2, 5, 2, 2, 3, 3, 6, 5, 3, 6, 4];
 
     function value(eng, type) {
         var s = eng.stats;
@@ -61,6 +64,8 @@ module AchievementSystem {
         if (type == A_RACE) { return s["raceW"]; }
         if (type == A_LEAGUE) { return s["lgBest"]; }
         if (type == A_LONG) { return s["long"]; }
+        if (type == A_RACEDAY) { return s["rday"]; }
+        if (type == A_EVENTS) { return s["evq"]; }
         return s["quests"];
     }
 

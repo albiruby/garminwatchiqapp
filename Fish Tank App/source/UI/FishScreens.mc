@@ -62,7 +62,7 @@ class FishProfileScreen extends Screen {
         var tag = FishDatabase.SYN[sp];
         var out = [
             [FishDatabase.RARITY_NAME[rar] + " " + FishDatabase.HABITAT[FishDatabase.HAB[sp]],
-             SpriteData.VARIANT_NAME[f.colorVariant()] + (f.giant() ? " giant" : "") + (f.evo ? " - evolved" : ""),
+             (f.edition() > 0 ? EventSystem.NAME[f.edition() - 1] : SpriteData.VARIANT_NAME[f.colorVariant()]) + (f.giant() ? " giant" : "") + (f.evo ? " - evolved" : ""),
              IconKit.FISH, [sp, f.evo, f.variant], FishDatabase.RARITY_COLOR[rar]],
             ["Level " + f.level().toString(), f.stageName() + " - " + f.fxp.toNumber().toString() + " fish XP", IconKit.GRID, SpriteData.ICON_STAR, null],
             ["Fed " + f.sat.toNumber().toString() + "%  Joy " + f.hap.toNumber().toString() + "%", "Health " + f.hp.toNumber().toString() + "%", IconKit.GRID, SpriteData.ICON_HEART, null],

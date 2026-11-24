@@ -191,6 +191,11 @@ class MinimalRenderer extends AquariumRenderer {
         var cols = FishDatabase.COLORS[sp];
         var body = cols[0];
         var fin = cols[3];
+        var ed = f.edition();
+        if (ed > 0) {
+            body = PixelKit.lerpColor(body, EventSystem.COL_A[ed - 1], 0.65);
+            fin = PixelKit.lerpColor(fin, EventSystem.COL_B[ed - 1], 0.7);
+        }
         var v = f.colorVariant();
         if (v == 1) { body = PixelKit.hueRotate(body, 150); fin = PixelKit.hueRotate(fin, 150); }
         else if (v == 2) { body = PixelKit.lerpColor(body, 0xFFD84A, 0.5); fin = PixelKit.lerpColor(fin, 0xFFD84A, 0.5); }

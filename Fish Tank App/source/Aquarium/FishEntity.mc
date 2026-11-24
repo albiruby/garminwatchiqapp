@@ -78,6 +78,11 @@ class FishEntity {
         return variant & 3;
     }
 
+    // Event edition id (0 = none), see EventSystem.edition.
+    function edition() {
+        return (variant >> 3) & 15;
+    }
+
     function giant() {
         return (variant & 4) != 0;
     }

@@ -64,9 +64,10 @@ module SpriteData {
         _pal = {};
     }
 
-    // Palette for a fish: color variant (0-3) then effect (0 none, 1 unwell, 2+theme dimmed).
+    // Palette for a fish: event edition (variant bits 3-6), color variant (bits 0-1), then
+    // effect (0 none, 1 unwell, 2+theme dimmed).
     function palette(sp, evo, variant, effect) {
-        var k = ((key(sp, evo) * 4 + (variant & 3)) * 8) + effect;
+        var k = ((key(sp, evo) * 128 + (variant & 123)) * 8) + effect;
         var p = _pal.get(k);
         if (p != null) { return p; }
         var spr = _cache.get(key(sp, evo));
@@ -74,8 +75,13 @@ module SpriteData {
         var base = spr[:pal];
         p = new [base.size()];
         var v = variant & 3;
+        var ed = (variant >> 3) & 15;
         for (var i = 0; i < base.size(); i++) {
             var c = base[i];
+            if (ed > 0 && i != P_K && i != P_W && i != P_E) {
+                var fin = i == P_F || i == P_A;
+                c = PixelKit.lerpColor(c, fin ? EventSystem.COL_B[ed - 1] : EventSystem.COL_A[ed - 1], fin ? 0.7 : 0.65);
+            }
             if (i != P_K && i != P_W && i != P_E) {
                 if (v == 1) { c = PixelKit.hueRotate(c, 150); }
                 else if (v == 2) { c = PixelKit.lerpColor(c, 0xFFD84A, 0.5); }

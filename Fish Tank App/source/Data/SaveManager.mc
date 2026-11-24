@@ -12,10 +12,12 @@ import Toybox.Lang;
 //   lg league, wk consistency week, rc run coins per day, dd fallback distance,
 //   egg incubator, eb egg bag, brd breeding, mg mini-game limits, la low animation,
 //   tf tap-to-feed, tu tutorial step, exp expedition regions announced
+// v3 adds: evp event quest progress, bd birthday [month, day], race race day, lrc last race
+//   reward day, hs Hijri date correction in days
 // Fish v2: [species, satiety, happiness, health, growth, fishXp, variant, evolved, raceSkill, id]
 module SaveManager {
     const KEY = "tank";
-    const VERSION = 2;
+    const VERSION = 3;
 
     function defaults() {
         return {
@@ -28,7 +30,8 @@ module SaveManager {
             "stp" => [0, 0], "ds" => {}, "q" => {}, "ach" => newAch(),
             "lg" => {}, "wk" => {}, "rc" => [0, 0], "dd" => [0, 0],
             "egg" => [], "eb" => [], "brd" => [], "mg" => {},
-            "la" => false, "tf" => true, "tu" => 0, "exp" => 0
+            "la" => false, "tf" => true, "tu" => 0, "exp" => 0,
+            "evp" => {}, "bd" => [], "race" => 0, "lrc" => -999, "hs" => 0
         };
     }
 
@@ -47,7 +50,8 @@ module SaveManager {
     function newStats() {
         return {"km" => 0, "runs" => 0, "dur" => 0, "long" => 0, "pace" => 0, "b5" => 0, "b10" => 0,
                 "ac" => 0, "hatch" => 0, "evo" => 0, "breed" => 0, "var" => 0, "steps" => 0,
-                "quests" => 0, "raceW" => 0, "bub" => 0, "dive" => 0, "streak" => 0, "lgBest" => 0};
+                "quests" => 0, "raceW" => 0, "bub" => 0, "dive" => 0, "streak" => 0, "lgBest" => 0,
+                "evq" => 0, "rday" => 0, "yr" => {}};
     }
 
     function migrate(d) {
@@ -107,7 +111,7 @@ module SaveManager {
         var ds = newStats();
         var sk = ds.keys();
         for (var i = 0; i < sk.size(); i++) {
-            if (!stt.hasKey(sk[i])) { stt.put(sk[i], 0); }
+            if (!stt.hasKey(sk[i])) { stt.put(sk[i], ds[sk[i]]); }
         }
         d.put("v", VERSION);
         return d;

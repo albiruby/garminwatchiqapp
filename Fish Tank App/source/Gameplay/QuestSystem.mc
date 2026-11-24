@@ -87,6 +87,7 @@ module QuestSystem {
     }
 
     function event(eng, type, amount) {
+        EventSystem.event(eng, type, amount);
         if (eng.preview != null || eng.quests.get("di") == null) { return; }
         if (type == Q_STEPS) { refreshSteps(eng); return; }
         var q = eng.quests;

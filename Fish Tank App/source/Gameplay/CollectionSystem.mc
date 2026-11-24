@@ -87,6 +87,14 @@ module CollectionSystem {
             if (r < w[i]) { rar = i; break; }
             r -= w[i];
         }
+        // Deep Current: half the time, try a Frozen / Deep Sea fish of this rarity first
+        if (Mods.deep && Util.rnd(2) == 0) {
+            var deepOpts = [];
+            for (var sp = 0; sp < FishDatabase.COUNT; sp++) {
+                if (FishDatabase.RARITY[sp] == rar && FishDatabase.HAB[sp] >= 3 && FishDatabase.REGION[sp] <= ExpeditionSystem.unlocked(eng)) { deepOpts.add(sp); }
+            }
+            if (deepOpts.size() > 0) { return deepOpts[Util.rnd(deepOpts.size())]; }
+        }
         // fall back to a lower rarity if nothing of this rarity is reachable yet
         while (rar >= 0) {
             var opts = [];
@@ -103,6 +111,7 @@ module CollectionSystem {
 
     function rollVariant(pct) {
         var v = 0;
+        pct = pct * Mods.variantMul;
         if (Util.rnd(100) < pct) { v = 1 + Util.rnd(3); }
         if (Util.rnd(100) < pct / 2) { v = v | 4; }   // giant
         return v;
@@ -170,11 +179,19 @@ module CollectionSystem {
                a.stage() == 2 && b.stage() == 2 && a.hap >= 60 && b.hap >= 60;
     }
 
+    function breedCost() {
+        return Mods.breedFast ? BREED_COST / 2 : BREED_COST;
+    }
+
+    function breedHours() {
+        return Mods.breedFast ? BREED_HOURS / 2 : BREED_HOURS;
+    }
+
     function breedReason(eng, a) {
         if (eng.breed.size() > 0) { return "Already breeding"; }
         if (a.stage() != 2) { return "Must be an adult"; }
         if (a.hap < 60) { return "Needs 60% happiness"; }
-        if (eng.coins < BREED_COST) { return "Needs " + BREED_COST.toString() + " coins"; }
+        if (eng.coins < breedCost()) { return "Needs " + breedCost().toString() + " coins"; }
         var any = false;
         for (var i = 0; i < eng.fish.size(); i++) { if (canPair(a, eng.fish[i])) { any = true; } }
         if (!any) { return "No happy adult partner of the same habitat"; }
@@ -182,10 +199,10 @@ module CollectionSystem {
     }
 
     function startBreed(eng, a, b) {
-        if (!canPair(a, b) || eng.coins < BREED_COST) { return; }
-        eng.coins -= BREED_COST;
-        eng.breed = [a.id, b.id, Time.now().value() + BREED_HOURS * 3600];
-        eng.toast("Breeding started - eggs in " + BREED_HOURS.toString() + "h", 0xFF8BEF);
+        if (!canPair(a, b) || eng.coins < breedCost()) { return; }
+        eng.coins -= breedCost();
+        eng.breed = [a.id, b.id, Time.now().value() + breedHours() * 3600];
+        eng.toast("Breeding started - eggs in " + breedHours().toString() + "h", 0xFF8BEF);
         eng.save();
     }
 

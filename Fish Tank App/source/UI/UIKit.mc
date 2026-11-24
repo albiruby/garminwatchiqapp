@@ -80,8 +80,8 @@ module IconKit {
                 var dark = new [pal.size()];
                 for (var i = 0; i < dark.size(); i++) { dark[i] = i == 0 ? 0x0E1830 : 0x23314F; }
                 pal = dark;
-            } else if ((arg[2] & 3) != 0) {
-                var p = SpriteData.palette(sp, evo, arg[2] & 3, 0);
+            } else if ((arg[2] & 123) != 0) {
+                var p = SpriteData.palette(sp, evo, arg[2], 0);
                 if (p != null) { pal = p; }
             }
             PixelKit.drawSprite(dc, spr, pal, cx, cy, s, false, false);
