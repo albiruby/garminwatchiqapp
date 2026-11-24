@@ -52,7 +52,7 @@ module SaveManager {
         return {"km" => 0, "runs" => 0, "dur" => 0, "long" => 0, "pace" => 0, "b5" => 0, "b10" => 0,
                 "ac" => 0, "hatch" => 0, "evo" => 0, "breed" => 0, "var" => 0, "steps" => 0,
                 "quests" => 0, "raceW" => 0, "bub" => 0, "dive" => 0, "streak" => 0, "lgBest" => 0,
-                "evq" => 0, "rday" => 0, "yr" => {}, "tpm" => 0, "fkm" => 0};
+                "evq" => 0, "rday" => 0, "yr" => {}, "tpm" => 0, "fkm" => 0, "rmax" => 0};
     }
 
     function migrate(d) {
@@ -98,13 +98,26 @@ module SaveManager {
             }
         }
 
+        // Missing values, and values of the wrong kind (a damaged or hand-edited save),
+        // fall back to defaults: Monkey C cannot catch a type error, so one bad value would
+        // otherwise crash the app on every start.
         var def = defaults();
         var keys = def.keys();
         for (var i = 0; i < keys.size(); i++) {
-            if (!d.hasKey(keys[i]) || d[keys[i]] == null) {
-                d.put(keys[i], def[keys[i]]);
+            var k = keys[i];
+            var v = d.get(k);
+            if (v == null || !sameKind(v, def[k])) {
+                d.put(k, def[k]);
+            } else if (def[k] instanceof Number && !(v instanceof Number)) {
+                d.put(k, v.toNumber());
             }
         }
+        // fixed-size arrays the code indexes directly
+        d.put("dp", fitArray(d["dp"], 6, -1));
+        d.put("fd", fitArray(d["fd"], 3, 0));
+        d.put("rc", fitArray(d["rc"], 2, 0));
+        d.put("stp", fitArray(d["stp"], 2, 0));
+        if (d["dd"].size() < 2) { d.put("dd", [0, 0, 0]); }
         // grow arrays that gained entries in later versions
         d.put("dx", padArray(d["dx"], FishDatabase.COUNT));
         d.put("ach", padArray(d["ach"], AchievementSystem.COUNT));
@@ -112,10 +125,27 @@ module SaveManager {
         var ds = newStats();
         var sk = ds.keys();
         for (var i = 0; i < sk.size(); i++) {
-            if (!stt.hasKey(sk[i])) { stt.put(sk[i], ds[sk[i]]); }
+            var v = stt.get(sk[i]);
+            if (v == null || !sameKind(v, ds[sk[i]])) { stt.put(sk[i], ds[sk[i]]); }
         }
         d.put("v", VERSION);
         return d;
+    }
+
+    function sameKind(v, def) {
+        if (def instanceof Dictionary) { return v instanceof Dictionary; }
+        if (def instanceof Array) { return v instanceof Array; }
+        if (def instanceof Boolean) { return v instanceof Boolean; }
+        if (def instanceof String) { return v instanceof String; }
+        return v instanceof Number || v instanceof Float || v instanceof Long || v instanceof Double;
+    }
+
+    // Exactly n entries: extra ones dropped, missing ones filled with `fill`.
+    function fitArray(a, n, fill) {
+        if (a.size() == n) { return a; }
+        var out = new [n];
+        for (var i = 0; i < n; i++) { out[i] = i < a.size() ? a[i] : fill; }
+        return out;
     }
 
     function padArray(a, n) {

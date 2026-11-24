@@ -28,6 +28,10 @@ module QuestSystem {
         var day = TimeUtil.today();
         var week = TimeUtil.weekOf(day);
         var q = eng.quests;
+        if (!valid(q)) {
+            q = {};
+            eng.quests = q;
+        }
         if (q.get("d") == null || day > q["d"]) {
             q.put("d", day);
             q.put("di", pick(day * 31 + 7, DAILY.size()));
@@ -40,6 +44,23 @@ module QuestSystem {
         }
         refreshSteps(eng);
         refreshRuns(eng);
+    }
+
+    // Quest indices point into DAILY / WEEKLY; a save from a build with longer tables (or a
+    // damaged one) would index past the end and crash every screen that lists quests.
+    function valid(q) {
+        if (q.get("d") == null) { return true; }
+        var di = q.get("di");
+        var wi = q.get("wi");
+        var dp = q.get("dp");
+        var wp = q.get("wp");
+        if (!(di instanceof Array) || !(wi instanceof Array) || !(dp instanceof Array) || !(wp instanceof Array)) { return false; }
+        if (di.size() != 3 || wi.size() != 3 || dp.size() != 3 || wp.size() != 3) { return false; }
+        for (var i = 0; i < 3; i++) {
+            if (!(di[i] instanceof Number) || di[i] < 0 || di[i] >= DAILY.size()) { return false; }
+            if (!(wi[i] instanceof Number) || wi[i] < 0 || wi[i] >= WEEKLY.size()) { return false; }
+        }
+        return true;
     }
 
     function isRunType(type) {

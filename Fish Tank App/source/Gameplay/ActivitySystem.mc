@@ -33,6 +33,12 @@ module ActivitySystem {
     const FAST_PACE = 390;              // s/km: "Run under 6:30 /km" quests
     const BATCH_CARDS = 3;              // this many runs found at once share one summary card
     const LOG_DAYS = 14;                // days kept in the per-day run log
+    const PAY_PER_TICK = 2;             // runs paid per frame: a long backlog never trips the watchdog
+    // Some firmware reports activity start times from the FIT epoch (1989-12-31) instead of
+    // the Unix epoch. No real run on these watches starts before 2010, so such a value is
+    // shifted. Without this every run would look 20 years old and never be paid.
+    const UNIX_2010 = 1262304000;
+    const FIT_EPOCH = 631065600;
 
     function historySupported() {
         return (Toybox has :UserProfile) && (UserProfile has :getUserActivityHistory);
@@ -110,16 +116,54 @@ module ActivitySystem {
         eng.scanIt = null;
         eng.pendingRuns = [];
         eng.scanLog = {};
+        eng.payQ = null;
+        eng.scanDone = false;
         eng.scanFrom = firstCountedDay(eng);
-        if (Preview.ON || !historySupported()) { return; }
+        initMark(eng);
+        if (Preview.ON || !historySupported()) {
+            eng.scanDone = true;
+            return;
+        }
         try {
             eng.scanIt = UserProfile.getUserActivityHistory();
         } catch (e) {
             eng.scanIt = null;
         }
+        if (eng.scanIt == null) { eng.scanDone = true; }
+    }
+
+    // stats["rmax"]: start of the newest paid run. The history is read in full on every
+    // scan and all unpaid runs are paid oldest first, so any run starting at or before it
+    // is already paid. This holds even after the ledger has been trimmed. Saves from 1.0.0
+    // take it from the ledger once.
+    function initMark(eng) {
+        var st = eng.stats;
+        var now = TimeUtil.now();
+        if (st["rmax"] > now + 86400) { st["rmax"] = now; }   // a run recorded on a wrong clock
+        if (st["rmax"] > 0) { return; }
+        var ks = eng.tx.keys();
+        var best = 0;
+        for (var i = 0; i < ks.size(); i++) {
+            var k = ks[i];
+            if (k.length() > 1 && k.substring(0, 1).equals("r") && "0123456789".find(k.substring(1, 2)) != null) {
+                var v = k.substring(1, k.length()).toNumber();
+                if (v != null && v > best && v <= now + 86400) { best = v; }
+            }
+        }
+        st["rmax"] = best;
+    }
+
+    function startOf(a) {
+        var st = a.startTime.value();
+        if (st < UNIX_2010) { st += FIT_EPOCH; }
+        return st;
     }
 
     function stepScan(eng) {
+        if (eng.payQ != null) {
+            payStep(eng, PAY_PER_TICK);
+            return;
+        }
         if (eng.scanIt == null) { return; }
         for (var k = 0; k < SCAN_PER_TICK; k++) {
             var a = null;
@@ -130,7 +174,7 @@ module ActivitySystem {
             }
             if (a == null) {
                 eng.scanIt = null;
-                finishScan(eng);
+                queueScan(eng);
                 return;
             }
             consider(eng, a);
@@ -140,8 +184,9 @@ module ActivitySystem {
     function consider(eng, a) {
         if (a.type == null || a.startTime == null || a.distance == null) { return; }
         if (a.type != Activity.SPORT_RUNNING) { return; }
-        var st = a.startTime.value();
+        var st = startOf(a);
         if (TimeUtil.dayOf(st) < eng.scanFrom) { return; }
+        if (st > TimeUtil.now() + 86400) { return; }   // clock trouble: not a real run (yet)
         if (st < TimeUtil.now() - MAX_RUN_AGE_DAYS * 86400) { return; }
         var dur = a.duration != null ? a.duration.value() : 0;
         if (a.distance < MIN_RUN_M || dur < MIN_RUN_S) { return; }
@@ -153,11 +198,18 @@ module ActivitySystem {
             var fast = dur * 1000 / a.distance <= FAST_PACE ? 1 : 0;
             eng.scanLog.put(day, [e[0] + a.distance, e[1] + 1, e[2] + fast]);
         }
-        if (RewardSystem.done(eng, "r" + st.toString())) { return; }
+        if (st <= eng.stats["rmax"] || RewardSystem.done(eng, "r" + st.toString())) { return; }
         eng.pendingRuns.add([st, a.distance, dur]);
     }
 
+    // Pays everything the scan found at once (unit tests; the app pays over ticks).
     function finishScan(eng) {
+        queueScan(eng);
+        payStep(eng, 1000000);
+    }
+
+    // Sorts the found runs and queues them; stepScan pays PAY_PER_TICK of them per frame.
+    function queueScan(eng) {
         var runs = eng.pendingRuns;
         // oldest first, so streaks and "first run of the week" are judged in order
         for (var i = 1; i < runs.size(); i++) {
@@ -169,29 +221,41 @@ module ActivitySystem {
             }
             runs[j + 1] = cur;
         }
+        eng.pendingRuns = [];
+        eng.payQ = runs;
+        eng.payI = 0;
+        eng.paySum = [0, 0, 0, false];     // coins, meters, runs, any from before install
+    }
+
+    function payStep(eng, max) {
+        var runs = eng.payQ;
+        if (runs == null) { return; }
         // Many runs at once (first open, or after days away): one summary card, not a stack.
         var quiet = runs.size() >= BATCH_CARDS;
-        var coins = 0;
-        var meters = 0;
-        var n = 0;
-        var early = false;
-        for (var i = 0; i < runs.size(); i++) {
-            var paid = payRunQ(eng, runs[i][0], runs[i][1], runs[i][2], quiet);
+        var s = eng.paySum;
+        var k = 0;
+        while (eng.payI < runs.size() && k < max) {
+            var r = runs[eng.payI];
+            eng.payI += 1;
+            k += 1;
+            var paid = payRunQ(eng, r[0], r[1], r[2], quiet);
             if (paid >= 0) {
-                coins += paid;
-                meters += runs[i][1];
-                n += 1;
-                if (eng.installTime > 0 && runs[i][0] < eng.installTime) { early = true; }
+                s[0] += paid;
+                s[1] += r[1];
+                s[2] += 1;
+                if (eng.installTime > 0 && r[0] < eng.installTime) { s[3] = true; }
             }
         }
-        if (quiet && n > 0) {
-            var lines = [n.toString() + " runs  -  " + fmtKm(meters) + " km", "Quests and trophies updated"];
-            if (early) { lines.add("Includes runs from before install"); }
-            RewardSystem.card(eng, "RUNS FOUND", "+" + coins.toString() + " coins", lines,
+        if (eng.payI < runs.size()) { return; }
+        eng.payQ = null;
+        if (quiet && s[2] > 0) {
+            var lines = [s[2].toString() + " runs  -  " + fmtKm(s[1]) + " km", "Quests and trophies updated"];
+            if (s[3]) { lines.add("Includes runs from before install"); }
+            RewardSystem.card(eng, "RUNS FOUND", "+" + s[0].toString() + " coins", lines,
                 RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);
         }
-        eng.pendingRuns = [];
         mergeLog(eng);
+        eng.scanDone = true;
         if (runs.size() > 0) {
             checkKm(eng);
             ExpeditionSystem.check(eng);
@@ -237,10 +301,13 @@ module ActivitySystem {
         var st = eng.stats;
         var pace = dur * 1000 / meters;                // seconds per km
         var isPr = st["pace"] > 0 && pace < st["pace"];
-        var p = payout(meters, eng.streakWeeks(), firstOfWeek, isPr, paidToday, Mods.runMul);
+        // event bonuses of the day the run happened, not of the day it is read
+        var mul = day == TimeUtil.today() ? Mods.runMul : EventSystem.runMulOn(eng, day);
+        var p = payout(meters, eng.streakWeeks(), firstOfWeek, isPr, paidToday, mul);
         var coins = p[0];
 
         RewardSystem.grant(eng, tx, coins, 0, 0, meters / 100);
+        if (start > st["rmax"]) { st["rmax"] = start; }
         if (firstOfWeek) { RewardSystem.mark(eng, "rw" + week.toString()); }
         eng.rc = [day, paidToday + coins];
 
@@ -325,7 +392,9 @@ module ActivitySystem {
         }
         if (steps >= ACTIVE_STEPS) { markActive(eng, day); }
 
-        if (info.distance != null && fallbackMode(eng)) { creditDaily(eng, day, info.distance / 100); }
+        // only once this session's history scan is done: on the day of the first run the
+        // run would otherwise be paid twice (as daily distance, then as a run)
+        if (info.distance != null && eng.scanDone && fallbackMode(eng)) { creditDaily(eng, day, info.distance / 100); }
     }
 
     // Distance credit shared by runs and the fallback: total distance, year log, weekly

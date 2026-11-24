@@ -39,7 +39,7 @@ class EventsScreen extends Screen {
             var start = e.events[i][1];
             var q = EventSystem.QUEST[id];
             var p = EventSystem.progress(e, id, start);
-            var done = RewardSystem.done(e, "eq" + EventSystem.key(id, start));
+            var done = RewardSystem.done(e, "eq" + EventSystem.key(e, id, start));
             var left = start + EventSystem.LEN[id] - today;
             var prog = q[0] == QuestSystem.Q_RUN_KM ? ActivitySystem.fmtKm(p) + "/" + ActivitySystem.fmtKm(q[1]) + " km"
                                                    : p.toString() + "/" + q[1].toString();

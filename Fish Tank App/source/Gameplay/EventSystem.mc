@@ -120,7 +120,7 @@ module EventSystem {
         for (var i = 0; i < eng.events.size(); i++) {
             var id = eng.events[i][0];
             var start = eng.events[i][1];
-            var tx = "es" + id.toString() + "_" + start.toString();
+            var tx = "es" + key(eng, id, start);
             if (RewardSystem.done(eng, tx)) { continue; }
             RewardSystem.grant(eng, tx, GIFT[id], 0, 0, 0);
             var q = QUEST[id];
@@ -143,8 +143,21 @@ module EventSystem {
         return e == 0 ? null : NAME[e - 1] + " edition";
     }
 
-    function key(id, start) {
+    // Ledger / progress id of one occurrence. Ramadan and Eid are keyed by their date
+    // before the user's Hijri correction, so changing the correction in Settings moves the
+    // event but can never open it (gift, quest, edition egg) a second time.
+    function key(eng, id, start) {
+        var k = KIND[id];
+        if (k == K_RAMADAN || k == K_EID) { start -= eng.hijriShift; }
         return id.toString() + "_" + start.toString();
+    }
+
+    // Run-coin multiplier of the events running on `day`.
+    function runMulOn(eng, day) {
+        var ev = activeOn(eng, day);
+        var mul = 1.0;
+        for (var i = 0; i < ev.size(); i++) { mul = mul * RUN[ev[i][0]] / 100.0; }
+        return mul;
     }
 
     // Quest progress from gameplay (called through QuestSystem.event).
@@ -162,7 +175,7 @@ module EventSystem {
             if (q[0] != type) { continue; }
             var start = eng.events[i][1];
             if (day != null && (day < start || day >= start + LEN[id])) { continue; }
-            var k = key(id, start);
+            var k = key(eng, id, start);
             var v = eng.evp.get(k);
             v = (v == null ? 0 : v) + amount;
             eng.evp.put(k, v);
@@ -178,7 +191,7 @@ module EventSystem {
     }
 
     function progress(eng, id, start) {
-        var v = eng.evp.get(key(id, start));
+        var v = eng.evp.get(key(eng, id, start));
         return v == null ? 0 : v;
     }
 

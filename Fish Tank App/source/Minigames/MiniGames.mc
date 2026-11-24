@@ -1,6 +1,7 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
+import Toybox.System;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
@@ -20,6 +21,8 @@ class MiniGameView extends WatchUi.View {
     var resultLine = "";
     var _timer = null;
     var t = 0.0;
+    var rewarded = false;   // this round pays (a daily play was used when it started)
+    var _last = 0;
 
     function initialize() {
         View.initialize();
@@ -27,6 +30,7 @@ class MiniGameView extends WatchUi.View {
 
     function onShow() as Void {
         if (_timer == null) { _timer = new Timer.Timer(); }
+        _last = 0;
         _timer.start(method(:onTick), 80, true);
     }
 
@@ -34,9 +38,16 @@ class MiniGameView extends WatchUi.View {
         if (_timer != null) { _timer.stop(); }
     }
 
+    // Game time follows the real clock, so a slow frame does not stretch a timed round;
+    // a pause (notification, hidden view) is capped so nothing jumps.
     function onTick() as Void {
-        t += 0.08;
-        if (phase == P_PLAY) { update(0.08); }
+        var now = System.getTimer();
+        var dt = _last > 0 ? (now - _last) / 1000.0 : 0.08;
+        _last = now;
+        if (dt > 0.2) { dt = 0.2; }
+        if (dt < 0.01) { dt = 0.01; }
+        t += dt;
+        if (phase == P_PLAY) { update(dt); }
         else { warm(); }
         WatchUi.requestUpdate();
     }
@@ -62,12 +73,13 @@ class MiniGameView extends WatchUi.View {
     function start() {
         phase = P_PLAY;
         t = 0.0;
+        rewarded = Preview.ON ? false : Globals.engine.startGame(gameId);
     }
 
     // Pays through the engine's daily limit and shows the result card.
     function finish(title, coins, xp, line) {
         phase = P_RESULT;
-        var paid = Globals.engine.finishGame(gameId, coins, xp);
+        var paid = Globals.engine.finishGame(gameId, coins, xp, rewarded);
         resultTitle = title;
         resultBig = paid && coins > 0 ? "+" + coins.toString() + " coins" : (paid ? "No coins" : "Practice round");
         resultLine = paid ? line : "Daily rewards used - come back tomorrow";
@@ -381,8 +393,7 @@ class TreasureDiveView extends MiniGameView {
         if (reached > e.stats["dive"]) { e.stats["dive"] = reached; }
         var coins = cleared ? loot + 20 : loot / 2;
         if (coins > 80) { coins = 80; }
-        var paid = e.gamesLeft(gameId) > 0;
-        if (paid && pearlsFound > 0) { e.pearls += pearlsFound; }
+        if (rewarded && pearlsFound > 0) { e.pearls += pearlsFound; }
         var line = cleared ? "Full dive bonus +20" : "Eels took half the loot";
         if (pearlsFound > 0) { line = line + ", +" + pearlsFound.toString() + " pearl"; }
         finish(cleared ? "TREASURE FOUND" : "SURFACED AT DEPTH " + reached.toString(), coins, 5 + reached * 2, line);

@@ -6,6 +6,9 @@ import Toybox.Lang;
 module RewardSystem {
     const KEEP_DAYS = 120;
     const MAX_ENTRIES = 500;
+    // Run ids ("r<start>", "rw<week>") stay longer than the history scan looks back
+    // (ActivitySystem.MAX_RUN_AGE_DAYS), even when the ledger is trimmed hard.
+    const RUN_KEEP_DAYS = 100;
     // One-time rewards that must never be paid again, so they are never pruned:
     // distance milestones, achievements, expedition regions, tutorial, tank anniversary.
     const PERMANENT = ["km", "a", "ex", "tut"];
@@ -55,11 +58,18 @@ module RewardSystem {
         var ks = eng.tx.keys();
         for (var i = 0; i < ks.size(); i++) {
             var d = eng.tx[ks[i]];
-            if (d != null && today - d > keep && !permanent(ks[i])) {
+            var lim = (keep < RUN_KEEP_DAYS && runKey(ks[i])) ? RUN_KEEP_DAYS : keep;
+            if (d != null && today - d > lim && !permanent(ks[i])) {
                 eng.tx.remove(ks[i]);
                 eng.txRev += 1;
             }
         }
+    }
+
+    // "r1732400000" (a paid run) or "rw2864" (first run of a week).
+    function runKey(k) {
+        if (k.length() < 2 || !k.substring(0, 1).equals("r")) { return false; }
+        return "0123456789w".find(k.substring(1, 2)) != null;
     }
 
     function card(eng, title, big, lines, iconKind, iconArg, col) {

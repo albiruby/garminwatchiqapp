@@ -97,6 +97,7 @@ v1.1.0
 - Running quests count each run on the day it was run
 - Activity Journal shows this week's and today's distance
 - Smoother animation: the frame rate adapts to your watch, no more hitch every minute
+- Stability: a long backlog of runs, a wrong watch date or a damaged save no longer cause problems
 ```
 ID:
 ```
@@ -105,6 +106,7 @@ v1.1.0
 - Quest lari menghitung setiap lari di hari lari itu dilakukan
 - Activity Journal menampilkan jarak minggu ini dan hari ini
 - Animasi lebih mulus: frame rate menyesuaikan jam, tidak ada lagi tersendat tiap menit
+- Stabilitas: banyak lari yang tertunda, tanggal jam yang salah atau data save rusak tidak lagi bermasalah
 ```
 
 ## What's New (v1.0.0)
@@ -149,6 +151,8 @@ v1.0.0 - Rilis pertama
   open FISH TANK: after onboarding a RUN FOUND card appears and "Run 2 km" / "Go for 1 run" are done.
   Activity > "This week" shows the week's runs.
 - [ ] v1.1.0: watch the tank for 2 minutes: no stutter at the minute mark, motion stays even.
+- [ ] v1.1.0: start a mini-game, press BACK mid-round: Games shows one play fewer.
+- [ ] v1.1.0: Settings > Ramadan / Eid dates, cycle the shift during an event: no second gift.
 - [ ] Developer portal > Upload an App > `bin\FishTank-v1.1.0.iq`.
 - [ ] Title, descriptions (EN + ID), What's New, category, images from the table above.
 - [ ] Permission note is in the description (UserProfile: activity history).

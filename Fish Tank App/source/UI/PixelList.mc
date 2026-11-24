@@ -57,14 +57,23 @@ class PixelListView extends WatchUi.View {
         if (_timer != null) { _timer.stop(); }
     }
 
+    // Redraws only when something changed (a message timed out, a sprite got built):
+    // a static list redrawn 8 times a second was battery spent on nothing.
     function onTick() as Void {
-        if (_flashT > 0) { _flashT -= 1; }
+        var dirty = false;
+        if (_flashT > 0) {
+            _flashT -= 1;
+            if (_flashT == 0) { dirty = true; }
+        }
         // generate one missing fish sprite per tick for visible rows
         for (var k = -1; k <= 1; k++) {
             var i = sel + k;
-            if (i >= 0 && i < rows.size() && !IconKit.warm(rows[i][2], rows[i][3])) { break; }
+            if (i >= 0 && i < rows.size() && !IconKit.warm(rows[i][2], rows[i][3])) {
+                dirty = true;
+                break;
+            }
         }
-        WatchUi.requestUpdate();
+        if (dirty) { WatchUi.requestUpdate(); }
     }
 
     function refresh() {

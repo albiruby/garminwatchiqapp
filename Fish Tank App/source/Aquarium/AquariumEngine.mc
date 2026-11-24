@@ -75,6 +75,10 @@ class AquariumEngine {
     var scanIt = null;
     var scanFrom = 0;            // first local day whose runs count (ActivitySystem.firstCountedDay)
     var scanLog = null;          // runs per day seen by the current scan (ActivitySystem.mergeLog)
+    var scanDone = false;        // this session's history scan and payments are finished
+    var payQ = null;             // runs found by the scan, paid a few per tick
+    var payI = 0;
+    var paySum = null;
     var pendingRuns;
     var events;                  // [[eventId, startDay], ...] active today
     var visitor = null;          // the week's visiting fish (not part of the tank)
@@ -88,6 +92,7 @@ class AquariumEngine {
     var _savedTxRev = -1;        // ledger revision last written to storage
     var _minutes = 0;
     var _job = 0;                // minute work spread over the next ticks (see tick)
+    var _pruneDue = false;
 
     function initialize() {
         fish = [];
@@ -132,6 +137,7 @@ class AquariumEngine {
 
         var now = Time.now().value();
         if (onboarded && installTime == 0) { installTime = now; }
+        if (onboarded && !Preview.ON) { sanitizeClock(now); }
         if (!Preview.ON && onboarded && lastSeen > 0) {
             var el = now - lastSeen;
             if (el > 60) {
@@ -148,14 +154,37 @@ class AquariumEngine {
         HabitatSystem.refresh(self);
         EventSystem.refresh(self);
         if (onboarded && !Preview.ON) {
-            RewardSystem.prune(self);
-            EventSystem.prune(self, TimeUtil.today());
+            _pruneDue = true;            // on the first tick: onStart already does a lot
             periodic();
             ExpeditionSystem.check(self);
             if (rewardAvailable()) { claimReward(); }
             ActivitySystem.backfillSteps(self);
             ActivitySystem.beginScan(self);
         }
+    }
+
+    // Day and week markers only move forward (setting the clock back must not pay twice).
+    // But if the watch once ran with a date far in the future (a reset before it synced),
+    // those markers would block gifts, quests and the league until that date. Markers more
+    // than 2 days / 1 week ahead of the real date are pulled back to today.
+    function sanitizeClock(now) {
+        var today = TimeUtil.today();
+        var week = TimeUtil.weekOf(today);
+        if (installTime > now + 2 * 86400) { installTime = now; }
+        if (rewardDay > today + 2) { rewardDay = today; }
+        var qd = quests.get("d");
+        var qw = quests.get("w");
+        if ((qd != null && qd > today + 2) || (qw != null && qw > week + 1)) { quests = {}; }
+        var wkk = wk.get("k");
+        if (wkk != null && wkk > week + 1) { wk = {}; }
+        var lw = league.get("w");
+        if (lw != null && lw > week + 1) {
+            league = {"w" => week, "s" => 0, "t" => league.get("t") == null ? 0 : league["t"], "h" => league.get("h") == null ? [] : league["h"]};
+        }
+        if (breed.size() >= 3 && breed[2] > now + CollectionSystem.BREED_HOURS * 3600 + 3600) {
+            breed[2] = now + CollectionSystem.breedHours() * 3600;
+        }
+        if (race > 0 && race > today + 400) { race = 0; }
     }
 
     function fromDict(d) {
@@ -211,6 +240,7 @@ class AquariumEngine {
         var fa = d["f"];
         for (var i = 0; i < fa.size(); i++) {
             var a = fa[i];
+            if (!(a instanceof Array) || a.size() < 5 || !(a[0] instanceof Number)) { continue; }
             if (a[0] >= 0 && a[0] < FishDatabase.COUNT) {
                 var f = new FishEntity(a);
                 if (f.id == 0) { f.id = nid; nid += 1; }
@@ -264,6 +294,8 @@ class AquariumEngine {
         cards = [];
         infoFish = null;
         scanIt = null;
+        payQ = null;
+        pendingRuns = [];
         setStyle(style);
         sceneDirty = true;
     }
@@ -516,6 +548,10 @@ class AquariumEngine {
             _minuteAcc = 0.0;
             _minutes += 1;
             _job = 1;
+        } else if (_pruneDue) {
+            _pruneDue = false;
+            RewardSystem.prune(self);
+            EventSystem.prune(self, TimeUtil.today());
         } else {
             ActivitySystem.stepScan(self);
             if (achDirty) {
@@ -840,20 +876,28 @@ class AquariumEngine {
         return MiniGameRules.DAILY - (used == null ? 0 : used);
     }
 
-    // Records a finished game, pays coins only while daily plays remain.
-    function finishGame(game, coinsWon, xpWon) {
+    // A rewarded play is used up when the game starts, so leaving a bad round with BACK
+    // and retrying cannot turn every round into a win. Returns true if this round pays.
+    function startGame(game) {
         var left = gamesLeft(game);
+        if (left <= 0) { return false; }
         var used = mg.get(game);
         mg.put(game, (used == null ? 0 : used) + 1);
+        save();
+        return true;
+    }
+
+    // Records a finished game; `rewarded` is what startGame returned for it.
+    function finishGame(game, coinsWon, xpWon, rewarded) {
         QuestSystem.event(self, QuestSystem.Q_GAME, 1);
-        if (left > 0) {
+        if (rewarded) {
             if (game.equals(Mods.spotlight)) { coinsWon = coinsWon * 2; }
             coins += coinsWon;
             addXp(xpWon);
         }
         achDirty = true;
         save();
-        return left > 0;
+        return rewarded;
     }
 
     // ---- effects --------------------------------------------------------------

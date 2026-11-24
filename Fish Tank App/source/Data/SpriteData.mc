@@ -64,6 +64,27 @@ module SpriteData {
         _pal = {};
     }
 
+    // Drops sprites the tank does not show. Browsing the Fishdex or the shop builds up to
+    // 72 sprites; keeping them all for the rest of the session wastes memory the watch may
+    // not have. Missing ones are rebuilt one per frame when needed again.
+    function trim(eng) {
+        var keep = {};
+        for (var i = 0; i < eng.fish.size(); i++) {
+            var k = key(eng.fish[i].sp, eng.fish[i].evo);
+            var s = _cache.get(k);
+            if (s != null) { keep.put(k, s); }
+        }
+        if (eng.visitor != null) {
+            var kv = key(eng.visitor.sp, false);
+            var sv = _cache.get(kv);
+            if (sv != null) { keep.put(kv, sv); }
+        }
+        if (keep.size() < _cache.size()) {
+            _cache = keep;
+            _pal = {};
+        }
+    }
+
     // Palette for a fish: event edition (variant bits 3-6), color variant (bits 0-1), then
     // effect (0 none, 1 unwell, 2+theme dimmed).
     function palette(sp, evo, variant, effect) {

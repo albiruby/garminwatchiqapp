@@ -52,9 +52,11 @@ class FishTankView extends WatchUi.View {
             if (eng.needsOnboarding()) { beginOnboarding(); }
             else if (eng.cards.size() > 0) { mode = Modes.CARD; }
         } else if (eng.needsOnboarding() && !onboarding) {
+            SpriteData.trim(eng);
             beginOnboarding();
-        } else if (mode == Modes.PLAY && eng.cards.size() > 0) {
-            mode = Modes.CARD;
+        } else {
+            SpriteData.trim(eng);       // back from menus: free sprites only they needed
+            if (mode == Modes.PLAY && eng.cards.size() > 0) { mode = Modes.CARD; }
         }
     }
 
@@ -78,8 +80,7 @@ class FishTankView extends WatchUi.View {
     // frames. Motion advances by the real time between frames, so speed is the same at any
     // frame rate and a late frame no longer makes the fish jump or stall.
     const ACTIVE_S = 20.0;              // 15 fps only within this long after input
-    const IDLE_S = 90.0;                // then 5 fps while nobody touches the watch
-    const SLEEP_S = 300.0;              // and 2 fps after 5 minutes
+    const IDLE_S = 90.0;                // then 2 fps while nobody touches the watch
     var _tier = 1;
     var _interval = 0;
     var _lastMs = 0;
@@ -89,15 +90,13 @@ class FishTankView extends WatchUi.View {
 
     // Low Animation Mode runs the tank at 2 frames per second.
     function applyTimer() {
+        // the display can time out while the app stays open, so idle frames cost battery
+        // for nothing: 2 fps after IDLE_S, as before
         var ms = 500;
-        if (!eng.lowAnim && _idle <= SLEEP_S) {
-            if (_idle > IDLE_S) {
-                ms = 200;
-            } else {
-                var t = _tier;
-                if (t == 0 && _idle > ACTIVE_S) { t = 1; }
-                ms = FramePace.TIERS[t];
-            }
+        if (!eng.lowAnim && _idle <= IDLE_S) {
+            var t = _tier;
+            if (t == 0 && _idle > ACTIVE_S) { t = 1; }
+            ms = FramePace.TIERS[t];
         }
         if (ms != _interval) {
             _interval = ms;
