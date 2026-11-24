@@ -1,0 +1,82 @@
+<settings>
+    <setting propertyKey="@Properties.Motif" title="@Strings.MotifTitle" prompt="@Strings.MotifStory">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.Motif0</listEntry>
+            <listEntry value="1">@Strings.Motif1</listEntry>
+            <listEntry value="2">@Strings.Motif2</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.Colorway" title="@Strings.ColorwayTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ColorGold</listEntry>
+            <listEntry value="1">@Strings.ColorBronze</listEntry>
+            <listEntry value="2">@Strings.ColorIndigo</listEntry>
+            <listEntry value="3">@Strings.ColorSogan</listEntry>
+            <listEntry value="4">@Strings.ColorCirebonBlue</listEntry>
+            <listEntry value="5">@Strings.ColorCirebonRed</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.Density" title="@Strings.DensityTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.DensityLow</listEntry>
+            <listEntry value="1">@Strings.DensityMid</listEntry>
+            <listEntry value="2">@Strings.DensityHigh</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.TimeStyle" title="@Strings.TimeStyleTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.TimeAnalog</listEntry>
+            <listEntry value="1">@Strings.TimeDigital</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.TopSlot" title="@Strings.TopTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.Top0</listEntry>
+            <listEntry value="1">@Strings.Top1</listEntry>
+            <listEntry value="2">@Strings.Top2</listEntry>
+            <listEntry value="3">@Strings.Top3</listEntry>
+            <listEntry value="4">@Strings.Top4</listEntry>
+            <listEntry value="5">@Strings.Top5</listEntry>
+            <listEntry value="6">@Strings.Top6</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.BottomSlot" title="@Strings.BottomTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.Bot0</listEntry>
+            <listEntry value="1">@Strings.Bot1</listEntry>
+            <listEntry value="2">@Strings.Bot2</listEntry>
+            <listEntry value="3">@Strings.Bot3</listEntry>
+            <listEntry value="4">@Strings.Bot4</listEntry>
+            <listEntry value="5">@Strings.Bot5</listEntry>
+            <listEntry value="6">@Strings.Bot6</listEntry>
+            <listEntry value="7">@Strings.Bot7</listEntry>
+            <listEntry value="8">@Strings.Bot8</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.LeftSlot" title="@Strings.LeftTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.Left0</listEntry>
+            <listEntry value="1">@Strings.Left1</listEntry>
+            <listEntry value="2">@Strings.Left2</listEntry>
+            <listEntry value="3">@Strings.Left3</listEntry>
+            <listEntry value="4">@Strings.Left4</listEntry>
+            <listEntry value="5">@Strings.Left5</listEntry>
+            <listEntry value="6">@Strings.Left6</listEntry>
+            <listEntry value="7">@Strings.Left7</listEntry>
+            <listEntry value="8">@Strings.Left8</listEntry>
+            <listEntry value="9">@Strings.Left9</listEntry>
+            <listEntry value="10">@Strings.Left10</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.RightSlot" title="@Strings.RightTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.Right0</listEntry>
+            <listEntry value="1">@Strings.Right1</listEntry>
+            <listEntry value="2">@Strings.Right2</listEntry>
+            <listEntry value="3">@Strings.Right3</listEntry>
+            <listEntry value="4">@Strings.Right4</listEntry>
+            <listEntry value="5">@Strings.Right5</listEntry>
+            <listEntry value="6">@Strings.Right6</listEntry>
+        </settingConfig>
+    </setting>
+</settings>

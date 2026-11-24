@@ -1,0 +1,25 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# Monkey C build output
+watchface/bin/
+watchface/source/gen/
+frameprobe/bin/
+datafield/bin/
+*.prg
+*.iq
+*.debug.xml
+
+# Local
+.env
+.env.local
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+next-env.d.ts
+.playwright-mcp/
+audit/
+watchface/designs/web/

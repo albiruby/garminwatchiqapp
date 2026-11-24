@@ -1,4 +1,0 @@
-project.manifest = manifest.xml
-
-base.sourcePath = sources
-base.resourcePath = resources

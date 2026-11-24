@@ -1,7 +1,0 @@
-<resources>
-    <fitContributions>
-        <fitField id="0" displayInChart="true" sortOrder="0" precision="0" chartTitle="@Strings.FitProjChart" dataLabel="@Strings.FitProjLabel" unitLabel="@Strings.FitUnitSec" fillColor="#4FD1C5" />
-        <fitField id="1" displayInChart="true" sortOrder="1" precision="0" chartTitle="@Strings.FitAheadChart" dataLabel="@Strings.FitAheadLabel" unitLabel="@Strings.FitUnitSec" fillColor="#2EE56B" />
-        <fitField id="2" displayInChart="true" sortOrder="2" precision="0" chartTitle="@Strings.FitNeedChart" dataLabel="@Strings.FitNeedLabel" unitLabel="@Strings.FitUnitSecKm" fillColor="#FF8A3D" />
-    </fitContributions>
-</resources>

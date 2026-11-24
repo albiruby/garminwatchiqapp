@@ -1,0 +1,253 @@
+{
+  "activityId": 25157631151,
+  "name": "Treadmill Running",
+  "startLocal": "2026-11-22T06:11:25.0",
+  "distanceM": 20182.28,
+  "timerSec": 6600.154,
+  "elapsedSec": 6600.154,
+  "movingSec": 6596.292,
+  "avgHR": 135,
+  "maxHR": 146,
+  "minHR": 91,
+  "calories": 632,
+  "steps": 17846,
+  "avgPower": 249,
+  "maxPower": 330,
+  "np": 250,
+  "ftp": 265,
+  "te": 2.4,
+  "anaerobicTE": 0,
+  "vo2": {
+    "first": 53.13408660888672,
+    "final": 53.61767578125
+  },
+  "recoveryTimeMin": 932,
+  "zonesHr": [
+    100.459,
+    6083.737,
+    415.62,
+    0,
+    0,
+    0,
+    0
+  ],
+  "zonesPower": [
+    0.458,
+    217.988,
+    2345.611,
+    2347.838,
+    1619.917,
+    68.003,
+    0,
+    0
+  ],
+  "zonesHrBounds": [
+    125,
+    143,
+    161,
+    175,
+    192,
+    208
+  ],
+  "zonesPowerBounds": [
+    173,
+    212,
+    238,
+    265,
+    305,
+    4000,
+    null,
+    null
+  ],
+  "laps": [
+    {
+      "n": 1,
+      "dist": 1000,
+      "timer": 336,
+      "hr": 125,
+      "hrMax": 137,
+      "power": 244,
+      "cadence": 79
+    },
+    {
+      "n": 2,
+      "dist": 1000,
+      "timer": 339,
+      "hr": 131,
+      "hrMax": 137,
+      "power": 235,
+      "cadence": 80
+    },
+    {
+      "n": 3,
+      "dist": 1000,
+      "timer": 348,
+      "hr": 133,
+      "hrMax": 139,
+      "power": 234,
+      "cadence": 80
+    },
+    {
+      "n": 4,
+      "dist": 1000,
+      "timer": 337,
+      "hr": 130,
+      "hrMax": 134,
+      "power": 241,
+      "cadence": 80
+    },
+    {
+      "n": 5,
+      "dist": 1000,
+      "timer": 321,
+      "hr": 130,
+      "hrMax": 135,
+      "power": 254,
+      "cadence": 81
+    },
+    {
+      "n": 6,
+      "dist": 1000,
+      "timer": 314,
+      "hr": 132,
+      "hrMax": 135,
+      "power": 260,
+      "cadence": 81
+    },
+    {
+      "n": 7,
+      "dist": 1000,
+      "timer": 338,
+      "hr": 134,
+      "hrMax": 140,
+      "power": 241,
+      "cadence": 81
+    },
+    {
+      "n": 8,
+      "dist": 1000,
+      "timer": 322,
+      "hr": 133,
+      "hrMax": 136,
+      "power": 253,
+      "cadence": 81
+    },
+    {
+      "n": 9,
+      "dist": 1000,
+      "timer": 327,
+      "hr": 133,
+      "hrMax": 137,
+      "power": 250,
+      "cadence": 81
+    },
+    {
+      "n": 10,
+      "dist": 1000,
+      "timer": 328,
+      "hr": 133,
+      "hrMax": 137,
+      "power": 248,
+      "cadence": 81
+    },
+    {
+      "n": 11,
+      "dist": 1000,
+      "timer": 319,
+      "hr": 134,
+      "hrMax": 138,
+      "power": 256,
+      "cadence": 81
+    },
+    {
+      "n": 12,
+      "dist": 1000,
+      "timer": 322,
+      "hr": 136,
+      "hrMax": 139,
+      "power": 252,
+      "cadence": 81
+    },
+    {
+      "n": 13,
+      "dist": 1000,
+      "timer": 328,
+      "hr": 137,
+      "hrMax": 140,
+      "power": 248,
+      "cadence": 81
+    },
+    {
+      "n": 14,
+      "dist": 1000,
+      "timer": 331,
+      "hr": 136,
+      "hrMax": 140,
+      "power": 246,
+      "cadence": 81
+    },
+    {
+      "n": 15,
+      "dist": 1000,
+      "timer": 321,
+      "hr": 138,
+      "hrMax": 141,
+      "power": 253,
+      "cadence": 81
+    },
+    {
+      "n": 16,
+      "dist": 1000,
+      "timer": 324,
+      "hr": 140,
+      "hrMax": 144,
+      "power": 251,
+      "cadence": 82
+    },
+    {
+      "n": 17,
+      "dist": 1000,
+      "timer": 321,
+      "hr": 139,
+      "hrMax": 144,
+      "power": 252,
+      "cadence": 82
+    },
+    {
+      "n": 18,
+      "dist": 1000,
+      "timer": 327,
+      "hr": 140,
+      "hrMax": 143,
+      "power": 248,
+      "cadence": 82
+    },
+    {
+      "n": 19,
+      "dist": 1000,
+      "timer": 315,
+      "hr": 141,
+      "hrMax": 146,
+      "power": 256,
+      "cadence": 81
+    },
+    {
+      "n": 20,
+      "dist": 1000,
+      "timer": 324,
+      "hr": 143,
+      "hrMax": 145,
+      "power": 252,
+      "cadence": 82
+    },
+    {
+      "n": 21,
+      "dist": 182.28,
+      "timer": 59,
+      "hr": 144,
+      "hrMax": 146,
+      "power": 246,
+      "cadence": 82
+    }
+  ]
+}

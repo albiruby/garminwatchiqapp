@@ -1,11 +1,51 @@
-# Build output (monkeyc)
-bin/
-
-# Signing keys never belong in the repo (this project uses one outside the folder)
+# ============ Secrets — never commit ============
+garmin-api-key.txt
 *.der
 *.pem
+*.pfx
+*.p12
+.env
+.env.*
+!.env.example
+.tokens/
+.garmin-tokens/
 
-# OS / editor
+# ============ Python ============
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+tests/test.log
+
+# ============ Node / Next.js ============
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# ============ Connect IQ build output ============
+bin/
+build/
+gen/
+*.prg
+*.prg.debug.xml
+*.iq
+*.debug.xml
+*.mir
+*.mcgen
+*.mbc
+keys/
+_backup/
+design-import/
+
+# ============ Logs / QA dumps ============
+.playwright-mcp/
+audit/
+
+# ============ OS / editor ============
 Thumbs.db
 .DS_Store
 .vscode/
