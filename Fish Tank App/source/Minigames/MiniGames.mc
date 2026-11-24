@@ -122,10 +122,13 @@ class MiniGameView extends WatchUi.View {
             var left = Globals.engine.gamesLeft(gameId);
             UIKit.text(dc, cx, 252, UIKit.font(0), left > 0 ? "TAP TO START" : "PRACTICE - TAP TO START", UIKit.ACCENT, UIKit.CENTER);
         } else {
-            UIKit.text(dc, cx, 146, UIKit.font(0), resultTitle, UIKit.GOLD, UIKit.CENTER);
-            UIKit.text(dc, cx, 190, UIKit.font(2), resultBig, 0xFFFFFF, UIKit.CENTER);
-            UIKit.text(dc, cx, 228, UIKit.font(0), UIKit.fit(dc, resultLine, UIKit.font(0), 250), UIKit.DIM, UIKit.CENTER);
-            UIKit.text(dc, cx, 258, UIKit.font(0), "TAP TO EXIT", UIKit.ACCENT, UIKit.CENTER);
+            // title, headline (largest font that fits), result line wrapped to 2 lines
+            var f0 = UIKit.font(0);
+            UIKit.lines(dc, cx, 122, f0, [UIKit.fit(dc, resultTitle, f0, 240)], UIKit.GOLD);
+            var big = UIKit.bestFit(dc, resultBig, [UIKit.font(2), UIKit.font(1), f0], 240, 1);
+            UIKit.lines(dc, cx, 152, big[0], big[1], 0xFFFFFF);
+            UIKit.lines(dc, cx, 198, f0, UIKit.wrap(dc, resultLine, f0, 240, 2), UIKit.DIM);
+            UIKit.text(dc, cx, 262, f0, "TAP TO EXIT", UIKit.ACCENT, UIKit.CENTER);
         }
     }
 

@@ -417,7 +417,9 @@ module SpriteData {
                        0x4FA3FF, 0x7FE7FF, 0x5EE36A, 0xC77DFF, 0xB0BEC5, 0x8B5A2B];
 
     const ICON_FEED = ["..kkkk..", ".kwwwwk.", ".kkkkkk.", ".kooook.", ".koyyok.", ".kooook.", ".kooook.", "..kkkk.."];
-    const ICON_CLEAN = ["......w.", ".....w.w", "......w.", ".kkkkkk.", "kyyyyyyk", "kydyydyk", "kyyyyyyk", ".kkkkkk."];
+    // Kitchen sponge: green scrub layer on yellow foam with pores, under soap bubbles (10x9).
+    const ICON_CLEAN = [".......c..", "......c.c.", "..c....c..", ".kkkkkkkk.", "kggggggggk",
+                        "kkkkkkkkkk", "kyydyyyydk", "kyyyydyyyk", ".kkkkkkkk."];
     const ICON_MENU = ["........", "wwwwwwww", "........", "........", "wwwwwwww", "........", "........", "wwwwwwww"];
     const ICON_COIN = ["..kkkk..", ".kYYyyk.", "kYyyyydk", "kYyddydk", "kYyddydk", "kyyyyydk", ".kyyddk.", "..kkkk.."];
     const ICON_HEART = [".rr.rr.", "rrrrrrr", "rrrrrrr", ".rrrrr.", "..rrr..", "...r..."];

@@ -25,10 +25,17 @@ module CollectionSystem {
         return eng.alv >= 3 ? 2 : 1;
     }
 
+    const BAG_MAX = 20;
+
     function addEgg(eng, type, fixedSp, varHint) {
         var egg = [type, EGG_KM[type].toFloat(), EGG_HOURS[type] * 3600, fixedSp, varHint];
         if (eng.eggs.size() < incubatorSlots(eng)) { eng.eggs.add(egg); }
-        else { eng.eggBag.add(egg); }
+        else if (eng.eggBag.size() < BAG_MAX) { eng.eggBag.add(egg); }
+        else {
+            // a full bag turns extra eggs into pearls instead of growing the save forever
+            eng.pearls += 1;
+            eng.toast("Egg bag full: +1 pearl instead", 0xF4F0FF);
+        }
     }
 
     function eggReady(egg) {

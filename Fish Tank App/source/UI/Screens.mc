@@ -502,7 +502,7 @@ class ActivityScreen extends Screen {
     }
 
     function footer() {
-        return ActivitySystem.historySupported() ? "Runs from your Run app" : "Paid from daily distance";
+        return ActivitySystem.fallbackMode(Globals.engine) ? "Counting daily distance" : "Runs from your Run app";
     }
 
     function rows() {
@@ -533,6 +533,8 @@ class ActivityScreen extends Screen {
             ["Best step day", Util.thousands(s["steps"]), IconKit.GRID, SpriteData.ICON_STEPS, null],
             ["Consistency", e.streakWeeks().toString() + " week streak - run bonus x" + (1.0 + 0.1 * (e.streakWeeks() > 5 ? 5 : e.streakWeeks())).format("%.1f"), IconKit.GRID, SpriteData.ICON_STAR, null],
             ["Coins from activity", s["ac"].toString() + "c", IconKit.GRID, SpriteData.ICON_COIN, 0xFFC93C],
+            ["Daily distance credit", s["fkm"] > 0 ? ActivitySystem.fmtKm(s["fkm"]) + " km (50%)" : "Off - runs come from history",
+             IconKit.GRID, SpriteData.ICON_STEPS, null],
             ["How it works", "100 m = 1 coin, max 300/day", IconKit.NONE, null, 0x8EA3C0]
         ];
     }
@@ -554,7 +556,8 @@ class GamesScreen extends Screen {
 
     function sub(game, best) {
         var left = Globals.engine.gamesLeft(game);
-        return (left > 0 ? left.toString() + " plays left" : "Practice only") + best;
+        var s = (left > 0 ? left.toString() + " plays left" : "Practice only") + best;
+        return game.equals(Mods.spotlight) ? "2x COINS - " + s : s;
     }
 
     function rows() {

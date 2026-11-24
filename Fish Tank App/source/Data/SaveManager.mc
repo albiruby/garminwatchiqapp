@@ -51,7 +51,7 @@ module SaveManager {
         return {"km" => 0, "runs" => 0, "dur" => 0, "long" => 0, "pace" => 0, "b5" => 0, "b10" => 0,
                 "ac" => 0, "hatch" => 0, "evo" => 0, "breed" => 0, "var" => 0, "steps" => 0,
                 "quests" => 0, "raceW" => 0, "bub" => 0, "dive" => 0, "streak" => 0, "lgBest" => 0,
-                "evq" => 0, "rday" => 0, "yr" => {}};
+                "evq" => 0, "rday" => 0, "yr" => {}, "tpm" => 0, "fkm" => 0};
     }
 
     function migrate(d) {
@@ -124,10 +124,24 @@ module SaveManager {
         return out;
     }
 
+    // Storage values are limited to 32 KB each, so the growing parts of the save live
+    // under their own keys. Older single-key saves still load (the parts are just missing).
+    const PART_KEYS = ["tank_tx", "tank_x"];
+    const PARTS = [["tx"], ["stt", "ds", "q", "lg", "wk", "evp", "egg", "eb", "mg", "ach", "dx"]];
+
     function load() {
         var d = null;
         try {
             d = Application.Storage.getValue(KEY);
+            if (d != null && d instanceof Dictionary) {
+                for (var i = 0; i < PART_KEYS.size(); i++) {
+                    var p = Application.Storage.getValue(PART_KEYS[i]);
+                    if (p != null && p instanceof Dictionary) {
+                        var ks = p.keys();
+                        for (var j = 0; j < ks.size(); j++) { d.put(ks[j], p[ks[j]]); }
+                    }
+                }
+            }
         } catch (e) {
             d = null;
         }
@@ -137,15 +151,32 @@ module SaveManager {
         return migrate(d);
     }
 
+    // Returns false if anything could not be written (storage full).
     function save(d) {
+        var core = {};
+        var ks = d.keys();
+        for (var i = 0; i < ks.size(); i++) { core.put(ks[i], d[ks[i]]); }
         try {
-            Application.Storage.setValue(KEY, d);
+            for (var i = 0; i < PART_KEYS.size(); i++) {
+                var part = {};
+                var names = PARTS[i];
+                for (var j = 0; j < names.size(); j++) {
+                    if (d.hasKey(names[j])) {
+                        part.put(names[j], d[names[j]]);
+                        core.remove(names[j]);
+                    }
+                }
+                Application.Storage.setValue(PART_KEYS[i], part);
+            }
+            Application.Storage.setValue(KEY, core);
         } catch (e) {
-            // Storage full or unavailable: keep playing, the next save retries.
+            return false;
         }
+        return true;
     }
 
     function clear() {
         Application.Storage.deleteValue(KEY);
+        for (var i = 0; i < PART_KEYS.size(); i++) { Application.Storage.deleteValue(PART_KEYS[i]); }
     }
 }

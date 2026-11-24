@@ -41,7 +41,7 @@ module LeagueSystem {
         ensure(eng);
         var w = TimeUtil.weekOf(TimeUtil.today());
         var lg = eng.league;
-        if (lg["w"] == w) { return; }
+        if (w <= lg["w"]) { return; }   // forward only
         var score = lg["s"] + HabitatSystem.stars(eng) * 10;
         var tgt = target(eng);
         var t = lg["t"];

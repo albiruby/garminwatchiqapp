@@ -64,11 +64,8 @@ module AquariumHUD {
             var sp = eng.spongePos();
             var sx = sp[0].toNumber();
             var sy = sp[1].toNumber();
-            PixelKit.rect(dc, 0x1A1424, sx - 22, sy - 14, 44, 28);
-            PixelKit.rect(dc, 0xFFD84A, sx - 20, sy - 12, 40, 24);
-            PixelKit.rect(dc, 0xC9A020, sx - 12, sy - 6, 4, 4);
-            PixelKit.rect(dc, 0xC9A020, sx + 4, sy + 2, 4, 4);
-            PixelKit.rect(dc, 0x5EE36A, sx - 20, sy + 6, 40, 6);
+            // the dock sponge, scrubbing (green side against the glass)
+            IconKit.draw(dc, IconKit.GRID, SpriteData.ICON_CLEAN, sx, sy, 5);
         }
     }
 
@@ -124,7 +121,7 @@ module AquariumHUD {
                 dc.drawRoundedRectangle(cx - cell / 2, cy - cell / 2, cell, cell, 10);
                 dc.setPenWidth(1);
             }
-            icon(dc, icons[i], cx - 12, cy - 12, 3);
+            IconKit.draw(dc, IconKit.GRID, icons[i], cx, cy, 3);
         }
 
         // food stock badge on the Feed cell (flakes are unlimited, so no badge)
@@ -210,15 +207,25 @@ module AquariumHUD {
         bar(dc, cx + 14, by, 32, 3, eng.clean, levelColor(eng.clean));
     }
 
+    // Short messages sit on one line; longer ones wrap onto a second line instead of
+    // running past the panel.
     function drawToast(dc, s, col) {
-        var w = dc.getTextWidthInPixels(s, font(0)) + 24;
-        if (w > 300) { w = 300; }
+        var f = font(0);
+        var ls = UIKit.wrap(dc, s, f, 250, 2);
+        var tw = 0;
+        for (var i = 0; i < ls.size(); i++) {
+            var lw = dc.getTextWidthInPixels(ls[i], f);
+            if (lw > tw) { tw = lw; }
+        }
+        var w = tw + 28;
+        var h = dc.getFontHeight(f) * ls.size() + 10;
+        var x0 = 195 - w / 2;
         dc.setColor(PANEL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(195 - w / 2, 88, w, 32, 12);
+        dc.fillRoundedRectangle(x0, 86, w, h, 12);
         dc.setColor(col, Graphics.COLOR_TRANSPARENT);
         dc.setPenWidth(1);
-        dc.drawRoundedRectangle(195 - w / 2, 88, w, 32, 12);
-        text(dc, 195, 104, font(0), s, col);
+        dc.drawRoundedRectangle(x0, 86, w, h, 12);
+        UIKit.lines(dc, 195, 91, f, ls, col);
     }
 
     function drawInfo(dc, f) {
@@ -227,8 +234,8 @@ module AquariumHUD {
         dc.fillRoundedRectangle(95, 80, 200, 72, 14);
         dc.setColor(FishDatabase.RARITY_COLOR[rar], Graphics.COLOR_TRANSPARENT);
         dc.drawRoundedRectangle(95, 80, 200, 72, 14);
-        text(dc, 195, 97, font(0), f.name() + (f.syn ? " +" : ""), FishDatabase.RARITY_COLOR[rar]);
-        text(dc, 195, 118, font(0), "LV " + f.level().toString() + " " + f.stageName() + " - " + FishDatabase.PERS_NAME[f.personality()], DIM);
+        text(dc, 195, 97, font(0), UIKit.fit(dc, f.name() + (f.syn ? " +" : ""), font(0), 180), FishDatabase.RARITY_COLOR[rar]);
+        text(dc, 195, 118, font(0), UIKit.fit(dc, "LV " + f.level().toString() + " " + f.stageName() + " - " + FishDatabase.PERS_NAME[f.personality()], font(0), 180), DIM);
         bar(dc, 115, 138, 50, 5, f.sat, 0xFF9F43);
         bar(dc, 170, 138, 50, 5, f.hap, 0xFF5A7A);
         bar(dc, 225, 138, 50, 5, f.hp, 0x5EE36A);
@@ -265,43 +272,67 @@ module AquariumHUD {
     }
 
     // ---- reward / info cards ----------------------------------------------------------
+    // Card size follows its content. Text never runs off the card: the headline shrinks to
+    // the small font or wraps onto a second line, detail lines wrap, and the card grows (up
+    // to what fits inside the round glass at its width).
+    const CARD_W = 260;
+    const CARD_TEXT_W = 226;
+    const CARD_MAX_H = 280;
+
     function drawCard(dc, eng) {
         if (eng.cards.size() == 0) { return; }
         var c = eng.cards[0];
         var col = c[:c];
-        var x0 = 70;
-        var y0 = 92;
-        var cw = 250;
-        var ch = 226;
+        var cx = dc.getWidth() / 2;
+        var f0 = font(0);
+        var lh0 = dc.getFontHeight(f0);
+
+        // ---- measure ----
+        var title = UIKit.fit(dc, c[:t], f0, CARD_TEXT_W);
+        var big = UIKit.bestFit(dc, c[:b], [font(1), f0], CARD_TEXT_W, 2);
+        var bigH = dc.getFontHeight(big[0]) * big[1].size();
+        var details = [];
+        var src = c[:l];
+        for (var i = 0; i < src.size(); i++) {
+            var w = UIKit.wrap(dc, src[i], f0, CARD_TEXT_W, 2);
+            for (var j = 0; j < w.size(); j++) { details.add(w[j]); }
+        }
+        var fixed = 14 + lh0 + 4 + 56 + 6 + bigH + 6 + 8 + lh0 + 12;
+        while (details.size() > 0 && fixed + details.size() * lh0 > CARD_MAX_H) {
+            details = details.slice(0, details.size() - 1);
+        }
+        var ch = fixed + details.size() * lh0;
+        var x0 = cx - CARD_W / 2;
+        var y0 = dc.getHeight() / 2 + 4 - ch / 2;
+
+        // ---- draw ----
         dc.setColor(PANEL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(x0, y0, cw, ch, 18);
+        dc.fillRoundedRectangle(x0, y0, CARD_W, ch, 18);
         dc.setPenWidth(2);
         dc.setColor(col, Graphics.COLOR_TRANSPARENT);
-        dc.drawRoundedRectangle(x0, y0, cw, ch, 18);
+        dc.drawRoundedRectangle(x0, y0, CARD_W, ch, 18);
         dc.setPenWidth(1);
-        text(dc, 195, y0 + 22, font(0), c[:t], col);
+
+        var y = UIKit.lines(dc, cx, y0 + 14, f0, [title], col) + 4;
 
         var bob = (Math.sin(eng.t * 3) * 3).toNumber();
         var kind = c[:i];
-        var iy = y0 + 70 + bob;
+        var iy = y + 28 + bob;
         if (kind == RewardSystem.IC_FISH) {
-            IconKit.draw(dc, IconKit.FISH, c[:a], 195, iy, 3);
+            IconKit.draw(dc, IconKit.FISH, c[:a], cx, iy, 3);
         } else if (kind == RewardSystem.IC_EGG) {
-            IconKit.draw(dc, IconKit.EGG, c[:a], 195, iy, 5);
+            IconKit.draw(dc, IconKit.EGG, c[:a], cx, iy, 5);
         } else if (kind == RewardSystem.IC_DECOR) {
-            IconKit.draw(dc, IconKit.DECOR, c[:a], 195, iy, 4);
+            IconKit.draw(dc, IconKit.DECOR, c[:a], cx, iy, 4);
         } else {
-            IconKit.draw(dc, IconKit.GRID, c[:a], 195, iy, 5);
+            IconKit.draw(dc, IconKit.GRID, c[:a], cx, iy, 5);
         }
+        y += 56 + 6;
 
-        var bf = font(1);
-        text(dc, 195, y0 + 120, bf, UIKit.fit(dc, c[:b], bf, cw - 30), 0xFFFFFF);
-        var lines = c[:l];
-        for (var i = 0; i < lines.size() && i < 3; i++) {
-            text(dc, 195, y0 + 148 + i * 20, font(0), UIKit.fit(dc, lines[i], font(0), cw - 30), DIM);
-        }
+        y = UIKit.lines(dc, cx, y, big[0], big[1], 0xFFFFFF) + 6;
+        y = UIKit.lines(dc, cx, y, f0, details, DIM) + 8;
         var more = eng.cards.size() > 1 ? "TAP  (" + (eng.cards.size() - 1).toString() + " more)" : "TAP TO CONTINUE";
-        text(dc, 195, y0 + ch - 16, font(0), more, col);
+        UIKit.lines(dc, cx, y, f0, [more], col);
     }
 
     // ---- build mode ---------------------------------------------------------------------

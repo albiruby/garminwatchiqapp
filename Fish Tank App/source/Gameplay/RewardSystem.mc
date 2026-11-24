@@ -5,6 +5,10 @@ import Toybox.Lang;
 // Reward cards are queued here and shown one by one on the tank screen.
 module RewardSystem {
     const KEEP_DAYS = 120;
+    const MAX_ENTRIES = 500;
+    // One-time rewards that must never be paid again, so they are never pruned:
+    // distance milestones, achievements, expedition regions, tutorial, tank anniversary.
+    const PERMANENT = ["km", "a", "ex", "tut"];
 
     // Card icon kinds
     const IC_GRID = 0;     // arg = icon rows (SpriteData.ICON_*)
@@ -33,13 +37,24 @@ module RewardSystem {
         return true;
     }
 
-    // Drops ledger entries older than KEEP_DAYS (run ids are also bounded by install time).
+    function permanent(k) {
+        for (var i = 0; i < PERMANENT.size(); i++) {
+            var p = PERMANENT[i];
+            if (k.length() >= p.length() && k.substring(0, p.length()).equals(p)) { return true; }
+        }
+        return false;
+    }
+
+    // Drops dated entries older than KEEP_DAYS. Runs older than
+    // ActivitySystem.MAX_RUN_AGE_DAYS (< KEEP_DAYS) are ignored by the scan, so a pruned
+    // run can never be paid again. Over MAX_ENTRIES, entries older than 30 days go too.
     function prune(eng) {
         var today = eng.dayKey();
+        var keep = eng.tx.size() > MAX_ENTRIES ? 30 : KEEP_DAYS;
         var ks = eng.tx.keys();
         for (var i = 0; i < ks.size(); i++) {
             var d = eng.tx[ks[i]];
-            if (d != null && today - d > KEEP_DAYS) { eng.tx.remove(ks[i]); }
+            if (d != null && today - d > keep && !permanent(ks[i])) { eng.tx.remove(ks[i]); }
         }
     }
 

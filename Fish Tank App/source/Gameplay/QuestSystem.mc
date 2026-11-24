@@ -28,12 +28,12 @@ module QuestSystem {
         var day = TimeUtil.today();
         var week = TimeUtil.weekOf(day);
         var q = eng.quests;
-        if (q.get("d") != day) {
+        if (q.get("d") == null || day > q["d"]) {
             q.put("d", day);
             q.put("di", pick(day * 31 + 7, DAILY.size()));
             q.put("dp", [0, 0, 0]);
         }
-        if (q.get("w") != week) {
+        if (q.get("w") == null || week > q["w"]) {
             q.put("w", week);
             q.put("wi", pick(week * 17 + 3, WEEKLY.size()));
             q.put("wp", [0, 0, 0]);

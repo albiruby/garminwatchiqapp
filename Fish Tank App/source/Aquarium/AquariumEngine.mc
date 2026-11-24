@@ -223,10 +223,20 @@ class AquariumEngine {
         };
     }
 
+    var saveWarned = false;
+
     function save() {
         if (Preview.ON || !onboarded) { return; }
         lastSeen = Time.now().value();
-        SaveManager.save(toDict());
+        if (!SaveManager.save(toDict())) {
+            // storage full: trim old records and try once more
+            RewardSystem.prune(self);
+            evp = {};
+            if (!SaveManager.save(toDict()) && !saveWarned) {
+                saveWarned = true;
+                toast("Watch storage full - progress not saved", 0xFF5A5A);
+            }
+        }
     }
 
     function resetAll() {
@@ -394,6 +404,15 @@ class AquariumEngine {
         } else if (Preview.MODE == 6) {
             RewardSystem.card(self, "EVENT", EventSystem.NAME[6], [EventSystem.DESC[6], "Quest: " + QuestSystem.label(0, 17000)],
                 RewardSystem.IC_FISH, [EventSystem.SPECIES[6], false, EventSystem.edition(6)], EventSystem.UI[6]);
+        } else if (Preview.MODE == 7 || Preview.MODE == 8) {
+            // long text on cards (readability check): 7 = weekly quest first, 8 = event quest
+            if (Preview.MODE == 7) {
+                RewardSystem.card(self, "WEEKLY QUEST", RewardSystem.summary(100, 1, 1), ["Hatch an egg - done!"],
+                    RewardSystem.IC_GRID, SpriteData.ICON_QUEST, 0x9BF08A);
+            }
+            RewardSystem.card(self, "EVENT QUEST DONE", EventSystem.NAME[10],
+                [RewardSystem.summary(EventSystem.QUEST_COINS, EventSystem.QUEST_PEARLS, 0), "+ Glowfish edition egg"],
+                RewardSystem.IC_EGG, 5, EventSystem.UI[10]);
         } else if (Preview.MODE == 4) {
             RewardSystem.card(self, "RUN REWARD", "+63 coins", ["5.2 km  -  28:14", "5:25 /km", "x1.2 bonus, 1st run of week +20"],
                 RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);
@@ -729,8 +748,9 @@ class AquariumEngine {
     }
 
     // ---- daily gift & progression -----------------------------------------------
+    // Only a later day counts: setting the clock back does not give another gift.
     function rewardAvailable() {
-        return onboarded && dayKey() != rewardDay;
+        return onboarded && dayKey() > rewardDay;
     }
 
     function nextStreak() {

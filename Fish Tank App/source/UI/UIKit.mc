@@ -128,6 +128,93 @@ module UIKit {
         return s + "..";
     }
 
+    // Word-wraps s into at most maxLines lines of maxW pixels. Only the last line is
+    // shortened with ".." if the text still does not fit.
+    function wrap(dc, s, f, maxW, maxLines) {
+        if (dc.getTextWidthInPixels(s, f) <= maxW) { return [s]; }
+        if (maxLines <= 1) { return [fit(dc, s, f, maxW)]; }
+        // Groups separated by two spaces ("+100 coins  +1 pearl  +1 key") are kept whole
+        // when every group fits on a line, so a reward never splits mid-phrase.
+        if (s.find("  ") != null) {
+            var groups = wrapGroups(dc, s, f, maxW);
+            if (groups != null && groups.size() <= maxLines) { return groups; }
+        }
+        var out = [];
+        var cur = "";
+        var rest = s;
+        while (rest.length() > 0) {
+            var sp = rest.find(" ");
+            var word = sp == null ? rest : rest.substring(0, sp);
+            rest = sp == null ? "" : rest.substring(sp + 1, rest.length());
+            if (word.length() == 0) { continue; }
+            var t = cur.length() == 0 ? word : cur + " " + word;
+            if (dc.getTextWidthInPixels(t, f) <= maxW || cur.length() == 0) {
+                cur = t;
+            } else {
+                out.add(cur);
+                cur = word;
+                if (out.size() == maxLines - 1) {
+                    // everything left goes on the last line
+                    cur = rest.length() > 0 ? cur + " " + rest : cur;
+                    rest = "";
+                }
+            }
+        }
+        if (cur.length() > 0) { out.add(cur); }
+        for (var i = 0; i < out.size(); i++) { out[i] = fit(dc, out[i], f, maxW); }
+        return out;
+    }
+
+    // Greedy line fill using "  "-separated groups; null if a single group is too wide.
+    function wrapGroups(dc, s, f, maxW) {
+        var out = [];
+        var cur = "";
+        var rest = s;
+        while (rest.length() > 0) {
+            var sp = rest.find("  ");
+            var g = sp == null ? rest : rest.substring(0, sp);
+            rest = sp == null ? "" : rest.substring(sp + 2, rest.length());
+            if (g.length() == 0) { continue; }
+            if (dc.getTextWidthInPixels(g, f) > maxW) { return null; }
+            var t = cur.length() == 0 ? g : cur + "  " + g;
+            if (dc.getTextWidthInPixels(t, f) <= maxW) { cur = t; }
+            else { out.add(cur); cur = g; }
+        }
+        if (cur.length() > 0) { out.add(cur); }
+        return out;
+    }
+
+    // Picks the largest of fonts[] that shows s within maxLines lines without truncation.
+    // Returns [font, lines].
+    function bestFit(dc, s, fonts, maxW, maxLines) {
+        for (var i = 0; i < fonts.size(); i++) {
+            var f = fonts[i];
+            if (dc.getTextWidthInPixels(s, f) <= maxW) { return [f, [s]]; }
+        }
+        for (var i = 0; i < fonts.size(); i++) {
+            var lines = wrap(dc, s, fonts[i], maxW, maxLines);
+            var cut = false;
+            for (var j = 0; j < lines.size(); j++) {
+                var l = lines[j];
+                if (l.length() >= 2 && l.substring(l.length() - 2, l.length()).equals("..")) { cut = true; }
+            }
+            if (!cut) { return [fonts[i], lines]; }
+        }
+        var last = fonts[fonts.size() - 1];
+        return [last, wrap(dc, s, last, maxW, maxLines)];
+    }
+
+    // Draws centred lines starting at y (line centres spaced by the font height).
+    // Returns the y just below the block.
+    function lines(dc, cx, y, f, ls, col) {
+        var lh = dc.getFontHeight(f);
+        dc.setColor(col, Graphics.COLOR_TRANSPARENT);
+        for (var i = 0; i < ls.size(); i++) {
+            dc.drawText(cx, y + lh / 2 + i * lh, f, ls[i], CENTER);
+        }
+        return y + lh * ls.size();
+    }
+
     function background(dc) {
         var w = dc.getWidth();
         var h = dc.getHeight();

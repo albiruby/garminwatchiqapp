@@ -22,10 +22,22 @@ module ActivitySystem {
     const WEEK_TARGET = 3;              // active days per week for the consistency streak
     const FALLBACK_M_PER_COIN = 200;
     const FALLBACK_CAP = 100;
+    const FALLBACK_AFTER_DAYS = 3;      // no run from history this long after install -> fallback
+    const FALLBACK_WEIGHT = 50;         // % of daily distance that counts as progress (it includes walking)
+    const MAX_RUN_AGE_DAYS = 90;        // older history entries are ignored (ledger keeps 120 days)
     const SCAN_PER_TICK = 6;
 
     function historySupported() {
         return (Toybox has :UserProfile) && (UserProfile has :getUserActivityHistory);
+    }
+
+    // Daily distance pays (coins and progress) when the watch cannot give us runs: no history
+    // API, or no run has arrived from history several days after install. The first real run
+    // switches it off for good.
+    function fallbackMode(eng) {
+        if (!historySupported()) { return true; }
+        if (eng.stats["runs"] > 0 || eng.installTime <= 0) { return false; }
+        return TimeUtil.today() - TimeUtil.dayOf(eng.installTime) >= FALLBACK_AFTER_DAYS;
     }
 
     // Coins for one run: 100 m = 1 coin, x1.1 per consistency week (max x1.5), x1.5 for
@@ -82,6 +94,7 @@ module ActivitySystem {
         if (a.type != Activity.SPORT_RUNNING) { return; }
         var st = a.startTime.value();
         if (st < eng.installTime) { return; }
+        if (st < TimeUtil.now() - MAX_RUN_AGE_DAYS * 86400) { return; }
         var dur = a.duration != null ? a.duration.value() : 0;
         if (a.distance < MIN_RUN_M || dur < MIN_RUN_S) { return; }
         if (RewardSystem.done(eng, "r" + st.toString())) { return; }
@@ -128,7 +141,6 @@ module ActivitySystem {
         if (firstOfWeek) { RewardSystem.mark(eng, "rw" + week.toString()); }
         eng.rc = [day, paidToday + coins];
 
-        st["km"] = st["km"] + meters;
         st["runs"] = st["runs"] + 1;
         st["dur"] = st["dur"] + dur;
         st["ac"] = st["ac"] + coins;
@@ -137,21 +149,12 @@ module ActivitySystem {
         if (meters >= 5000 && (st["b5"] == 0 || pace * 5 < st["b5"])) { st["b5"] = pace * 5; }
         if (meters >= 10000 && (st["b10"] == 0 || pace * 10 < st["b10"])) { st["b10"] = pace * 10; }
 
-        var yr = st["yr"];
-        var y = CalendarUtil.year(day);
-        var ye = yr.get(y);
-        yr.put(y, ye == null ? [meters, 1] : [ye[0] + meters, ye[1] + 1]);
-        WeeklySystem.onRun(eng, day, meters);
+        credit(eng, day, meters);
+        var ye = st["yr"].get(CalendarUtil.year(day));
+        ye[1] = ye[1] + 1;
         EventSystem.onRun(eng, day, meters);
-
-        var km = meters / 1000.0;
-        eng.tp += meters / 1000;
-        for (var i = 0; i < eng.fish.size(); i++) { eng.fish[i].fxp += km * 3; }
-        CollectionSystem.eggKm(eng, km);
-        QuestSystem.event(eng, QuestSystem.Q_RUN_KM, meters);
         QuestSystem.event(eng, QuestSystem.Q_RUNS, 1);
         if (pace <= 390) { QuestSystem.event(eng, QuestSystem.Q_PACE, 1); }
-        LeagueSystem.add(eng, meters / 100);
         markActive(eng, day);
 
         var lines = [fmtKm(meters) + " km  -  " + fmtTime(dur), fmtPace(pace) + " /km"];
@@ -210,20 +213,52 @@ module ActivitySystem {
         }
         if (steps >= ACTIVE_STEPS) { markActive(eng, day); }
 
-        // Devices without activity history: pay daily distance at a lower rate.
-        if (!historySupported() && info.distance != null) {
-            var meters = info.distance / 100;
-            if (eng.dd[0] != day) { eng.dd = [day, 0, 0]; }
-            var paidM = eng.dd[1];
-            var coinsToday = eng.dd.size() > 2 ? eng.dd[2] : 0;
-            var c = (meters - paidM) / FALLBACK_M_PER_COIN;
-            if (c + coinsToday > FALLBACK_CAP) { c = FALLBACK_CAP - coinsToday; }
-            if (c > 0) {
-                eng.coins += c;
-                eng.dd = [day, paidM + c * FALLBACK_M_PER_COIN, coinsToday + c];
-                eng.pop(195, 140, "+" + c.toString(), 0xFFC93C);
-            }
+        if (info.distance != null && fallbackMode(eng)) { creditDaily(eng, day, info.distance / 100); }
+    }
+
+    // Distance credit shared by runs and the fallback: total distance, year log, weekly
+    // visitor, training points, fish XP, eggs, running quests and league points.
+    function credit(eng, day, meters) {
+        var st = eng.stats;
+        st["km"] = st["km"] + meters;
+        var yr = st["yr"];
+        var y = CalendarUtil.year(day);
+        var ye = yr.get(y);
+        yr.put(y, ye == null ? [meters, 0] : [ye[0] + meters, ye[1]]);
+        WeeklySystem.onRun(eng, day, meters);
+        st["tpm"] = st["tpm"] + meters;
+        while (st["tpm"] >= 1000) {
+            st["tpm"] = st["tpm"] - 1000;
+            eng.tp += 1;
         }
+        var km = meters / 1000.0;
+        for (var i = 0; i < eng.fish.size(); i++) { eng.fish[i].fxp += km * 3; }
+        CollectionSystem.eggKm(eng, km);
+        QuestSystem.event(eng, QuestSystem.Q_RUN_KM, meters);
+        LeagueSystem.add(eng, meters / 100);
+    }
+
+    // Fallback: today's distance from the activity monitor, in 200 m units. Coins up to
+    // FALLBACK_CAP a day; progress at FALLBACK_WEIGHT % because it includes walking.
+    function creditDaily(eng, day, meters) {
+        if (eng.dd[0] != day) { eng.dd = [day, 0, 0]; }
+        var done = eng.dd[1];
+        var coinsToday = eng.dd.size() > 2 ? eng.dd[2] : 0;
+        var units = (meters - done) / FALLBACK_M_PER_COIN;
+        if (units <= 0) { return; }
+        var c = units;
+        if (c + coinsToday > FALLBACK_CAP) { c = FALLBACK_CAP - coinsToday; }
+        if (c < 0) { c = 0; }
+        eng.coins += c;
+        eng.dd = [day, done + units * FALLBACK_M_PER_COIN, coinsToday + c];
+        var progress = units * FALLBACK_M_PER_COIN * FALLBACK_WEIGHT / 100;
+        eng.stats["fkm"] = eng.stats["fkm"] + progress;
+        eng.stats["ac"] = eng.stats["ac"] + c;
+        credit(eng, day, progress);
+        if (c > 0) { eng.pop(195, 140, "+" + c.toString(), 0xFFC93C); }
+        checkKm(eng);
+        ExpeditionSystem.check(eng);
+        eng.achDirty = true;
     }
 
     function pruneDays(dict, today) {
@@ -241,7 +276,7 @@ module ActivitySystem {
             eng.wk = {"k" => w, "m" => 0, "s" => 0};
             return;
         }
-        if (wk["k"] == w) { return; }
+        if (w <= wk["k"]) { return; }   // forward only (clock set back: ignore)
         var s = wk["s"];
         if (bits(wk["m"]) >= WEEK_TARGET && wk["k"] == w - 1) { s += 1; }
         else { s = 0; }

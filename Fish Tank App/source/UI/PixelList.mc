@@ -150,11 +150,21 @@ class PixelListView extends WatchUi.View {
         var maxW = x1 - tx - 12;
         var col = r[4] == null ? 0xFFFFFF : r[4];
         if (big) {
-            var hasSub = r[1] != null;
-            var lf = UIKit.font(1);
-            UIKit.text(dc, tx, hasSub ? cy - 12 : cy, lf, UIKit.fit(dc, r[0], lf, maxW), col, UIKit.LEFT);
-            if (hasSub) {
-                UIKit.text(dc, tx, cy + 15, UIKit.font(0), UIKit.fit(dc, r[1], UIKit.font(0), maxW), UIKit.DIM, UIKit.LEFT);
+            // Label: large font if it fits, otherwise the small one. Sublabel: up to two
+            // lines. The block is centred vertically in the row.
+            var f0 = UIKit.font(0);
+            var lf = dc.getTextWidthInPixels(r[0], UIKit.font(1)) <= maxW ? UIKit.font(1) : f0;
+            var subs = r[1] == null ? [] : UIKit.wrap(dc, r[1], f0, maxW, 2);
+            var lh0 = dc.getFontHeight(f0);
+            if (subs.size() > 1 && lf != f0 && dc.getFontHeight(lf) + 2 * lh0 > hh - 4) { lf = f0; }
+            var lhl = dc.getFontHeight(lf);
+            var total = lhl + subs.size() * (lh0 - 3);
+            var y = cy - total / 2;
+            UIKit.text(dc, tx, y + lhl / 2, lf, UIKit.fit(dc, r[0], lf, maxW), col, UIKit.LEFT);
+            y += lhl;
+            for (var i = 0; i < subs.size(); i++) {
+                UIKit.text(dc, tx, y + (lh0 - 3) / 2, f0, subs[i], UIKit.DIM, UIKit.LEFT);
+                y += lh0 - 3;
             }
         } else {
             UIKit.text(dc, tx, cy, UIKit.font(0), UIKit.fit(dc, r[0], UIKit.font(0), maxW), PixelKit.lerpColor(col, 0x0B1226, 0.3), UIKit.LEFT);
@@ -162,15 +172,24 @@ class PixelListView extends WatchUi.View {
     }
 
     function drawFlash(dc, s) {
+        // one line near the bottom edge, or two lines moved up where the glass is wider
         var f = UIKit.font(0);
-        var w = dc.getTextWidthInPixels(s, f) + 24;
-        if (w > 260) { w = 260; s = UIKit.fit(dc, s, f, 236); }
-        var y = (dc.getHeight() * 0.86).toNumber();
+        var ls = UIKit.wrap(dc, s, f, 220, 2);
+        var tw = 0;
+        for (var i = 0; i < ls.size(); i++) {
+            var lw = dc.getTextWidthInPixels(ls[i], f);
+            if (lw > tw) { tw = lw; }
+        }
+        var w = tw + 24;
+        var lh = dc.getFontHeight(f);
+        var h = lh * ls.size() + 6;
+        var cy = ls.size() > 1 ? (dc.getHeight() * 0.82).toNumber() : (dc.getHeight() * 0.86).toNumber();
+        var x0 = dc.getWidth() / 2 - w / 2;
         dc.setColor(UIKit.PANEL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(dc.getWidth() / 2 - w / 2, y - 14, w, 28, 10);
+        dc.fillRoundedRectangle(x0, cy - h / 2, w, h, 10);
         dc.setColor(UIKit.GOLD, Graphics.COLOR_TRANSPARENT);
-        dc.drawRoundedRectangle(dc.getWidth() / 2 - w / 2, y - 14, w, 28, 10);
-        UIKit.text(dc, dc.getWidth() / 2, y, f, s, UIKit.GOLD, UIKit.CENTER);
+        dc.drawRoundedRectangle(x0, cy - h / 2, w, h, 10);
+        UIKit.lines(dc, dc.getWidth() / 2, cy - h / 2 + 3, f, ls, UIKit.GOLD);
     }
 }
 
