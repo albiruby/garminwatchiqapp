@@ -10,11 +10,19 @@ Premium race-pacing data field untuk Garmin Connect IQ, target awal **Forerunner
 - `ARCHITECTURE.md` — peta modul dan alur data
 - `ROADMAP.md`, `HARDWARE_TEST_CHECKLIST.md` — status dan rencana pengujian
 - `STORE_METADATA_DRAFT.md`, `STORE_UPLOAD_v2.2.0.md` — material publikasi store
-- `docs/store/` — aset Developer Portal (cover, hero, screen images)
-- `docs/screenshots/multi-device/` — screenshot simulator lintas perangkat
-- `docs/screenshots/v2.2.0/` — HUD/redesign terbaru + store shots
+- `Asset Developer Portal/` — aset Developer Portal (cover, hero, screen images)
+- `SS Multi Device - CIQ Simulator/` — screenshot simulator lintas perangkat
+- `SS Redesign UI/` — HUD/redesign terbaru (hero, store shots v2.2.0, multi-device)
 - `LogoRacePilot.png` — aset branding
 - `buildandsim.bat`, `RunSimulator.bat`, `start.bat` — helper build/simulator Windows
+
+## Galeri
+
+![RacePilot v2.2.0](<SS Redesign UI/Hero v2.2.0/HeroImage_v2.2.0.jpg>)
+
+| ![Projected finish](<SS Redesign UI/Store v2.2.0/01_projected_finish.jpg>) | ![Ahead / behind](<SS Redesign UI/Store v2.2.0/02_ahead_behind.jpg>) | ![Grid](<SS Redesign UI/Store v2.2.0/03_grid.jpg>) |
+|---|---|---|
+| ![AMOLED](<SS Redesign UI/Store v2.2.0/04_amoled.jpg>) | ![Edge](<SS Redesign UI/Store v2.2.0/05_edge.jpg>) | ![Forerunner 165](<SS Multi Device - CIQ Simulator/RacePilot_fr165_390x390.png>) |
 
 ## Build
 
