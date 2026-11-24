@@ -1,6 +1,6 @@
-# FISH TANK: Connect IQ Store listing (v1.0.0)
+# FISH TANK: Connect IQ Store listing (v1.1.0)
 
-Upload: `bin/FishTank-v1.0.0.iq` (2 watches: Forerunner 165, Forerunner 165 Music).
+Upload: `bin/FishTank-v1.1.0.iq` (2 watches: Forerunner 165, Forerunner 165 Music).
 Images: `docs/store/` (HERO, COVER, SCREEN_1 to SCREEN_5), all within portal limits.
 Masters: `docs/store/master/`. Regenerate: `tools\capture.ps1 ...`, then `python -I tools\compose-store.py`.
 
@@ -11,7 +11,7 @@ Masters: `docs/store/master/`. Regenerate: `tools\capture.ps1 ...`, then `python
 Rebuild the package:
 ```powershell
 $sdk = (Get-Content "$env:APPDATA\Garmin\ConnectIQ\current-sdk.cfg").Trim()
-& "$sdk\bin\monkeyc.bat" -e -r -f monkey.jungle -o bin\FishTank-v1.0.0.iq -y "$env:USERPROFILE\.Garmin\ConnectIQ\developer_key.der"
+& "$sdk\bin\monkeyc.bat" -e -r -f monkey.jungle -o bin\FishTank-v1.1.0.iq -y "$env:USERPROFILE\.Garmin\ConnectIQ\developer_key.der"
 ```
 
 ## App type & category
@@ -28,7 +28,7 @@ $sdk = (Get-Content "$env:APPDATA\Garmin\ConnectIQ\current-sdk.cfg").Trim()
 A pixel-art aquarium on your wrist that grows every time you run.
 
 RUN TO EARN
-Run with your watch's own Run app as usual. Open FISH TANK afterwards and each new run is paid once: 100 m = 1 coin, with bonuses for consistent weeks, long runs, your first run of the week and pace PRs. Daily step milestones (3k / 5k / 8k / 10k) and distance milestones (25 to 500 km) add pearls, keys and eggs.
+Run with your watch's own Run app as usual. Open FISH TANK afterwards and each new run is paid once, even runs from earlier the same week you installed it: 100 m = 1 coin, with bonuses for consistent weeks, long runs, your first run of the week and pace PRs. Daily step milestones (3k / 5k / 8k / 10k) and distance milestones (25 to 500 km) add pearls, keys and eggs.
 
 CARE FOR YOUR FISH
 Feed them (each species has a favorite food), clean the glass, pet them. Fish grow from baby to adult, level up and can evolve. Fish never die: if life gets busy they just wait for you.
@@ -61,7 +61,7 @@ Font: Pixelify Sans by Stefie Justprince, SIL Open Font License 1.1.
 Akuarium pixel-art di pergelangan tangan yang tumbuh setiap kali kamu lari.
 
 LARI JADI KOIN
-Lari seperti biasa dengan app Run bawaan jam. Setelah itu buka FISH TANK dan setiap lari baru dibayar satu kali: 100 m = 1 koin, dengan bonus untuk minggu yang konsisten, lari jauh, lari pertama minggu ini dan rekor pace. Target langkah harian (3rb / 5rb / 8rb / 10rb) dan milestone jarak (25 sampai 500 km) memberi pearl, kunci dan telur.
+Lari seperti biasa dengan app Run bawaan jam. Setelah itu buka FISH TANK dan setiap lari baru dibayar satu kali, termasuk lari di minggu yang sama sebelum app dipasang: 100 m = 1 koin, dengan bonus untuk minggu yang konsisten, lari jauh, lari pertama minggu ini dan rekor pace. Target langkah harian (3rb / 5rb / 8rb / 10rb) dan milestone jarak (25 sampai 500 km) memberi pearl, kunci dan telur.
 
 RAWAT IKANMU
 Beri makan (tiap spesies punya makanan favorit), bersihkan kaca, elus ikanmu. Ikan tumbuh dari bayi sampai dewasa, naik level dan bisa berevolusi. Ikan tidak pernah mati: kalau kamu sibuk, mereka menunggu.
@@ -87,6 +87,24 @@ Bisa dengan layar sentuh maupun tombol. Semua tersimpan di jam: tanpa app HP, ta
 Izin: FISH TANK membaca riwayat aktivitas (tanggal, jenis olahraga, jarak dan durasi lari) hanya untuk membayar hadiah lari. Tidak ada data yang dikirim ke mana pun.
 
 Huruf: Pixelify Sans oleh Stefie Justprince, SIL Open Font License 1.1.
+```
+
+## What's New (v1.1.0)
+EN:
+```
+v1.1.0
+- Runs and steps from earlier the same day or week count, also from before you installed the app: quests already met finish right away
+- Running quests count each run on the day it was run
+- Activity Journal shows this week's and today's distance
+- Smoother animation: the frame rate adapts to your watch, no more hitch every minute
+```
+ID:
+```
+v1.1.0
+- Lari dan langkah di hari/minggu yang sama ikut dihitung, termasuk sebelum app dipasang: quest yang sudah terpenuhi langsung selesai
+- Quest lari menghitung setiap lari di hari lari itu dilakukan
+- Activity Journal menampilkan jarak minggu ini dan hari ini
+- Animasi lebih mulus: frame rate menyesuaikan jam, tidak ada lagi tersendat tiap menit
 ```
 
 ## What's New (v1.0.0)
@@ -127,7 +145,11 @@ v1.0.0 - Rilis pertama
 - [ ] Do a 1 km+ run with the built-in Run app, open FISH TANK: a RUN REWARD card appears.
   If it does not, the app switches to daily distance after 3 days (see Activity > footer).
 - [ ] Check touch and buttons on the watch: feed, clean, menu, a mini-game, Build mode.
-- [ ] Developer portal > Upload an App > `bin\FishTank-v1.0.0.iq`.
+- [ ] v1.1.0: with a 2 km+ run done earlier today, delete the app's data (or install fresh) and
+  open FISH TANK: after onboarding a RUN FOUND card appears and "Run 2 km" / "Go for 1 run" are done.
+  Activity > "This week" shows the week's runs.
+- [ ] v1.1.0: watch the tank for 2 minutes: no stutter at the minute mark, motion stays even.
+- [ ] Developer portal > Upload an App > `bin\FishTank-v1.1.0.iq`.
 - [ ] Title, descriptions (EN + ID), What's New, category, images from the table above.
 - [ ] Permission note is in the description (UserProfile: activity history).
 - [ ] Keep `developer_key.der` (MD5 above) backed up for every future update.

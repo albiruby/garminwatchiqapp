@@ -43,13 +43,18 @@ module FishMovement {
         if (pers == P_ACTIVE) { sp *= 1.3; }
         else if (pers == P_CALM) { sp *= 0.75; }
         if (f.hp < 50) { sp *= 0.6; }
-        if (eng.postRunGlow()) { sp *= 1.2; }
+        if (eng.glow) { sp *= 1.2; }
         if (seeking) { sp *= jelly ? 2.5 : 1.9; }
 
+        // Steering and drag were tuned per 0.1 s frame; scaling them by the real frame time
+        // keeps the swimming identical at any frame rate.
+        var fr = dt * 10.0;
         if (!seeking && f.pause > 0) {
             f.pause -= dt;
-            f.vx *= 0.92;
-            f.vy *= 0.92;
+            var drag = 1.0 - 0.08 * fr;
+            if (drag < 0.0) { drag = 0.0; }
+            f.vx *= drag;
+            f.vy *= drag;
         } else {
             var dx = f.tx - f.x;
             var dy = f.ty - f.y;
@@ -61,7 +66,8 @@ module FishMovement {
                 else if (pers == P_ACTIVE) { maxPause = 0.6; }
                 f.pause = Util.rf(0.2, maxPause);
             } else if (d > 0.01) {
-                var k = jelly ? 0.05 : 0.12;
+                var k = (jelly ? 0.05 : 0.12) * fr;
+                if (k > 1.0) { k = 1.0; }
                 f.vx += (dx / d * sp - f.vx) * k;
                 f.vy += (dy / d * sp * 0.7 - f.vy) * k;
             }

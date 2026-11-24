@@ -6,7 +6,11 @@ import Toybox.UserProfile;
 
 // Move pillar. Runs are recorded with the watch's own Run app; FISH TANK reads them from
 // the activity history when it opens and pays each run exactly once (ledger id "r<start>").
-// Daily steps feed Step Hunter milestones and the weekly consistency target.
+// Runs from the week the app was installed count too, also those from before the install:
+// a 5 km run in the morning finishes "Run 5 km today" when the app is installed that night.
+// Every counted run is logged per day (eng.rl) so run quests are judged by the day the run
+// happened, not the day it was read. Daily steps feed Step Hunter milestones and the weekly
+// consistency target; the watch's 7-day step history fills days the app was not opened.
 module ActivitySystem {
     const STEP_MS = [3000, 5000, 8000, 10000];
     const STEP_COINS = [10, 15, 25, 40];
@@ -26,9 +30,51 @@ module ActivitySystem {
     const FALLBACK_WEIGHT = 50;         // % of daily distance that counts as progress (it includes walking)
     const MAX_RUN_AGE_DAYS = 90;        // older history entries are ignored (ledger keeps 120 days)
     const SCAN_PER_TICK = 6;
+    const FAST_PACE = 390;              // s/km: "Run under 6:30 /km" quests
+    const BATCH_CARDS = 3;              // this many runs found at once share one summary card
+    const LOG_DAYS = 14;                // days kept in the per-day run log
 
     function historySupported() {
         return (Toybox has :UserProfile) && (UserProfile has :getUserActivityHistory);
+    }
+
+    // First local day whose runs count: the Monday of the install week, so runs done earlier
+    // that day or week (before the app was installed) still finish quests. 0 = no limit.
+    function firstCountedDay(eng) {
+        if (eng.installTime <= 0) { return 0; }
+        var d0 = TimeUtil.dayOf(eng.installTime);
+        return d0 - TimeUtil.weekday(d0);
+    }
+
+    // ---- per-day run log ----------------------------------------------------------
+    // eng.rl = {day => [meters, runs, fastRuns]}; quests read it (QuestSystem.refreshRuns).
+    function addLog(eng, day, meters, runs, fast) {
+        var e = eng.rl.get(day);
+        if (e == null) { e = [0, 0, 0]; }
+        eng.rl.put(day, [e[0] + meters, e[1] + runs, e[2] + fast]);
+        var ks = eng.rl.keys();
+        var today = TimeUtil.today();
+        for (var i = 0; i < ks.size(); i++) {
+            if (today - ks[i] > LOG_DAYS) { eng.rl.remove(ks[i]); }
+        }
+    }
+
+    // [meters, runs, fastRuns] for one day, or summed over that day's week.
+    function logDay(eng, day) {
+        var e = eng.rl.get(day);
+        return e == null ? [0, 0, 0] : e;
+    }
+
+    function logWeek(eng, day) {
+        var w = TimeUtil.weekOf(day);
+        var out = [0, 0, 0];
+        var ks = eng.rl.keys();
+        for (var i = 0; i < ks.size(); i++) {
+            if (TimeUtil.weekOf(ks[i]) != w) { continue; }
+            var e = eng.rl[ks[i]];
+            out = [out[0] + e[0], out[1] + e[1], out[2] + e[2]];
+        }
+        return out;
     }
 
     // Daily distance pays (coins and progress) when the watch cannot give us runs: no history
@@ -63,6 +109,8 @@ module ActivitySystem {
     function beginScan(eng) {
         eng.scanIt = null;
         eng.pendingRuns = [];
+        eng.scanLog = {};
+        eng.scanFrom = firstCountedDay(eng);
         if (Preview.ON || !historySupported()) { return; }
         try {
             eng.scanIt = UserProfile.getUserActivityHistory();
@@ -93,10 +141,18 @@ module ActivitySystem {
         if (a.type == null || a.startTime == null || a.distance == null) { return; }
         if (a.type != Activity.SPORT_RUNNING) { return; }
         var st = a.startTime.value();
-        if (st < eng.installTime) { return; }
+        if (TimeUtil.dayOf(st) < eng.scanFrom) { return; }
         if (st < TimeUtil.now() - MAX_RUN_AGE_DAYS * 86400) { return; }
         var dur = a.duration != null ? a.duration.value() : 0;
         if (a.distance < MIN_RUN_M || dur < MIN_RUN_S) { return; }
+        // every counted run of the last days, paid or not, rebuilds the run log
+        var day = TimeUtil.dayOf(st);
+        if (eng.scanLog != null && TimeUtil.today() - day <= LOG_DAYS) {
+            var e = eng.scanLog.get(day);
+            if (e == null) { e = [0, 0, 0]; }
+            var fast = dur * 1000 / a.distance <= FAST_PACE ? 1 : 0;
+            eng.scanLog.put(day, [e[0] + a.distance, e[1] + 1, e[2] + fast]);
+        }
         if (RewardSystem.done(eng, "r" + st.toString())) { return; }
         eng.pendingRuns.add([st, a.distance, dur]);
     }
@@ -113,8 +169,29 @@ module ActivitySystem {
             }
             runs[j + 1] = cur;
         }
-        for (var i = 0; i < runs.size(); i++) { payRun(eng, runs[i][0], runs[i][1], runs[i][2]); }
+        // Many runs at once (first open, or after days away): one summary card, not a stack.
+        var quiet = runs.size() >= BATCH_CARDS;
+        var coins = 0;
+        var meters = 0;
+        var n = 0;
+        var early = false;
+        for (var i = 0; i < runs.size(); i++) {
+            var paid = payRunQ(eng, runs[i][0], runs[i][1], runs[i][2], quiet);
+            if (paid >= 0) {
+                coins += paid;
+                meters += runs[i][1];
+                n += 1;
+                if (eng.installTime > 0 && runs[i][0] < eng.installTime) { early = true; }
+            }
+        }
+        if (quiet && n > 0) {
+            var lines = [n.toString() + " runs  -  " + fmtKm(meters) + " km", "Quests and trophies updated"];
+            if (early) { lines.add("Includes runs from before install"); }
+            RewardSystem.card(eng, "RUNS FOUND", "+" + coins.toString() + " coins", lines,
+                RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);
+        }
         eng.pendingRuns = [];
+        mergeLog(eng);
         if (runs.size() > 0) {
             checkKm(eng);
             ExpeditionSystem.check(eng);
@@ -123,9 +200,35 @@ module ActivitySystem {
         }
     }
 
+    // The history holds every run of the last days, including ones paid by an older version
+    // that kept no log: take the larger value per day so the log is complete either way.
+    function mergeLog(eng) {
+        var h = eng.scanLog;
+        eng.scanLog = null;
+        if (h == null) { return; }
+        var ks = h.keys();
+        var changed = false;
+        for (var i = 0; i < ks.size(); i++) {
+            var a = h[ks[i]];
+            var b = logDay(eng, ks[i]);
+            var m = [a[0] > b[0] ? a[0] : b[0], a[1] > b[1] ? a[1] : b[1], a[2] > b[2] ? a[2] : b[2]];
+            if (m[0] != b[0] || m[1] != b[1] || m[2] != b[2]) {
+                eng.rl.put(ks[i], m);
+                changed = true;
+            }
+        }
+        if (changed) { QuestSystem.refreshRuns(eng); }
+    }
+
     function payRun(eng, start, meters, dur) {
+        return payRunQ(eng, start, meters, dur, false);
+    }
+
+    // Pays one run. `quiet` skips its own card (finishScan shows a summary). Returns the
+    // coins paid, or -1 when the run was already paid.
+    function payRunQ(eng, start, meters, dur, quiet) {
         var tx = "r" + start.toString();
-        if (RewardSystem.done(eng, tx)) { return; }
+        if (RewardSystem.done(eng, tx)) { return -1; }
         var day = TimeUtil.dayOf(start);
         var week = TimeUtil.weekOf(day);
         checkWeek(eng);
@@ -149,14 +252,23 @@ module ActivitySystem {
         if (meters >= 5000 && (st["b5"] == 0 || pace * 5 < st["b5"])) { st["b5"] = pace * 5; }
         if (meters >= 10000 && (st["b10"] == 0 || pace * 10 < st["b10"])) { st["b10"] = pace * 10; }
 
+        var fast = pace <= FAST_PACE;
+        addLog(eng, day, 0, 1, fast ? 1 : 0);   // meters are logged by credit()
         credit(eng, day, meters);
         var ye = st["yr"].get(CalendarUtil.year(day));
         ye[1] = ye[1] + 1;
         EventSystem.onRun(eng, day, meters);
-        QuestSystem.event(eng, QuestSystem.Q_RUNS, 1);
-        if (pace <= 390) { QuestSystem.event(eng, QuestSystem.Q_PACE, 1); }
+        QuestSystem.runEvent(eng, day, QuestSystem.Q_RUNS, 1);
+        if (fast) { QuestSystem.runEvent(eng, day, QuestSystem.Q_PACE, 1); }
         markActive(eng, day);
 
+        if (!quiet) { runCard(eng, start, meters, dur, pace, p, coins, firstOfWeek, isPr); }
+        // a small chance of a mystery find on every run
+        if (Util.rnd(100) < Mods.mystery) { CollectionSystem.mystery(eng, "m" + start.toString()); }
+        return coins;
+    }
+
+    function runCard(eng, start, meters, dur, pace, p, coins, firstOfWeek, isPr) {
         var lines = [fmtKm(meters) + " km  -  " + fmtTime(dur), fmtPace(pace) + " /km"];
         // bonus groups separated by two spaces so the card wraps between them
         var extra = "";
@@ -165,10 +277,9 @@ module ActivitySystem {
         if (isPr) { extra = extra + (extra.length() > 0 ? "  " : "") + "+10 pace PR"; }
         if (coins < (meters / 100)) { extra = "Daily run cap reached"; }
         if (extra.length() > 0) { lines.add(extra); }
-        RewardSystem.card(eng, "RUN REWARD", "+" + coins.toString() + " coins", lines, RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);
-
-        // a small chance of a mystery find on every run
-        if (Util.rnd(100) < Mods.mystery) { CollectionSystem.mystery(eng, "m" + start.toString()); }
+        // a run from before the install is "found", not just rewarded
+        var title = (eng.installTime > 0 && start < eng.installTime) ? "RUN FOUND" : "RUN REWARD";
+        RewardSystem.card(eng, title, "+" + coins.toString() + " coins", lines, RewardSystem.IC_GRID, SpriteData.ICON_SHOE, 0xFFC93C);
     }
 
     // ---- steps ------------------------------------------------------------------
@@ -235,7 +346,8 @@ module ActivitySystem {
         var km = meters / 1000.0;
         for (var i = 0; i < eng.fish.size(); i++) { eng.fish[i].fxp += km * 3; }
         CollectionSystem.eggKm(eng, km);
-        QuestSystem.event(eng, QuestSystem.Q_RUN_KM, meters);
+        addLog(eng, day, meters, 0, 0);
+        QuestSystem.runEvent(eng, day, QuestSystem.Q_RUN_KM, meters);
         LeagueSystem.add(eng, meters / 100);
     }
 
@@ -260,6 +372,33 @@ module ActivitySystem {
         checkKm(eng);
         ExpeditionSystem.check(eng);
         eng.achDirty = true;
+    }
+
+    // Steps of the past days from the watch's own 7-day history, so a week's step quest and
+    // active days include days the app was not opened (or was not installed yet).
+    // Runs once per app start.
+    function backfillSteps(eng) {
+        if (Preview.ON || !(Toybox has :ActivityMonitor) || !(ActivityMonitor has :getHistory)) { return; }
+        var h = null;
+        try {
+            h = ActivityMonitor.getHistory();
+        } catch (e) {
+            h = null;
+        }
+        if (h == null) { return; }
+        var today = TimeUtil.today();
+        for (var i = 0; i < h.size(); i++) {
+            var a = h[i];
+            if (a == null || a.startOfDay == null || a.steps == null) { continue; }
+            // midday of that date, so the day is right whichever midnight the watch reports
+            var d = TimeUtil.dayOf(a.startOfDay.value() + 43200);
+            if (d >= today || today - d > 7) { continue; }
+            var prev = eng.ds.get(d);
+            if (prev == null || a.steps > prev) { eng.ds.put(d, a.steps); }
+            if (a.steps >= ACTIVE_STEPS) { markActive(eng, d); }
+        }
+        pruneDays(eng.ds, today);
+        if (eng.quests.get("di") != null) { QuestSystem.refreshSteps(eng); }
     }
 
     function pruneDays(dict, today) {

@@ -12,6 +12,7 @@ class MinimalRenderer extends AquariumRenderer {
 
     function initialize() {
         AquariumRenderer.initialize();
+        _cols = {};
         floorY = 300;
         speedMul = 0.7;
         airX = 300;
@@ -186,9 +187,15 @@ class MinimalRenderer extends AquariumRenderer {
         }
     }
 
-    function drawFish(dc, f, eng) {
-        var sp = f.sp;
-        var cols = FishDatabase.COLORS[sp];
+    // Body and fin colors per species / variant / health, worked out once (hue rotation
+    // and blends are too slow to repeat for every fish on every frame).
+    var _cols;
+
+    function colors(f) {
+        var k = f.sp * 512 + (f.variant & 123) * 2 + (f.hp < 50 ? 1 : 0);
+        var bf = _cols.get(k);
+        if (bf != null) { return bf; }
+        var cols = FishDatabase.COLORS[f.sp];
         var body = cols[0];
         var fin = cols[3];
         var ed = f.edition();
@@ -204,6 +211,17 @@ class MinimalRenderer extends AquariumRenderer {
             body = PixelKit.lerpColor(body, 0x8C96A8, 0.45);
             fin = PixelKit.lerpColor(fin, 0x8C96A8, 0.45);
         }
+        if (_cols.size() > 64) { _cols = {}; }
+        bf = [body, fin];
+        _cols.put(k, bf);
+        return bf;
+    }
+
+    function drawFish(dc, f, eng) {
+        var sp = f.sp;
+        var bf = colors(f);
+        var body = bf[0];
+        var fin = bf[1];
         var size = fishSize(f);
         var shape = FishDatabase.SHAPE[sp];
         var x = f.x;

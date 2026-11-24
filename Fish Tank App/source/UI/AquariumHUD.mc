@@ -148,15 +148,31 @@ module AquariumHUD {
 
     // Coins and level share one centred pill, measured from the real text widths and
     // positioned from the screen size, so it never collides or leaves the round glass.
+    // Text and widths are measured only when coins or level change, not every frame.
+    var _tbCoins = -1;
+    var _tbLv = -1;
+    var _tbC = "";
+    var _tbL = "";
+    var _tbCw = 0;
+    var _tbLw = 0;
+
     function drawTopBar(dc, eng) {
         var w = dc.getWidth();
         var h = dc.getHeight();
         var cx = w / 2;
         var f = font(0);
-        var coinStr = compact(eng.coins);
-        var lvStr = "LV " + eng.lv.toString();
-        var cw = dc.getTextWidthInPixels(coinStr, f);
-        var lw = dc.getTextWidthInPixels(lvStr, f);
+        if (eng.coins != _tbCoins || eng.lv != _tbLv) {
+            _tbCoins = eng.coins;
+            _tbLv = eng.lv;
+            _tbC = compact(eng.coins);
+            _tbL = "LV " + eng.lv.toString();
+            _tbCw = dc.getTextWidthInPixels(_tbC, f);
+            _tbLw = dc.getTextWidthInPixels(_tbL, f);
+        }
+        var coinStr = _tbC;
+        var lvStr = _tbL;
+        var cw = _tbCw;
+        var lw = _tbLw;
         var gap = 8;                      // icon->text and text->divider spacing
         var inner = 14 + 5 + cw + gap * 2 + 2 + lw;
         var pillW = inner + 24;
@@ -209,14 +225,23 @@ module AquariumHUD {
 
     // Short messages sit on one line; longer ones wrap onto a second line instead of
     // running past the panel.
+    var _toastSrc = null;
+    var _toastLines = null;
+    var _toastW = 0;
+
     function drawToast(dc, s, col) {
         var f = font(0);
-        var ls = UIKit.wrap(dc, s, f, 250, 2);
-        var tw = 0;
-        for (var i = 0; i < ls.size(); i++) {
-            var lw = dc.getTextWidthInPixels(ls[i], f);
-            if (lw > tw) { tw = lw; }
+        if (_toastSrc == null || !_toastSrc.equals(s)) {
+            _toastSrc = s;
+            _toastLines = UIKit.wrap(dc, s, f, 250, 2);
+            _toastW = 0;
+            for (var i = 0; i < _toastLines.size(); i++) {
+                var lw = dc.getTextWidthInPixels(_toastLines[i], f);
+                if (lw > _toastW) { _toastW = lw; }
+            }
         }
+        var ls = _toastLines;
+        var tw = _toastW;
         var w = tw + 28;
         var h = dc.getFontHeight(f) * ls.size() + 10;
         var x0 = 195 - w / 2;
@@ -286,9 +311,35 @@ module AquariumHUD {
         var col = c[:c];
         var cx = dc.getWidth() / 2;
         var f0 = font(0);
-        var lh0 = dc.getFontHeight(f0);
 
-        // ---- measure ----
+        // ---- measure (once per card, kept in the card) ----
+        var m = c.get(:m);
+        if (m == null) {
+            m = measureCard(dc, c);
+            c.put(:m, m);
+        }
+        var title = m[0];
+        var big = m[1];
+        var details = m[2];
+        var iconH = m[3];
+        var ch = m[4];
+        var x0 = cx - CARD_W / 2;
+        var y0 = dc.getHeight() / 2 + 4 - ch / 2;
+
+        // ---- draw ----
+        dc.setColor(PANEL, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(x0, y0, CARD_W, ch, 18);
+        dc.setPenWidth(2);
+        dc.setColor(col, Graphics.COLOR_TRANSPARENT);
+        dc.drawRoundedRectangle(x0, y0, CARD_W, ch, 18);
+        dc.setPenWidth(1);
+        drawCardBody(dc, eng, c, cx, y0, title, big, details, iconH, col, f0);
+    }
+
+    // [title, [bigFont, bigLines], detailLines, iconH, cardHeight]
+    function measureCard(dc, c) {
+        var f0 = font(0);
+        var lh0 = dc.getFontHeight(f0);
         var title = UIKit.fit(dc, c[:t], f0, CARD_TEXT_W);
         var big = UIKit.bestFit(dc, c[:b], [font(1), f0], CARD_TEXT_W, 2);
         var bigH = dc.getFontHeight(big[0]) * big[1].size();
@@ -308,18 +359,10 @@ module AquariumHUD {
         while (details.size() > 0 && fixed + details.size() * lh0 > CARD_MAX_H) {
             details = details.slice(0, details.size() - 1);
         }
-        var ch = fixed + details.size() * lh0;
-        var x0 = cx - CARD_W / 2;
-        var y0 = dc.getHeight() / 2 + 4 - ch / 2;
+        return [title, big, details, iconH, fixed + details.size() * lh0];
+    }
 
-        // ---- draw ----
-        dc.setColor(PANEL, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(x0, y0, CARD_W, ch, 18);
-        dc.setPenWidth(2);
-        dc.setColor(col, Graphics.COLOR_TRANSPARENT);
-        dc.drawRoundedRectangle(x0, y0, CARD_W, ch, 18);
-        dc.setPenWidth(1);
-
+    function drawCardBody(dc, eng, c, cx, y0, title, big, details, iconH, col, f0) {
         var y = UIKit.lines(dc, cx, y0 + 14, f0, [title], col) + 4;
 
         var bob = (Math.sin(eng.t * 3) * 3).toNumber();

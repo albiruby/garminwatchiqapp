@@ -5,12 +5,13 @@ Connect IQ device app untuk Forerunner 165 / 165 Music (390×390 AMOLED). Akuari
 ![FISH TANK](../docs/previews/fish-tank.jpg)
 
 ## Fitur
-- **Move:** Run-to-Earn dari riwayat aktivitas, Step Hunter (3k/5k/8k/10k), consistency streak mingguan, distance milestone 25–500 km, Activity Journal.
+- **Move:** Run-to-Earn dari riwayat aktivitas (lari dan langkah di minggu pemasangan ikut dihitung, termasuk sebelum app dipasang, jadi quest yang sudah terpenuhi langsung beres), Step Hunter (3k/5k/8k/10k), consistency streak mingguan, distance milestone 25–500 km, Activity Journal.
 - **Collect:** 36 spesies di 5 habitat, Fishdex, telur yang menetas lebih cepat kalau lari, varian Shiny/Golden/Ghost/Giant, personality, level ikan, evolusi, breeding.
 - **Care + Build:** makan (makanan favorit), bersih, habitat synergy, 16 dekorasi di Build mode, aquarium level 1–5, rating bintang.
 - **Explore:** 5 region ekspedisi (2 membuka tema baru), mini-game Bubble Pop, Treasure Dive, Fish Racing.
 - **Compete:** quest harian/mingguan, 33 trophy, Aquarium League pribadi.
 - **Events (tanpa update, berulang tiap tahun):** 15 event tahunan (Tahun Baru, HUT RI, Hari Batik, Halloween, dll.), Ramadan, Idul Fitri dan Imlek yang tanggalnya dihitung otomatis, event pribadi (Race Day, ulang tahun, anniversary tank), dan rotasi mingguan "Arus Minggu Ini" (arus, ikan unggulan, pengunjung, mini-game sorotan). Setiap event punya quest dengan ikan edisi khusus.
+- **Performa:** frame rate adaptif (15/12/10/7,5 fps sesuai kemampuan jam), gerakan berbasis waktu nyata, pekerjaan per menit dan autosave dipecah ke beberapa frame.
 - **Tampilan:** 3 art style (Modern Pixel, Minimalist, Pseudo-3D) × 6 tema, font Pixelify Sans, menu pixel custom.
 
 ## Screenshot

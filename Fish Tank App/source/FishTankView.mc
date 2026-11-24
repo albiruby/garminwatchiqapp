@@ -1,7 +1,13 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.System;
 import Toybox.Timer;
 import Toybox.WatchUi;
+
+// Frame interval tiers in ms (15, 12, 10 and 7.5 fps), see FishTankView.pace.
+module FramePace {
+    const TIERS = [66, 83, 100, 133];
+}
 
 // The aquarium screen. Also hosts the style/theme pickers (with a live preview of the
 // tank behind them), reward cards, the tutorial coach and the decoration builder, so the
@@ -23,7 +29,6 @@ class FishTankView extends WatchUi.View {
     var _stage = 0;
     var _haveScene = false;
     var _idle = 0.0;
-    var _fast = true;
     var _shown = false;
     var _previewScreen = 0;
 
@@ -55,6 +60,8 @@ class FishTankView extends WatchUi.View {
 
     function onHide() as Void {
         if (_timer != null) { _timer.stop(); }
+        _interval = 0;          // onShow restarts the timer
+        _lastMs = 0;
         eng.save();
     }
 
@@ -64,9 +71,55 @@ class FishTankView extends WatchUi.View {
         _timer.start(method(:onTick), ms, true);
     }
 
-    // Low Animation Mode and idle both run the tank at 2 frames per second.
+    // ---- frame pacing -------------------------------------------------------------
+    // The frame interval adapts to the watch: the pacer measures how long each frame's
+    // simulation and drawing really take and picks the fastest tier that leaves headroom,
+    // so a quick watch gets fluid motion and a slower one (or a busy scene) never queues
+    // frames. Motion advances by the real time between frames, so speed is the same at any
+    // frame rate and a late frame no longer makes the fish jump or stall.
+    const ACTIVE_S = 20.0;              // 15 fps only within this long after input
+    const IDLE_S = 90.0;                // then 5 fps while nobody touches the watch
+    const SLEEP_S = 300.0;              // and 2 fps after 5 minutes
+    var _tier = 1;
+    var _interval = 0;
+    var _lastMs = 0;
+    var _cost = 30.0;                   // smoothed ms of work per frame
+    var _tickMs = 0;
+    var _frames = 0;
+
+    // Low Animation Mode runs the tank at 2 frames per second.
     function applyTimer() {
-        startTimer(_fast && !eng.lowAnim ? 100 : 500);
+        var ms = 500;
+        if (!eng.lowAnim && _idle <= SLEEP_S) {
+            if (_idle > IDLE_S) {
+                ms = 200;
+            } else {
+                var t = _tier;
+                if (t == 0 && _idle > ACTIVE_S) { t = 1; }
+                ms = FramePace.TIERS[t];
+            }
+        }
+        if (ms != _interval) {
+            _interval = ms;
+            startTimer(ms);
+        }
+    }
+
+    // Called after each drawn frame with the ms it cost (tick + draw).
+    function pace(ms) {
+        _cost = _cost * 0.9 + ms * 0.1;
+        _frames += 1;
+        if (_frames < 15) { return; }
+        _frames = 0;
+        var t = _tier;
+        if (t < FramePace.TIERS.size() - 1 && _cost > FramePace.TIERS[t] * 0.6) { t += 1; }
+        else if (t > 0 && _cost < FramePace.TIERS[t - 1] * 0.45) { t -= 1; }
+        _tier = t;
+        // even the slowest tier is tight: thin out ambient bubbles and sparkles
+        var slow = FramePace.TIERS[FramePace.TIERS.size() - 1];
+        if (_cost > slow * 0.6) { eng.fxLite = true; }
+        else if (_cost < slow * 0.35) { eng.fxLite = false; }
+        applyTimer();
     }
 
     function onTick() as Void {
@@ -76,13 +129,16 @@ class FishTankView extends WatchUi.View {
             PreviewScreens.open(n);
             return;
         }
-        var dt = (_fast && !eng.lowAnim) ? 0.1 : 0.5;
+        var t0 = System.getTimer();
+        var dt = _lastMs > 0 ? (t0 - _lastMs) / 1000.0 : _interval / 1000.0;
+        _lastMs = t0;
+        var maxDt = _interval >= 200 ? 0.6 : 0.25;    // after a pause: no big jump
+        if (dt > maxDt) { dt = maxDt; }
+        if (dt < 0.01) { dt = 0.01; }
         eng.tick(dt);
         _idle += dt;
-        if (_fast && _idle > 90) {
-            _fast = false;          // idle: slow the animation to save battery
-            applyTimer();
-        }
+        _tickMs = System.getTimer() - t0;
+        if (_idle > IDLE_S) { applyTimer(); }     // idle: slow down to save battery
         if (mode == Modes.PLAY && eng.tutorialActive()) {
             var tb = AquariumHUD.COACH_BTN[eng.tutorial];
             if (tb >= 0) { focus = tb; }
@@ -97,12 +153,11 @@ class FishTankView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    // Input: back to full speed, and draw right away so taps feel instant.
     function poke() {
         _idle = 0.0;
-        if (!_fast) {
-            _fast = true;
-            applyTimer();
-        }
+        applyTimer();
+        WatchUi.requestUpdate();
     }
 
     // ---- drawing ----------------------------------------------------------------
@@ -157,6 +212,7 @@ class FishTankView extends WatchUi.View {
     }
 
     function onUpdate(dc as Graphics.Dc) as Void {
+        var t0 = System.getTimer();
         var r = eng.renderer;
         var bmp = sceneBitmap(dc);
         if (bmp != null) {
@@ -191,6 +247,8 @@ class FishTankView extends WatchUi.View {
             var idx = mode == Modes.STYLE ? eng.style : eng.theme;
             AquariumHUD.drawPicker(dc, eng, mode, idx, pickPos, opts.size(), onboarding);
         }
+        pace(System.getTimer() - t0 + _tickMs);
+        _tickMs = 0;
     }
 
     // ---- pickers ------------------------------------------------------------------

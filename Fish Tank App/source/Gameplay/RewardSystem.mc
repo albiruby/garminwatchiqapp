@@ -22,6 +22,7 @@ module RewardSystem {
 
     function mark(eng, tx) {
         eng.tx.put(tx, eng.dayKey());
+        eng.txRev += 1;     // the ledger must be written on the next save
     }
 
     // Pays once per tx (null tx = always). Returns true when paid now.
@@ -54,7 +55,10 @@ module RewardSystem {
         var ks = eng.tx.keys();
         for (var i = 0; i < ks.size(); i++) {
             var d = eng.tx[ks[i]];
-            if (d != null && today - d > keep && !permanent(ks[i])) { eng.tx.remove(ks[i]); }
+            if (d != null && today - d > keep && !permanent(ks[i])) {
+                eng.tx.remove(ks[i]);
+                eng.txRev += 1;
+            }
         }
     }
 

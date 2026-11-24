@@ -39,6 +39,11 @@ module QuestSystem {
             q.put("wp", [0, 0, 0]);
         }
         refreshSteps(eng);
+        refreshRuns(eng);
+    }
+
+    function isRunType(type) {
+        return type == Q_RUN_KM || type == Q_RUNS || type == Q_PACE;
     }
 
     function pick(seed, n) {
@@ -86,10 +91,43 @@ module QuestSystem {
         }
     }
 
+    // Running quests are absolute too, read from the per-day run log (ActivitySystem.addLog):
+    // daily = runs dated today, weekly = runs dated this week. A run counts for the day it
+    // was run, whenever the app reads it, including runs from before the install.
+    function refreshRuns(eng) {
+        var q = eng.quests;
+        if (q.get("di") == null || eng.preview != null) { return; }
+        var day = TimeUtil.today();
+        var dl = ActivitySystem.logDay(eng, day);
+        var wl = ActivitySystem.logWeek(eng, day);
+        var di = q["di"];
+        var wi = q["wi"];
+        for (var i = 0; i < 3; i++) {
+            var td = DAILY[di[i]][0];
+            if (isRunType(td)) { setProgress(eng, true, i, runValue(td, dl)); }
+            var tw = WEEKLY[wi[i]][0];
+            if (isRunType(tw)) { setProgress(eng, false, i, runValue(tw, wl)); }
+        }
+    }
+
+    function runValue(type, log) {
+        if (type == Q_RUN_KM) { return log[0]; }
+        if (type == Q_RUNS) { return log[1]; }
+        return log[2];
+    }
+
+    // A run (or fallback distance) dated `day`: event quests that cover that day, then the
+    // daily and weekly quests from the run log.
+    function runEvent(eng, day, type, amount) {
+        EventSystem.eventOn(eng, type, amount, day);
+        refreshRuns(eng);
+    }
+
     function event(eng, type, amount) {
         EventSystem.event(eng, type, amount);
         if (eng.preview != null || eng.quests.get("di") == null) { return; }
         if (type == Q_STEPS) { refreshSteps(eng); return; }
+        if (isRunType(type)) { refreshRuns(eng); return; }
         var q = eng.quests;
         for (var i = 0; i < 3; i++) {
             if (DAILY[q["di"][i]][0] == type) { bump(eng, true, i, type, amount); }

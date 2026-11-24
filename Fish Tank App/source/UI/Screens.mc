@@ -520,7 +520,11 @@ class ActivityScreen extends Screen {
         for (var i = 0; i < ActivitySystem.KM_MS.size(); i++) {
             if (s["km"] / 1000 < ActivitySystem.KM_MS[i]) { nextKm = ActivitySystem.KM_MS[i].toString() + " km: +" + ActivitySystem.KM_PEARLS[i].toString() + " pearls"; break; }
         }
+        var td = ActivitySystem.logDay(e, TimeUtil.today());
+        var tw = ActivitySystem.logWeek(e, TimeUtil.today());
         return [
+            ["This week", ActivitySystem.fmtKm(tw[0]) + " km - " + tw[1].toString() + " run" + (tw[1] == 1 ? "" : "s"), IconKit.GRID, SpriteData.ICON_SHOE, 0x7FE7FF],
+            ["Today", ActivitySystem.fmtKm(td[0]) + " km - " + td[1].toString() + " run" + (td[1] == 1 ? "" : "s"), IconKit.GRID, SpriteData.ICON_SHOE, null],
             ["Total distance", ActivitySystem.fmtKm(s["km"]) + " km", IconKit.GRID, SpriteData.ICON_SHOE, 0x7FE7FF],
             ["Next milestone", nextKm, IconKit.GRID, SpriteData.ICON_TROPHY, null],
             ["Runs", s["runs"].toString() + " - " + ActivitySystem.fmtTime(s["dur"]) + " total", IconKit.GRID, SpriteData.ICON_SHOE, null],

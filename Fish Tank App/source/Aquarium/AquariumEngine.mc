@@ -53,6 +53,7 @@ class AquariumEngine {
     var race = 0;       // race day (day number), 0 = none
     var lastRace = -999;
     var hijriShift = 0; // correction for Ramadan / Eid dates
+    var rl;             // run log {day => [meters, runs, fastRuns]} (ActivitySystem.addLog)
 
     // ---- runtime ----
     var renderer;
@@ -72,6 +73,8 @@ class AquariumEngine {
     var sceneDirty = true;
     var achDirty = false;
     var scanIt = null;
+    var scanFrom = 0;            // first local day whose runs count (ActivitySystem.firstCountedDay)
+    var scanLog = null;          // runs per day seen by the current scan (ActivitySystem.mergeLog)
     var pendingRuns;
     var events;                  // [[eventId, startDay], ...] active today
     var visitor = null;          // the week's visiting fish (not part of the tank)
@@ -79,6 +82,12 @@ class AquariumEngine {
     var _minuteAcc = 0.0;
     var _bubbleAcc = 0.0;
     var _cleanBucket = 10;
+    var glow = false;            // ran today: fish swim livelier (cached once per tick)
+    var fxLite = false;          // slow device or busy scene: fewer ambient effects
+    var txRev = 0;               // bumped on every ledger change (RewardSystem)
+    var _savedTxRev = -1;        // ledger revision last written to storage
+    var _minutes = 0;
+    var _job = 0;                // minute work spread over the next ticks (see tick)
 
     function initialize() {
         fish = [];
@@ -109,6 +118,7 @@ class AquariumEngine {
         evp = {};
         bday = [];
         events = [];
+        rl = {};
         renderer = CustomizationManager.renderer(0);
     }
 
@@ -143,6 +153,7 @@ class AquariumEngine {
             periodic();
             ExpeditionSystem.check(self);
             if (rewardAvailable()) { claimReward(); }
+            ActivitySystem.backfillSteps(self);
             ActivitySystem.beginScan(self);
         }
     }
@@ -194,6 +205,8 @@ class AquariumEngine {
         race = d["race"];
         lastRace = d["lrc"];
         hijriShift = d["hs"];
+        rl = d["rl"];
+        _savedTxRev = -1;
         fish = [];
         var fa = d["f"];
         for (var i = 0; i < fa.size(); i++) {
@@ -219,7 +232,7 @@ class AquariumEngine {
             "ach" => ach, "lg" => league, "wk" => wk, "rc" => rc, "dd" => dd, "egg" => eggs,
             "eb" => eggBag, "brd" => breed, "mg" => mg, "la" => lowAnim, "tf" => tapFeed,
             "tu" => tutorial, "exp" => expSeen, "evp" => evp, "bd" => bday, "race" => race,
-            "lrc" => lastRace, "hs" => hijriShift
+            "lrc" => lastRace, "hs" => hijriShift, "rl" => rl
         };
     }
 
@@ -228,11 +241,16 @@ class AquariumEngine {
     function save() {
         if (Preview.ON || !onboarded) { return; }
         lastSeen = Time.now().value();
-        if (!SaveManager.save(toDict())) {
+        var rev = txRev;
+        if (SaveManager.saveParts(toDict(), rev != _savedTxRev)) {
+            _savedTxRev = rev;
+        } else {
             // storage full: trim old records and try once more
             RewardSystem.prune(self);
             evp = {};
-            if (!SaveManager.save(toDict()) && !saveWarned) {
+            if (SaveManager.save(toDict())) {
+                _savedTxRev = txRev;
+            } else if (!saveWarned) {
                 saveWarned = true;
                 toast("Watch storage full - progress not saved", 0xFF5A5A);
             }
@@ -291,6 +309,11 @@ class AquariumEngine {
         QuestSystem.check(self);
         LeagueSystem.ensure(self);
         ActivitySystem.checkWeek(self);
+        // read today's and this week's activity right away: a run done before installing
+        // finishes its quests in this first session
+        ActivitySystem.checkSteps(self);
+        ActivitySystem.backfillSteps(self);
+        ActivitySystem.beginScan(self);
         save();
         toast("Welcome to your tank!", 0x7FE7FF);
     }
@@ -475,20 +498,32 @@ class AquariumEngine {
         if (preview == null) { setClean(clean - n); }
     }
 
+    // The once-a-minute work is spread over consecutive ticks (decay and income, then the
+    // periodic checks, then the autosave every 2 minutes; the history scan and trophies run
+    // on the ticks in between) so no single frame carries all of it: that was a visible
+    // hitch once a minute.
     function tick(dt) {
         t += dt;
         _minuteAcc += dt;
-        if (_minuteAcc >= 60.0) {
+        if (_job == 1) {
+            periodic();
+            _job = 2;
+        } else if (_job == 2) {
+            if (_minutes % 2 == 0) { save(); }
+            _job = 0;
+        } else if (_minuteAcc >= 60.0) {
             advance(_minuteAcc);
             _minuteAcc = 0.0;
-            periodic();
-            save();
+            _minutes += 1;
+            _job = 1;
+        } else {
+            ActivitySystem.stepScan(self);
+            if (achDirty) {
+                achDirty = false;
+                AchievementSystem.check(self);
+            }
         }
-        ActivitySystem.stepScan(self);
-        if (achDirty) {
-            achDirty = false;
-            AchievementSystem.check(self);
-        }
+        glow = postRunGlow();
 
         var list = fishList();
         if (renderer != CustomizationManager.renderer(1)) { SpriteData.warm(list); }
@@ -501,46 +536,47 @@ class AquariumEngine {
 
         if (!lowAnim) {
             _bubbleAcc += dt;
-            if (_bubbleAcc > 0.45 && bubbles.size() < 14) {
+            if (_bubbleAcc > (fxLite ? 0.8 : 0.45) && bubbles.size() < (fxLite ? 8 : 14)) {
                 _bubbleAcc = 0.0;
                 bubbles.add([renderer.airX + Util.rf(-6.0, 6.0), renderer.floorY - 6.0, 1 + Util.rnd(2), Util.rf(28.0, 50.0), Util.rf(0.0, 6.0)]);
             }
             // shiny and evolved fish shed the odd sparkle
-            if (Util.rnd(12) == 0 && list.size() > 0) {
+            if (!fxLite && list.size() > 0 && Util.rnd(1000) < (dt * 833).toNumber()) {
                 var f = list[Util.rnd(list.size())];
                 if (f.colorVariant() == 1 || f.evo) {
                     particle(f.x + Util.rf(-12.0, 12.0), f.y + Util.rf(-8.0, 8.0), 0.0, -12.0, 0.6, 0xFFFFFF, 0);
                 }
             }
         }
-        var keepB = [];
+        // update in place; a new list is only built on frames where something expired
+        var dead = 0;
         for (var i = 0; i < bubbles.size(); i++) {
             var b = bubbles[i];
             b[1] -= b[3] * dt;
             b[4] += dt * 3;
             b[0] += Math.sin(b[4]) * 0.5;
-            if (b[1] > 40) { keepB.add(b); }
+            if (b[1] <= 40) { dead++; }
         }
-        bubbles = keepB;
+        if (dead > 0) { bubbles = alive(bubbles, 1, 40); }
 
-        var keepP = [];
+        dead = 0;
         for (var i = 0; i < parts.size(); i++) {
             var p = parts[i];
             p[0] += p[2] * dt;
             p[1] += p[3] * dt;
             p[4] -= dt;
-            if (p[4] > 0) { keepP.add(p); }
+            if (p[4] <= 0) { dead++; }
         }
-        parts = keepP;
+        if (dead > 0) { parts = alive(parts, 4, 0); }
 
-        var keepT = [];
+        dead = 0;
         for (var i = 0; i < pops.size(); i++) {
             var p = pops[i];
             p[1] -= 18 * dt;
             p[3] -= dt;
-            if (p[3] > 0) { keepT.add(p); }
+            if (p[3] <= 0) { dead++; }
         }
-        pops = keepT;
+        if (dead > 0) { pops = alive(pops, 3, 0); }
 
         if (toastT > 0) { toastT -= dt; }
         if (infoT > 0) {
@@ -554,6 +590,15 @@ class AquariumEngine {
             particle(sp[0], sp[1], Util.rf(-30.0, 30.0), Util.rf(-40.0, 10.0), 0.6, 0xBFEFFF, 0);
             if (cleanT >= 1.0) { finishClean(); }
         }
+    }
+
+    // Entries of `list` whose field `idx` is still above `min`.
+    function alive(list, idx, min) {
+        var out = [];
+        for (var i = 0; i < list.size(); i++) {
+            if (list[i][idx] > min) { out.add(list[i]); }
+        }
+        return out;
     }
 
     // ---- tutorial ---------------------------------------------------------------

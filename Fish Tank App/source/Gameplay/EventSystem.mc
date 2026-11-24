@@ -149,12 +149,20 @@ module EventSystem {
 
     // Quest progress from gameplay (called through QuestSystem.event).
     function event(eng, type, amount) {
+        eventOn(eng, type, amount, null);
+    }
+
+    // `day` (or null = today) is when it happened: a run read later only counts for events
+    // that were running on the day of the run.
+    function eventOn(eng, type, amount, day) {
         if (eng.preview != null || eng.events == null) { return; }
         for (var i = 0; i < eng.events.size(); i++) {
             var id = eng.events[i][0];
             var q = QUEST[id];
             if (q[0] != type) { continue; }
-            var k = key(id, eng.events[i][1]);
+            var start = eng.events[i][1];
+            if (day != null && (day < start || day >= start + LEN[id])) { continue; }
+            var k = key(id, start);
             var v = eng.evp.get(k);
             v = (v == null ? 0 : v) + amount;
             eng.evp.put(k, v);

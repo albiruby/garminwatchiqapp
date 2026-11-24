@@ -14,6 +14,7 @@ import Toybox.Lang;
 //   tf tap-to-feed, tu tutorial step, exp expedition regions announced
 // v3 adds: evp event quest progress, bd birthday [month, day], race race day, lrc last race
 //   reward day, hs Hijri date correction in days
+// v3 (1.1) adds, filled in by migrate(): rl run log per day {day => [meters, runs, fastRuns]}
 // Fish v2: [species, satiety, happiness, health, growth, fishXp, variant, evolved, raceSkill, id]
 module SaveManager {
     const KEY = "tank";
@@ -31,7 +32,7 @@ module SaveManager {
             "lg" => {}, "wk" => {}, "rc" => [0, 0], "dd" => [0, 0],
             "egg" => [], "eb" => [], "brd" => [], "mg" => {},
             "la" => false, "tf" => true, "tu" => 0, "exp" => 0,
-            "evp" => {}, "bd" => [], "race" => 0, "lrc" => -999, "hs" => 0
+            "evp" => {}, "bd" => [], "race" => 0, "lrc" => -999, "hs" => 0, "rl" => {}
         };
     }
 
@@ -127,7 +128,7 @@ module SaveManager {
     // Storage values are limited to 32 KB each, so the growing parts of the save live
     // under their own keys. Older single-key saves still load (the parts are just missing).
     const PART_KEYS = ["tank_tx", "tank_x"];
-    const PARTS = [["tx"], ["stt", "ds", "q", "lg", "wk", "evp", "egg", "eb", "mg", "ach", "dx"]];
+    const PARTS = [["tx"], ["stt", "ds", "q", "lg", "wk", "evp", "egg", "eb", "mg", "ach", "dx", "rl"]];
 
     function load() {
         var d = null;
@@ -153,6 +154,12 @@ module SaveManager {
 
     // Returns false if anything could not be written (storage full).
     function save(d) {
+        return saveParts(d, true);
+    }
+
+    // Writing storage is the slowest thing the app does, and the reward ledger is the
+    // biggest part. `withTx` false keeps the stored ledger (it has not changed).
+    function saveParts(d, withTx) {
         var core = {};
         var ks = d.keys();
         for (var i = 0; i < ks.size(); i++) { core.put(ks[i], d[ks[i]]); }
@@ -166,7 +173,7 @@ module SaveManager {
                         core.remove(names[j]);
                     }
                 }
-                Application.Storage.setValue(PART_KEYS[i], part);
+                if (i > 0 || withTx) { Application.Storage.setValue(PART_KEYS[i], part); }
             }
             Application.Storage.setValue(KEY, core);
         } catch (e) {
