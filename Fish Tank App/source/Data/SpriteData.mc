@@ -325,28 +325,49 @@ module SpriteData {
         }
 
         // Horizontal runs, split at the tail boundary so the tail can wiggle separately.
+        // Non-jelly runs are also merged vertically (same x, width and color) so a frame
+        // draws fewer rectangles; the covered pixels are identical.
         var split = left - 1;
         var runs = [];
+        var prev = [];
         for (var y = 0; y < H; y++) {
+            var cur = [];
             var x = 0;
             while (x < W) {
                 var c = out[y * W + x];
                 if (c < 0) { x++; continue; }
                 var j = x + 1;
                 while (j < W && j != split && out[y * W + j] == c) { j++; }
-                runs.add(x);
-                runs.add(y);
-                runs.add(j - x);
-                runs.add(c);
+                var m = null;
+                if (!jelly) {
+                    for (var k = 0; k < prev.size(); k++) {
+                        var p = prev[k];
+                        if (p[0] == x && p[2] == j - x && p[3] == c && p[1] + p[4] == y) { m = p; break; }
+                    }
+                }
+                if (m != null) {
+                    m[4] = m[4] + 1;
+                    cur.add(m);
+                } else {
+                    var nr = [x, y, j - x, c, 1];
+                    runs.add(nr);
+                    cur.add(nr);
+                }
                 x = j;
             }
+            prev = cur;
+        }
+        var flat = [];
+        for (var i = 0; i < runs.size(); i++) {
+            var r = runs[i];
+            flat.add(r[0]); flat.add(r[1]); flat.add(r[2]); flat.add(r[3]); flat.add(r[4]);
         }
 
         var hi = evo ? PixelKit.tint(cols[2], 0.35) : cols[2];
         var pal = [cols[4], cols[0], cols[1], hi, cols[3], 0xFFFFFF, 0x0B0B14, FishDatabase.ACCENT[sp]];
         for (var m = 0; m < marks.size(); m++) { pal.add(marks[m][4]); }
 
-        return {:runs => runs, :pal => pal, :tail => split, :jelly => jelly, :wig => skirt + 1};
+        return {:runs => flat, :pal => pal, :tail => split, :jelly => jelly, :wig => skirt + 1};
     }
 
     // ---- Decorations -------------------------------------------------------

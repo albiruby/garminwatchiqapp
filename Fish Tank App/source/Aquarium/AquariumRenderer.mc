@@ -81,11 +81,19 @@ module PixelKit {
         dc.fillRectangle(x, y, w, h);
     }
 
-    // Character-grid sprite: `keys` maps each char to `cols`; '.' is transparent.
-    function drawGrid(dc, rows, keys, cols, x, y, b, flip) {
+    // Parsed character-grid sprites. Building a run list involves string work, so each
+    // grid is parsed once and reused; the resulting rectangles are identical.
+    var _gridCache = {};
+
+    function gridRuns(rows, keys) {
+        var cached = _gridCache.get(rows);
+        if (cached != null) { return cached; }
+        var runs = [];
+        var prev = [];
         for (var r = 0; r < rows.size(); r++) {
             var cs = rows[r].toCharArray();
             var n = cs.size();
+            var cur = [];
             var i = 0;
             while (i < n) {
                 var ch = cs[i];
@@ -94,13 +102,92 @@ module PixelKit {
                 while (j < n && cs[j] == ch) { j++; }
                 var idx = keys.find(ch.toString());
                 if (idx != null) {
-                    var px = flip ? (n - j) : i;
-                    dc.setColor(cols[idx], Graphics.COLOR_TRANSPARENT);
-                    dc.fillRectangle(x + px * b, y + r * b, (j - i) * b, b);
+                    var m = null;
+                    for (var k = 0; k < prev.size(); k++) {
+                        var p = prev[k];
+                        if (p[0] == i && p[2] == j - i && p[3] == idx && p[1] + p[5] == r) { m = p; break; }
+                    }
+                    if (m != null) {
+                        m[5] = m[5] + 1;
+                        cur.add(m);
+                    } else {
+                        var nr = [i, r, j - i, idx, n, 1];
+                        runs.add(nr);
+                        cur.add(nr);
+                    }
                 }
                 i = j;
             }
+            prev = cur;
         }
+        _gridCache.put(rows, runs);
+        return runs;
+    }
+
+    function drawGridRuns(dc, runs, cols, x, y, b, flip) {
+        for (var i = 0; i < runs.size(); i++) {
+            var run = runs[i];
+            var n = run[4];
+            var px = flip ? (n - run[0] - run[2]) : run[0];
+            dc.setColor(cols[run[3]], Graphics.COLOR_TRANSPARENT);
+            dc.fillRectangle(x + px * b, y + run[1] * b, run[2] * b, run[5] * b);
+        }
+    }
+
+    // Character-grid sprite: `keys` maps each char to `cols`; '.' is transparent.
+    function drawGrid(dc, rows, keys, cols, x, y, b, flip) {
+        drawGridRuns(dc, gridRuns(rows, keys), cols, x, y, b, flip);
+    }
+
+    // Icons on a solid panel are cached as a small bitmap: one blit per frame instead of
+    // dozens of rectangles. The pixels are identical because the background matches.
+    var _gridBitmapCache = {};
+
+    function gridBitmap(rows, keys, cols, b, bg) {
+        var sub = _gridBitmapCache.get(rows);
+        if (sub == null) { sub = {}; _gridBitmapCache.put(rows, sub); }
+        var key = b * 0x1000000 + bg;
+        var ref = sub.get(key);
+        if (ref != null) { return ref; }
+        var w = 0;
+        for (var i = 0; i < rows.size(); i++) {
+            if (rows[i].length() > w) { w = rows[i].length(); }
+        }
+        try {
+            ref = Graphics.createBufferedBitmap({:width => w * b, :height => rows.size() * b});
+        } catch (e) {
+            return null;
+        }
+        var bm = ref.get();
+        if (bm == null) { return null; }
+        var bdc = bm.getDc();
+        bdc.setColor(bg, Graphics.COLOR_TRANSPARENT);
+        bdc.fillRectangle(0, 0, w * b, rows.size() * b);
+        drawGridRuns(bdc, gridRuns(rows, keys), cols, 0, 0, b, false);
+        sub.put(key, ref);
+        return ref;
+    }
+
+    function drawGridOn(dc, rows, keys, cols, x, y, b, flip, bg) {
+        if (bg != null && (Graphics has :createBufferedBitmap)) {
+            var ref = gridBitmap(rows, keys, cols, b, bg);
+            var bmp = ref != null ? ref.get() : null;
+            if (bmp != null) { dc.drawBitmap(x, y, bmp); return; }
+        }
+        drawGridRuns(dc, gridRuns(rows, keys), cols, x, y, b, flip);
+    }
+
+    // Parse the icon grids and build the HUD bitmaps before the first frame.
+    function warmHudIcons() {
+        gridRuns(SpriteData.ICON_COIN, SpriteData.ICON_KEYS);
+        gridRuns(SpriteData.ICON_FEED, SpriteData.ICON_KEYS);
+        gridRuns(SpriteData.ICON_CLEAN, SpriteData.ICON_KEYS);
+        gridRuns(SpriteData.ICON_MENU, SpriteData.ICON_KEYS);
+        gridRuns(SpriteData.ICON_HEART, SpriteData.ICON_KEYS);
+        gridBitmap(SpriteData.ICON_COIN, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 2, 0x0B1226);
+        gridBitmap(SpriteData.ICON_FEED, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
+        gridBitmap(SpriteData.ICON_CLEAN, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
+        gridBitmap(SpriteData.ICON_MENU, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
     }
 
     // Generated fish sprite centred on (cx, cy) at integer scale s.
@@ -122,11 +209,12 @@ module PixelKit {
         var oy = cy - SpriteData.H * s / 2;
         var last = -1;
         var n = runs.size();
-        for (var i = 0; i < n; i += 4) {
+        for (var i = 0; i < n; i += 5) {
             var x = runs[i];
             var y = runs[i + 1];
             var w = runs[i + 2];
             var c = runs[i + 3];
+            var h = runs[i + 4];
             var dx = 0;
             var dy = 0;
             if (wig) {
@@ -144,11 +232,11 @@ module PixelKit {
             var bx = ox + (px + dx) * s;
             var by = oy + (y + dy) * s;
             if (scaled) {
-                var x0 = (bx * k + 0.5).toNumber();
-                var y0 = (by * k + 0.5).toNumber();
-                dc.fillRectangle(x0, y0, ((bx + w * s) * k + 0.5).toNumber() - x0, ((by + s) * k + 0.5).toNumber() - y0);
+                var x0 = Scale.px(bx);
+                var y0 = Scale.px(by);
+                dc.fillRectangle(x0, y0, Scale.px(bx + w * s) - x0, Scale.px(by + h * s) - y0);
             } else {
-                dc.fillRectangle(bx, by, w * s, s);
+                dc.fillRectangle(bx, by, w * s, h * s);
             }
         }
     }
@@ -166,12 +254,77 @@ module PixelKit {
             var hh = (i == bands - 1) ? (y1 - yy) : bh;
             rect(dc, water(lerpColor(top, bot, i / (bands - 1.0))), x0, yy, w, hh);
         }
+        var scaled = dc instanceof ScaledDc;
+        var real = scaled ? dc.dc : dc;
+        var l = Scale.lut;
         for (var i = 1; i < bands; i++) {
             var yy = y0 + i * bh;
             if (yy >= y1) { break; }
-            dc.setColor(water(lerpColor(top, bot, (i - 1) / (bands - 1.0))), Graphics.COLOR_TRANSPARENT);
-            for (var x = x0; x < x1; x += 2 * b) { dc.fillRectangle(x, yy, b, b); }
-            for (var x = x0 + b; x < x1; x += 4 * b) { dc.fillRectangle(x, yy + b, b, b); }
+            real.setColor(water(lerpColor(top, bot, (i - 1) / (bands - 1.0))), Graphics.COLOR_TRANSPARENT);
+            if (scaled) {
+                var ya = l[yy];
+                var ha = l[yy + b] - ya;
+                for (var x = x0; x < x1; x += 2 * b) {
+                    var xa = l[x];
+                    real.fillRectangle(xa, ya, l[x + b] - xa, ha);
+                }
+                var yb = l[yy + b];
+                var hb = l[yy + 2 * b] - yb;
+                for (var x = x0 + b; x < x1; x += 4 * b) {
+                    var xb = l[x];
+                    real.fillRectangle(xb, yb, l[x + b] - xb, hb);
+                }
+            } else {
+                for (var x = x0; x < x1; x += 2 * b) { real.fillRectangle(x, yy, b, b); }
+                for (var x = x0 + b; x < x1; x += 4 * b) { real.fillRectangle(x, yy + b, b, b); }
+            }
+        }
+    }
+
+    // One quarter of the banded gradient. Parts 0-1 draw the bands, parts 2-3 draw the
+    // seam dither, so the final image (all bands, then all dither) is unchanged.
+    function gradientPixelPart(dc, top, bot, x0, y0, x1, y1, b, part) {
+        var bands = 10;
+        var bh = (y1 - y0) / bands;
+        if (bh < b) { bh = b; }
+        bh = bh / b * b;
+        var w = x1 - x0;
+        if (part < 2) {
+            var start = part * 5;
+            for (var i = start; i < start + 5; i++) {
+                var yy = y0 + i * bh;
+                if (yy >= y1) { break; }
+                var hh = (i == bands - 1) ? (y1 - yy) : bh;
+                rect(dc, water(lerpColor(top, bot, i / (bands - 1.0))), x0, yy, w, hh);
+            }
+            return;
+        }
+        var scaled = dc instanceof ScaledDc;
+        var real = scaled ? dc.dc : dc;
+        var l = Scale.lut;
+        var start = part == 2 ? 1 : 6;
+        var end = part == 2 ? 6 : bands;
+        for (var i = start; i < end; i++) {
+            var yy = y0 + i * bh;
+            if (yy >= y1) { break; }
+            real.setColor(water(lerpColor(top, bot, (i - 1) / (bands - 1.0))), Graphics.COLOR_TRANSPARENT);
+            if (scaled) {
+                var ya = l[yy];
+                var ha = l[yy + b] - ya;
+                for (var x = x0; x < x1; x += 2 * b) {
+                    var xa = l[x];
+                    real.fillRectangle(xa, ya, l[x + b] - xa, ha);
+                }
+                var yb = l[yy + b];
+                var hb = l[yy + 2 * b] - yb;
+                for (var x = x0 + b; x < x1; x += 4 * b) {
+                    var xb = l[x];
+                    real.fillRectangle(xb, yb, l[x + b] - xb, hb);
+                }
+            } else {
+                for (var x = x0; x < x1; x += 2 * b) { real.fillRectangle(x, yy, b, b); }
+                for (var x = x0 + b; x < x1; x += 4 * b) { real.fillRectangle(x, yy + b, b, b); }
+            }
         }
     }
 
@@ -183,21 +336,38 @@ module PixelKit {
         }
     }
 
-    // Diagonal dithered light shafts from the surface.
-    function lightRays(dc, top, bot, depth, b) {
+    // One diagonal dithered light shaft. On a scaled screen the blocks are mapped once
+    // per row with the coordinate table and drawn straight to the real Dc; the shape and
+    // colors are unchanged. Splitting by shaft keeps each scene stage short.
+    function lightRaysShaft(dc, top, bot, depth, b, k) {
         var xs = [40, 150, 255];
-        for (var k = 0; k < xs.size(); k++) {
-            for (var y = 0; y < depth; y += b) {
-                var fade = 1.0 - y / (depth * 1.0);
-                var c = tint(lerpColor(top, bot, y / 300.0), 0.12 * fade);
-                dc.setColor(c, Graphics.COLOR_TRANSPARENT);
-                var x0 = xs[k] + (y * 0.45).toNumber() / b * b;
-                var row = y / b;
-                for (var bx = 0; bx < 6; bx++) {
-                    if ((bx + row) % 2 == 0) { dc.fillRectangle(x0 + bx * b, y, b, b); }
+        var scaled = dc instanceof ScaledDc;
+        var real = scaled ? dc.dc : dc;
+        var l = Scale.lut;
+        for (var y = 0; y < depth; y += b) {
+            var fade = 1.0 - y / (depth * 1.0);
+            var c = tint(lerpColor(top, bot, y / 300.0), 0.12 * fade);
+            real.setColor(c, Graphics.COLOR_TRANSPARENT);
+            var x0 = xs[k] + (y * 0.45).toNumber() / b * b;
+            var row = y / b;
+            var y0 = scaled ? l[y] : y;
+            var hh = scaled ? l[y + b] - y0 : b;
+            for (var bx = 0; bx < 6; bx++) {
+                if ((bx + row) % 2 == 0) {
+                    var xx = x0 + bx * b;
+                    if (scaled) {
+                        var xa = l[xx];
+                        real.fillRectangle(xa, y0, l[xx + b] - xa, hh);
+                    } else {
+                        real.fillRectangle(xx, y, b, b);
+                    }
                 }
             }
         }
+    }
+
+    function lightRays(dc, top, bot, depth, b) {
+        for (var k = 0; k < 3; k++) { lightRaysShaft(dc, top, bot, depth, b, k); }
     }
 }
 
@@ -310,6 +480,35 @@ class AquariumRenderer {
                     dc.fillRectangle(x, y, b, b);
                 }
             }
+        }
+    }
+
+    // Same dirt, split into specks + two halves of the dark glass pattern. The order and
+    // every block are unchanged; each scene stage just draws less.
+    function drawDirtPart(dc, eng, b, part) {
+        if (eng.clean >= 80) { return; }
+        if (part == 0) {
+            var n = ((80 - eng.clean) * 1.6).toNumber();
+            var rng = new Rng(99);
+            for (var i = 0; i < n; i++) {
+                var x = (25 + rng.next(340)) / b * b;
+                var y = (50 + rng.next(floorY - 40)) / b * b;
+                var c = (i % 3 == 0) ? 0x6E9B45 : 0x3F6B2A;
+                PixelKit.rect(dc, c, x, y, b * (1 + rng.next(2)), b);
+            }
+            return;
+        }
+        if (eng.clean >= 40) { return; }
+        dc.setColor(0x2F4A22, Graphics.COLOR_TRANSPARENT);
+        var row = 0;
+        var first = (part - 1) * 10;
+        for (var y = 60; y < floorY; y += 4 * b) {
+            if (row >= first && row < first + 10) {
+                for (var x = ((y / b) % 2) * 2 * b; x < 390; x += 4 * b) {
+                    dc.fillRectangle(x, y, b, b);
+                }
+            }
+            row += 1;
         }
     }
 

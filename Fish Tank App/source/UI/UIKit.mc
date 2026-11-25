@@ -90,6 +90,18 @@ module IconKit {
         return true;
     }
 
+    // Grid icons on a known solid background can be cached as one bitmap.
+    function drawOnPanel(dc, kind, arg, cx, cy, s, bg) {
+        if (kind == GRID) {
+            var rows = arg;
+            var w = rows[0].length();
+            PixelKit.drawGridOn(dc, rows, SpriteData.ICON_KEYS, SpriteData.ICON_COLS,
+                cx - w * s / 2, cy - rows.size() * s / 2, s, false, bg);
+            return true;
+        }
+        return draw(dc, kind, arg, cx, cy, s);
+    }
+
     // Builds one missing sprite needed by an icon; true when everything is ready.
     function warm(kind, arg) {
         if (kind == FISH) {

@@ -16,6 +16,7 @@ module Scale {
     var s = 1.0;           // real pixels per canvas pixel
     var on = false;
     var mip = false;       // 64-color memory-in-pixel screen (every supported watch under 300 px)
+    var lut = null;        // rounded canvas -> screen coordinate, for the hot draw calls
 
     function init() {
         var w = System.getDeviceSettings().screenWidth;
@@ -23,10 +24,16 @@ module Scale {
         s = w / (BASE * 1.0);
         on = w != BASE;
         mip = w < 300;
+        lut = new [BASE + 1];
+        for (var i = 0; i <= BASE; i++) {
+            lut[i] = (i * s + 0.5).toNumber();
+        }
     }
 
     // Canvas -> screen
     function px(v) {
+        var n = v.toNumber();
+        if (lut != null && v >= 0 && v <= BASE && n == v) { return lut[n]; }
         var r = v * s;
         return r >= 0 ? (r + 0.5).toNumber() : (r - 0.5).toNumber();
     }
@@ -80,13 +87,13 @@ class ScaledDc {
         return (p < 1 && v > 0) ? 1 : p;
     }
 
-    // The hottest call (every pixel-art block): rounding inline, no helper calls.
-    // Coordinates on screen are >= 0, where adding 0.5 and truncating rounds.
+    // The hottest call (every pixel-art block). Integer canvas coordinates hit the
+    // lookup table, so no float work is done per block.
     function fillRectangle(x, y, w, h) {
-        var x0 = (x * k + 0.5).toNumber();
-        var y0 = (y * k + 0.5).toNumber();
-        var ww = ((x + w) * k + 0.5).toNumber() - x0;
-        var hh = ((y + h) * k + 0.5).toNumber() - y0;
+        var x0 = Scale.px(x);
+        var y0 = Scale.px(y);
+        var ww = Scale.px(x + w) - x0;
+        var hh = Scale.px(y + h) - y0;
         if (ww < 1) { ww = 1; }
         if (hh < 1) { hh = 1; }
         dc.fillRectangle(x0, y0, ww, hh);

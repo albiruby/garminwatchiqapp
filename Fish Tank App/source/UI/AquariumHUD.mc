@@ -27,7 +27,7 @@ module AquariumHUD {
     }
 
     function icon(dc, rows, x, y, b) {
-        PixelKit.drawGrid(dc, rows, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, x, y, b, false);
+        PixelKit.drawGridOn(dc, rows, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, x, y, b, false, PANEL);
     }
 
     function text(dc, x, y, font, s, col) {
@@ -121,7 +121,11 @@ module AquariumHUD {
                 dc.drawRoundedRectangle(cx - cell / 2, cy - cell / 2, cell, cell, 10);
                 dc.setPenWidth(1);
             }
-            IconKit.draw(dc, IconKit.GRID, icons[i], cx, cy, 3);
+            if (focus == i) {
+                IconKit.draw(dc, IconKit.GRID, icons[i], cx, cy, 3);
+            } else {
+                IconKit.drawOnPanel(dc, IconKit.GRID, icons[i], cx, cy, 3, PANEL);
+            }
         }
 
         // food stock badge on the Feed cell (flakes are unlimited, so no badge)

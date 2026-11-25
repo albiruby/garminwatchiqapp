@@ -222,6 +222,15 @@ class FishTankView extends WatchUi.View {
             r.drawStage(dc, eng, 0);
         }
 
+        // While the scene cache is rebuilt one stage per frame, show the partial scene
+        // only. The final frame is unchanged; this just keeps the stage plus overlays
+        // inside the watchdog budget on small screens.
+        if (_building) {
+            pace(System.getTimer() - t0 + _tickMs);
+            _tickMs = 0;
+            return;
+        }
+
         for (var i = 0; i < eng.foods.size(); i++) { r.drawFood(dc, eng.foods[i]); }
 
         var list = eng.fishList();

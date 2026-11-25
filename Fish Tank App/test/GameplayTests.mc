@@ -207,10 +207,10 @@ function leagueTargetHasFloor(logger as Logger) as Boolean {
 function everySpriteBuilds(logger as Logger) as Boolean {
     for (var i = 0; i < FishDatabase.COUNT; i++) {
         var s = SpriteData.get(i, false);
-        Test.assert(s[:runs].size() > 40);
-        Test.assert(s[:runs].size() % 4 == 0);
+        Test.assert(s[:runs].size() > 15);
+        Test.assert(s[:runs].size() % 5 == 0);
     }
-    Test.assert(SpriteData.get(0, true)[:runs].size() > 40);
+    Test.assert(SpriteData.get(0, true)[:runs].size() > 15);
     return true;
 }
 
