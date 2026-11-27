@@ -301,9 +301,6 @@ class BubblePopView extends MiniGameView {
     function drawPlay(dc) {
         var left = (DURATION - t).toNumber();
         if (left < 0) { left = 0; }
-        hudLine(dc, score.toString() + " pts", left.toString() + "s");
-        // target banner
-        UIKit.text(dc, 195, 76, UIKit.font(0), "POP " + NAMES[target], COLORS[target], UIKit.CENTER);
         // lane marker for button play
         PixelKit.rect(dc, 0x14244A, LANES[lane] - 30, 336, 60, 4);
         for (var i = 0; i < bubbles.size(); i++) {
@@ -321,6 +318,15 @@ class BubblePopView extends MiniGameView {
             var p = pops[i];
             UIKit.text(dc, p[0], p[1] - (0.5 - p[2]) * 40, UIKit.font(0), p[3], p[4], UIKit.CENTER);
         }
+        // HUD and target banner sit above the playfield, so rising bubbles cannot hide them.
+        hudLine(dc, score.toString() + " pts", left.toString() + "s");
+        var label = "POP " + NAMES[target];
+        var f = UIKit.font(0);
+        var w = dc.getTextWidthInPixels(label, f) + 24;
+        var h = dc.getFontHeight(f) + 8;
+        dc.setColor(UIKit.PANEL, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(195 - w / 2, 76 - h / 2, w, h, 8);
+        UIKit.text(dc, 195, 76, f, label, COLORS[target], UIKit.CENTER);
     }
 }
 
