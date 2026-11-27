@@ -1,8 +1,8 @@
-# FISH TANK: Product and Feature Report
+﻿# FISH TANK: Product and Feature Report
 
 **Document:** `docs/FISH-TANK-REPORT.md`
 **Snapshot:** 27 November 2026
-**Code basis:** `d05efbb` (Bubble Pop HUD fix), with `5f66ce7` (63-device manifest and UI fit fixes) and `fac9778` (multi-device performance)
+**Code basis:** `6f3db93` (glance preview + MIP dock), with `d05efbb` (Bubble Pop HUD fix), `5f66ce7` (63-device manifest and UI fit fixes) and `fac9778` (multi-device performance)
 **Product version:** 1.1.0
 **Status:** Implemented, simulator-audited, real-device acceptance pending
 
@@ -257,7 +257,7 @@ The four legacy devices remain in the manifest. Their SDK 9.3 device definitions
 
 | Item | Status |
 |---|---|
-| Latest commit | `d05efbb` |
+| Latest commit | `6f3db93` |
 | Manifest products | 63 |
 | Final package | `bin/FishTank-v1.1.0-59devices.iq` |
 | Package size | 9.45 MB |
@@ -362,3 +362,4 @@ No text overlap or container overflow was found on the other audited screens. Th
 | Store listing | `docs/store-listing.md` |
 | Screenshots | `docs/screens/` |
 | Store images | `docs/store/` |
+
