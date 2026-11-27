@@ -1,5 +1,6 @@
 <fonts>
-    <font id="PixS" filename="pixs.fnt" antialias="false"/>
-    <font id="PixM" filename="pixm.fnt" antialias="false"/>
+    <font id="PixS" filename="pixs.fnt" antialias="false" scope="glance"/>
+    <font id="PixM" filename="pixm.fnt" antialias="false" scope="glance"/>
     <font id="PixL" filename="pixl.fnt" antialias="false"/>
+    <font id="PixG" filename="pixg.fnt" antialias="false" scope="glance"/>
 </fonts>

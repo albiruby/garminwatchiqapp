@@ -15,6 +15,7 @@ Connect IQ device app untuk 63 jam Garmin berlayar bulat, AMOLED (360–454 px) 
 - **Events (tanpa update, berulang tiap tahun):** 15 event tahunan (Tahun Baru, HUT RI, Hari Batik, Halloween, dll.), Ramadan, Idul Fitri dan Imlek yang tanggalnya dihitung otomatis, event pribadi (Race Day, ulang tahun, anniversary tank), dan rotasi mingguan "Arus Minggu Ini" (arus, ikan unggulan, pengunjung, mini-game sorotan). Setiap event punya quest dengan ikan edisi khusus.
 - **Performa:** frame rate adaptif (15/12/10/7,5 fps sesuai kemampuan jam), gerakan berbasis waktu nyata, pekerjaan per menit dan autosave dipecah ke beberapa frame.
 - **Tampilan:** 3 art style (Modern Pixel, Minimalist, Pseudo-3D) × 6 tema, font Pixelify Sans, menu pixel custom.
+- **Glance:** tekan UP/DOWN dari watch face untuk melihat koin, level dan mini tank di daftar glance. Buka glance untuk langsung masuk ke akuarium.
 
 ## Screenshot
 

@@ -89,12 +89,19 @@ module AquariumHUD {
     function drawDock(dc, eng, focus) {
         var w = dc.getWidth();
         var h = dc.getHeight();
-        var cell = 40;
-        var gap = 6;
-        var pad = 6;
+        // MIP screens are physically smaller; a 32 px cell with 2 px icon pixels keeps
+        // the dock from overpowering the tank. AMOLED keeps the original 40 px cell.
+        var small = Scale.mip;
+        var cell = small ? 32 : 40;
+        var gap = small ? 5 : 6;
+        var pad = small ? 5 : 6;
+        var iconS = small ? 2 : 3;
         var dockW = 3 * cell + 2 * gap + 2 * pad;
         var dockH = cell + 2 * pad;
-        var cy = (h * 0.855).toNumber();
+        // Keep a clear gap above the black bezel; at 0.855 the dock's lower edge merged
+        // into the bezel on Fenix-class MIP screens. 0.83 leaves the same visual margin
+        // on every round resolution without moving the icons off the sand.
+        var cy = (h * 0.83).toNumber();
         var r = w / 2;
         var dy = cy + dockH / 2 - r;
         var half = Math.sqrt((r * r - dy * dy).toFloat()).toNumber() - 8;
@@ -122,9 +129,9 @@ module AquariumHUD {
                 dc.setPenWidth(1);
             }
             if (focus == i) {
-                IconKit.draw(dc, IconKit.GRID, icons[i], cx, cy, 3);
+                IconKit.draw(dc, IconKit.GRID, icons[i], cx, cy, iconS);
             } else {
-                IconKit.drawOnPanel(dc, IconKit.GRID, icons[i], cx, cy, 3, PANEL);
+                IconKit.drawOnPanel(dc, IconKit.GRID, icons[i], cx, cy, iconS, PANEL);
             }
         }
 

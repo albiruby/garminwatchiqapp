@@ -169,7 +169,10 @@ module PixelKit {
     }
 
     function drawGridOn(dc, rows, keys, cols, x, y, b, flip, bg) {
-        if (bg != null && (Graphics has :createBufferedBitmap)) {
+        // The cached bitmap is built in canvas pixels. On a non-390 screen the ScaledDc
+        // only translates bitmaps, it cannot scale them, so a cached icon would be drawn
+        // larger than its cell. Fall back to the vector path there; it scales exactly.
+        if (!Scale.on && bg != null && (Graphics has :createBufferedBitmap)) {
             var ref = gridBitmap(rows, keys, cols, b, bg);
             var bmp = ref != null ? ref.get() : null;
             if (bmp != null) { dc.drawBitmap(x, y, bmp); return; }
@@ -184,10 +187,13 @@ module PixelKit {
         gridRuns(SpriteData.ICON_CLEAN, SpriteData.ICON_KEYS);
         gridRuns(SpriteData.ICON_MENU, SpriteData.ICON_KEYS);
         gridRuns(SpriteData.ICON_HEART, SpriteData.ICON_KEYS);
-        gridBitmap(SpriteData.ICON_COIN, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 2, 0x0B1226);
-        gridBitmap(SpriteData.ICON_FEED, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
-        gridBitmap(SpriteData.ICON_CLEAN, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
-        gridBitmap(SpriteData.ICON_MENU, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
+        // Non-390 screens use the vector path (see drawGridOn), so there is no bitmap to warm.
+        if (!Scale.on) {
+            gridBitmap(SpriteData.ICON_COIN, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 2, 0x0B1226);
+            gridBitmap(SpriteData.ICON_FEED, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
+            gridBitmap(SpriteData.ICON_CLEAN, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
+            gridBitmap(SpriteData.ICON_MENU, SpriteData.ICON_KEYS, SpriteData.ICON_COLS, 3, 0x0B1226);
+        }
     }
 
     // Generated fish sprite centred on (cx, cy) at integer scale s.

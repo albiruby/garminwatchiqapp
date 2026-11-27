@@ -49,6 +49,9 @@ SOMETHING NEW EVERY WEEK
 MAKE IT YOURS
 3 art styles (Modern Pixel, Minimalist, Pseudo-3D) x 6 themes. Switch any time, your progress is kept.
 
+GLANCE
+Press UP/DOWN from the watch face to see your coins, level and a mini tank in the glance list. Open it to jump straight back into the aquarium.
+
 Works with touch and with buttons. Everything stays on your watch: no phone app, no account, no internet needed.
 
 Permission: FISH TANK reads your activity history (date, sport type, distance and duration of runs) only to pay run rewards. Nothing is sent anywhere.
@@ -82,6 +85,9 @@ SELALU ADA YANG BARU
 SESUAIKAN GAYAMU
 3 gaya visual (Modern Pixel, Minimalist, Pseudo-3D) x 6 tema. Ganti kapan saja, progres tetap aman.
 
+GLANCE
+Tekan UP/DOWN dari watch face untuk melihat koin, level dan mini tank di daftar glance. Buka untuk langsung kembali ke akuarium.
+
 Bisa dengan layar sentuh maupun tombol. Semua tersimpan di jam: tanpa app HP, tanpa akun, tanpa internet.
 
 Izin: FISH TANK membaca riwayat aktivitas (tanggal, jenis olahraga, jarak dan durasi lari) hanya untuk membayar hadiah lari. Tidak ada data yang dikirim ke mana pun.
@@ -98,6 +104,7 @@ v1.1.0
 - Activity Journal shows this week's and today's distance
 - Smoother animation: the frame rate adapts to your watch, no more hitch every minute
 - Stability: a long backlog of runs, a wrong watch date or a damaged save no longer cause problems
+- Glance preview: coins, level and a mini tank in the watch's glance list (UP/DOWN from the watch face)
 - Now on 59 round watches: Forerunner, fenix 7/8/9, epix, Enduro, Venu, vivoactive, MARQ, Instinct, D2 Mach and Approach S70
 ```
 ID:
@@ -108,6 +115,7 @@ v1.1.0
 - Activity Journal menampilkan jarak minggu ini dan hari ini
 - Animasi lebih mulus: frame rate menyesuaikan jam, tidak ada lagi tersendat tiap menit
 - Stabilitas: banyak lari yang tertunda, tanggal jam yang salah atau data save rusak tidak lagi bermasalah
+- Glance preview: koin, level dan mini tank di daftar glance jam (tekan UP/DOWN dari watch face)
 - Kini di 59 jam bulat: Forerunner, fenix 7/8/9, epix, Enduro, Venu, vivoactive, MARQ, Instinct, D2 Mach, dan Approach S70
 ```
 

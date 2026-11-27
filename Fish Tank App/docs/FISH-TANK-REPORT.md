@@ -20,7 +20,7 @@ Current snapshot:
 | Version | 1.1.0 |
 | Manifest target | 63 devices |
 | Buildable package now | 59 devices |
-| Package size | 9.23 MB |
+| Package size | 9.45 MB |
 | Binaries in package | 72 |
 | Unit tests | 50/50 PASS |
 | Visual audit | 26 screens on FR165 (390 px) |
@@ -200,6 +200,7 @@ Huruf: Pixelify Sans oleh Stefie Justprince, SIL Open Font License 1.1.
 | 3 art styles | Modern Pixel, Minimalist, Pseudo-3D. |
 | 6 themes | Different palettes and moods. |
 | Pixelify Sans | Per-resolution pixel font, kept sharp on small screens. |
+| Glance | Press UP/DOWN from the watch face to see coins, level, and a mini tank in the glance list; open it to launch the app. Uses a dedicated 14 px `PixG` pixel font. |
 | Touch and buttons | Playable with touch and with physical buttons. |
 | Local-only | No account, phone app, or internet connection. |
 | UserProfile permission | Reads activity history only to pay run rewards. Nothing is sent anywhere. |
@@ -259,7 +260,7 @@ The four legacy devices remain in the manifest. Their SDK 9.3 device definitions
 | Latest commit | `d05efbb` |
 | Manifest products | 63 |
 | Final package | `bin/FishTank-v1.1.0-59devices.iq` |
-| Package size | 9.23 MB |
+| Package size | 9.45 MB |
 | Binaries in package | 72 |
 | Mapped device IDs | 59 |
 | App ID | `f15a7c2e8b4d4e6a9c3d1b0e5a7f2c91` |
@@ -286,13 +287,14 @@ The 63-device command requires the four legacy device definitions. For a 59-devi
 
 ## 8. Visual audit and recent fixes
 
-Audited on the FR165 simulator (390 x 390), 26 screens:
+Audited on the FR165 simulator (390 x 390), 26 screens, plus the glance and full-app dock on FR165 and fenix 7X (280 px):
 
 - Tank, Main, Shop Fish, Inventory, Fish Profile, Quests, Activity, Expedition
 - Games, Fishdex, Trophies, League, Profile, Settings, Shop Decor, Events
 - Bubble Pop, Treasure Dive, Fish Racing
 - Card Gift, Card Run, Card Event, Build, Coach
 - Style picker, theme picker, fixed Bubble Pop
+- Glance preview: FR165 (261 x 124) and fenix 7X (191 x 63); full-app dock: FR165 and fenix 7X
 
 Findings and fixes:
 
@@ -304,6 +306,9 @@ Findings and fixes:
 | Expedition description was truncated | Descriptions shortened to fit the 228 px info box |
 | Events row "Featured: Royal Gr.." was truncated | Row uses the fish name; sublabel shows "Featured -30%: price" |
 | Feed/clean could briefly clear the tank on AMOLED | Scene-rebuild guard is now MIP-only; feed 5x tested on FR570 47 |
+| Glance title and numbers were clipped by the round glass and by the 32 px PixM font | Dedicated 14 px `PixG` glance font, dynamic HUD strip, 10 px top / 18 px left inset, and a safe right margin inside the visible chord |
+| MIP dock icons looked oversized compared with AMOLED | Cached icon bitmaps are canvas-sized and `ScaledDc` cannot scale them; the cache is disabled when `Scale.on`, and the MIP dock uses a 32 px cell with 2 px icons at 0.83 h |
+| Fenix dock sat too close to the bezel | Dock moved from 0.855 h to 0.83 h, with a clear gap on 240/280 px MIP |
 
 No text overlap or container overflow was found on the other audited screens. The style/theme picker intentionally covers the lower tank as a modal preview; this is a design choice, not a text collision.
 
@@ -315,21 +320,22 @@ No text overlap or container overflow was found on the other audited screens. Th
 2. Real-device acceptance on FR165 is still pending. The simulator cannot prove `getUserActivityHistory()` returns a pre-install morning run.
 3. Interactive states are not fully audited: buying, hatching, claiming, all Build slots, mini-game intro/result/BACK, save/reload, onboarding.
 4. Empty and extreme states are not fully audited: 0 fish, 8 fish, 36 Fishdex, 33 trophies, 10 Settings rows, long names, long text cards.
-5. Device matrix is partial: 280, 360, and 416 px, MIP memory, button-only Instinct/D2, and touch-only Venu/vivoactive need coverage.
+5. Device matrix coverage improved: 240, 280, 360, and 416 px tank/main/settings screens were captured, but MIP memory, button-only Instinct/D2, and touch-only Venu/vivoactive still need coverage.
 6. On 218-280 px MIP screens, the scene-rebuild guard remains active for watchdog stability. Feed or clean can briefly hide overlays there.
-7. Store screenshots are still from v1.0.0 and should be regenerated from the final build.
-8. The app UI is English (`eng`); the store descriptions are available in EN and ID.
-9. If v1.1.0 has already been uploaded, this fix set requires version 1.1.1.
-10. The v1.1.0 store checklist is not fully checked.
+7. The glance was verified on the FR165 and fenix 7X simulators only. A real-device check is needed for the glance list position, round-glass masking, fresh install with no save, and a maxed save under the glance memory budget.
+8. Store screenshots are still from v1.0.0 and do not include the glance; regenerate them from the final build.
+9. The app UI is English (`eng`); the store descriptions are available in EN and ID.
+10. If v1.1.0 has already been uploaded, this fix set requires version 1.1.1.
+11. The v1.1.0 store checklist is not fully checked.
 
 ---
 
 ## 10. Recommendations
 
-1. Real-device FR165 acceptance: sideload, run 5 km in the morning, install at night, open the app, confirm RUN FOUND; check feed/clean, FPS, touch/buttons, and migration from an older save.
+1. Real-device FR165 acceptance: sideload, run 5 km in the morning, install at night, open the app, confirm RUN FOUND; check feed/clean, FPS, touch/buttons, the glance list, the MIP dock, and migration from an older save.
 2. Interactive simulator audit: onboarding, economy, hatch, claim, style/theme, Build, cards, all three mini-games, save/reload.
 3. Empty and extreme audit: 0/8 fish, 36 Fishdex, 33 trophies, 10 Settings rows, long text.
-4. Device matrix: 280/360/416 px, MIP memory, button-only and touch-only devices.
+4. Device matrix: 240/280/360/416 px captured; MIP memory, button-only and touch-only devices still need coverage.
 5. Store pack: regenerate store screenshots from the final build, fill the checklist, confirm version and signing key.
 6. Documentation and release pack: use `project-docs-skills` for README, store listing, changelog, handoff, and clean screenshots.
 7. Full 63-device package: install the four legacy device definitions in SDK Manager and rebuild.
