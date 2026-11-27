@@ -2,53 +2,80 @@
 <iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
     <iq:application id="f15a7c2e8b4d4e6a9c3d1b0e5a7f2c91" version="1.1.0" type="watch-app" name="@Strings.AppName" entry="FishTankApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="4.2.0">
         <iq:products>
+            <iq:product id="approachs7243mm"/>
+            <iq:product id="approachs7247mm"/>
+            <iq:product id="d2mach1"/>
+            <iq:product id="d2mach2"/>
+            <iq:product id="d2mach2pro"/>
             <iq:product id="enduro2"/>
+            <iq:product id="enduro3"/>
+            <iq:product id="enduro4"/>
             <iq:product id="epix2"/>
             <iq:product id="epix2pro42mm"/>
             <iq:product id="epix2pro47mm"/>
             <iq:product id="epix2pro51mm"/>
             <iq:product id="fenix7"/>
             <iq:product id="fenix7pro"/>
+            <iq:product id="fenix7pronowifi"/>
             <iq:product id="fenix7s"/>
             <iq:product id="fenix7spro"/>
             <iq:product id="fenix7x"/>
             <iq:product id="fenix7xpro"/>
+            <iq:product id="fenix7xpronowifi"/>
             <iq:product id="fenix843mm"/>
             <iq:product id="fenix847mm"/>
+            <iq:product id="fenix8pro47mm"/>
+            <iq:product id="fenix8solar47mm"/>
+            <iq:product id="fenix8solar51mm"/>
+            <iq:product id="fenix943mm"/>
+            <iq:product id="fenix947mm"/>
+            <iq:product id="fenix9pro43mm"/>
+            <iq:product id="fenix9pro47mm"/>
+            <iq:product id="fenix9prosolar47mm"/>
+            <iq:product id="fenix9prosolar51mm"/>
             <iq:product id="fenixe"/>
             <iq:product id="fr165"/>
             <iq:product id="fr165m"/>
+            <iq:product id="fr170"/>
+            <iq:product id="fr170m"/>
             <iq:product id="fr255"/>
             <iq:product id="fr255m"/>
             <iq:product id="fr255s"/>
             <iq:product id="fr255sm"/>
             <iq:product id="fr265"/>
             <iq:product id="fr265s"/>
+            <iq:product id="fr57042mm"/>
+            <iq:product id="fr57047mm"/>
+            <iq:product id="fr70"/>
             <iq:product id="fr955"/>
             <iq:product id="fr965"/>
+            <iq:product id="fr970"/>
+            <iq:product id="instinct3amoled45mm"/>
+            <iq:product id="instinct3amoled50mm"/>
+            <iq:product id="instinctcrossoveramoled"/>
+            <iq:product id="marq2"/>
+            <iq:product id="marq2aviator"/>
+            <iq:product id="marq3"/>
             <iq:product id="venu2"/>
             <iq:product id="venu2plus"/>
             <iq:product id="venu2s"/>
             <iq:product id="venu3"/>
             <iq:product id="venu3s"/>
+            <iq:product id="venu441mm"/>
+            <iq:product id="venu445mm"/>
             <iq:product id="vivoactive5"/>
-            <!-- Likely round watches whose exact SDK id is not verified yet: check the name in
-                 SDK Manager, then move it above this comment. Any round screen of 218, 240,
-                 260, 280, 360, 390, 416 or 454 px works without other changes.
-                 fenix8solar47mm
-                 fenix8solar51mm
-                 enduro3
-                 fr57042mm
-                 fr57047mm
-                 fr970
-                 vivoactive6
-                 instinct3amoled45mm
-                 instinct3amoled50mm
-                 marq2
-                 marq2aviator
-                 d2mach1pro
-                 approachs7042mm
-                 approachs7047mm
+            <iq:product id="vivoactive6"/>
+            <!-- 63 round products. 59 have device definitions installed in SDK 9.3.0;
+                 the four legacy ids below are in the manifest but not installed on this
+                 machine. Install them in SDK Manager before building the full .iq, or
+                 monkeyc will reject the package:
+                 enduro2, venu2, venu2plus, venu2s
+                 Deliberately not added yet (need a new layout or font set):
+                 fenix9pro51mm       466x466, needs a 466 font set
+                 venux1              rectangle 448x486
+                 instinct3solar45mm  semioctagon 176x176
+                 instincte40mm       semioctagon 166x166
+                 instincte45mm       semioctagon 176x176
             -->
         </iq:products>
         <iq:permissions>

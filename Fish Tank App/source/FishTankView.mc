@@ -222,10 +222,11 @@ class FishTankView extends WatchUi.View {
             r.drawStage(dc, eng, 0);
         }
 
-        // While the scene cache is rebuilt one stage per frame, show the partial scene
-        // only. The final frame is unchanged; this just keeps the stage plus overlays
-        // inside the watchdog budget on small screens.
-        if (_building) {
+        // On the small MIP screens the stage plus fish and HUD can exceed the watchdog,
+        // so show the partial scene while the cache rebuilds. AMOLED screens have room
+        // for the overlays, and hiding them there makes a feed or clean look like a
+        // restart.
+        if (_building && Scale.mip) {
             pace(System.getTimer() - t0 + _tickMs);
             _tickMs = 0;
             return;

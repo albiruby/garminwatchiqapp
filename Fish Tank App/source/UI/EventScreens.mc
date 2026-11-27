@@ -52,7 +52,7 @@ class EventsScreen extends Screen {
         out.add([WeeklySystem.NAME[c], WeeklySystem.DESC[c], IconKit.GRID, SpriteData.ICON_WAVE, 0x7FE7FF]);
         _acts.add([1, 0]);
         var fsp = WeeklySystem.featured(e, w);
-        out.add(["Featured: " + FishDatabase.NAME[fsp], "-" + WeeklySystem.DISCOUNT.toString() + "% this week: " + WeeklySystem.price(e, fsp).toString() + "c",
+        out.add([FishDatabase.NAME[fsp], "Featured -" + WeeklySystem.DISCOUNT.toString() + "%: " + WeeklySystem.price(e, fsp).toString() + "c",
                  IconKit.FISH, [fsp, false, 0], null]);
         _acts.add([2, 0]);
         var vsp = WeeklySystem.visitor(w);

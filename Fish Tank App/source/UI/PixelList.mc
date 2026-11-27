@@ -131,7 +131,7 @@ class PixelListView extends WatchUi.View {
         } else {
             if (foot == null && rows.size() > 0) { foot = (sel + 1).toString() + " / " + rows.size().toString(); }
             if (foot != null) {
-                UIKit.text(dc, w / 2, (h * 0.885).toNumber(), UIKit.font(0), UIKit.fit(dc, foot, UIKit.font(0), 236), UIKit.DIM, UIKit.CENTER);
+                UIKit.text(dc, w / 2, (h * 0.85).toNumber(), UIKit.font(0), UIKit.fit(dc, foot, UIKit.font(0), 236), UIKit.DIM, UIKit.CENTER);
             }
         }
     }
@@ -403,7 +403,7 @@ class GridView extends WatchUi.View {
         }
         if (n > 0) {
             var cap = UIKit.fit(dc, screen.caption(sel), UIKit.font(0), 220);
-            UIKit.text(dc, w / 2, (dc.getHeight() * 0.885).toNumber(), UIKit.font(0), cap, screen.captionColor(sel), UIKit.CENTER);
+            UIKit.text(dc, w / 2, (dc.getHeight() * 0.85).toNumber(), UIKit.font(0), cap, screen.captionColor(sel), UIKit.CENTER);
         }
     }
 }

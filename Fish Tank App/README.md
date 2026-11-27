@@ -1,6 +1,8 @@
 # FISH TANK: Pocket Aquarium
 
-Connect IQ device app untuk 30 jam Garmin berlayar bulat, AMOLED (360–454 px) maupun MIP (218–280 px): Forerunner 165/165 Music, 255/255S, 265/265S, 955, 965, fēnix 7/7S/7X (+ Pro), fēnix 8 AMOLED, fēnix E, epix Gen 2 / Pro, Enduro 2, Venu 2/2S/2 Plus, Venu 3/3S, vívoactive 5. Akuarium pixel-art yang dirawat, dikoleksi dan didekorasi. Koin utamanya datang dari lari: lari dengan app Run bawaan Garmin, lalu buka FISH TANK dan setiap lari baru dibayar satu kali (100 m = 1 koin, maks 300/hari).
+Connect IQ device app untuk 63 jam Garmin berlayar bulat, AMOLED (360–454 px) maupun MIP (218–280 px): Forerunner 165/170/255/265/570/955/965/970, fēnix 7/7S/7X (+ Pro), fēnix 8/9 (+ Pro/Solar), fēnix E, epix Gen 2 / Pro, Enduro 2/3/4, Venu 2/2S/2 Plus/3/4, vívoactive 5/6, MARQ 2/3, Instinct 3/E/Crossover, D2 Mach, Approach S70. Akuarium pixel-art yang dirawat, dikoleksi dan didekorasi. Koin utamanya datang dari lari: lari dengan app Run bawaan Garmin, lalu buka FISH TANK dan setiap lari baru dibayar satu kali (100 m = 1 koin, maks 300/hari).
+
+> Build note: paket 59 device saat ini belum menyertakan Enduro 2 dan Venu 2/2S/2 Plus karena definisi device-nya belum ter-install di SDK 9.3; manifest sudah mencakup 63 device.
 
 ![FISH TANK](../docs/previews/fish-tank.jpg)
 

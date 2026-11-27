@@ -6,8 +6,8 @@ module ExpeditionSystem {
     const NAME = ["Coral Reef", "Tropical Lagoon", "Frozen Ocean", "Deep Sea", "Mystic Trench"];
     const KM = [0, 10, 30, 75, 150];
     // shown in a 184 px box on the map: keep each under ~22 characters
-    const DESC = ["Where every tank begins", "Idols, discus, wrecks", "Ice fish + a new theme",
-                  "Anglers + a new theme", "Home of the Leviathan"];
+    const DESC = ["Where tanks begin", "Idols and wrecks", "Ice fish, new theme",
+                  "Anglers, new theme", "Home of Leviathan"];
     const COLOR = [0xFF8BA8, 0x2FD6C0, 0x9FE8FF, 0x4F7BFF, 0x9A7BFF];
 
     function unlocked(eng) {

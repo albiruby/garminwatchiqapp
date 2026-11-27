@@ -502,7 +502,7 @@ class ActivityScreen extends Screen {
     }
 
     function footer() {
-        return ActivitySystem.fallbackMode(Globals.engine) ? "Counting daily distance" : "Runs from your Run app";
+        return ActivitySystem.fallbackMode(Globals.engine) ? "Counting daily km" : "Runs from Run app";
     }
 
     function rows() {
@@ -555,7 +555,7 @@ class GamesScreen extends Screen {
     }
 
     function footer() {
-        return MiniGameRules.DAILY.toString() + " rewarded plays a day";
+        return MiniGameRules.DAILY.toString() + " plays a day";
     }
 
     function sub(game, best) {
@@ -593,7 +593,7 @@ class RacePickScreen extends Screen {
     }
 
     function footer() {
-        return Globals.engine.tp.toString() + " training points - train in My Fish";
+        return Globals.engine.tp.toString() + " TP - train in My Fish";
     }
 
     function rows() {
