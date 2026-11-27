@@ -1,4 +1,4 @@
-﻿# FISH TANK: Product and Feature Report
+# FISH TANK: Product and Feature Report
 
 **Document:** `docs/FISH-TANK-REPORT.md`
 **Snapshot:** 27 November 2026
@@ -362,4 +362,3 @@ No text overlap or container overflow was found on the other audited screens. Th
 | Store listing | `docs/store-listing.md` |
 | Screenshots | `docs/screens/` |
 | Store images | `docs/store/` |
-
